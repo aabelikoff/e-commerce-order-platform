@@ -1,34 +1,115 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
-
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
-
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
 
 ## Description
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+This project is a **training backend application** built with **NestJS**.  
+The main goal of the project is to demonstrate a clean, well-structured, and scalable backend architecture that follows modern industry best practices.
+
+# 📘 Table of Contents
+
+- [Architectural Vision](#project-architecture)
+- [Requirements](#requirements)
+- [Project setup](#project-setup)
+- [Environment Variables](#environment-variables)
+- [Compile and run the project](#compile-and-run-the-project)
+- [Run tests](#run-tests)
+- [Deployment](#deployment)
+- [Tests](#run-tests)
+- [Stay in touch](#stay-in-touch)
+- [License](#license)
+
+## Architectural Vision
+
+The architecture is designed with a focus on:
+- modularity
+- clear separation of responsibilities
+- centralized and typed configuration
+- maintainability and future scalability
+
+---
+
+## Overall Architecture
+
+The application follows a **modular architecture**.
+
+Each major business domain is implemented as an isolated module:
+- `users`
+- `products`
+- `orders`
+- `payments`
+- `auth`
+- `profiles`
+- `notifications`
+- `reportings`
+
+This design allows each domain to evolve independently while maintaining clear boundaries between different areas of responsibility.
+
+---
+
+## Project Structure
+
+```text
+src/
+ ├─ auth/
+ ├─ users/
+ ├─ orders/
+ ├─ payments/
+ ├─ products/
+ ├─ profiles/
+ ├─ notifications/
+ ├─ reportings/
+ ├─ config/
+ ├─ app.module.ts
+ └─ main.ts
+
+test/
+ └─ app.e2e-spec.ts
+```
+
+### Structure explanation
+### Domain modules
+Each domain module encapsulates its own business logic and typically contains controllers, services, DTOs, and entities.
+This follows the Single Responsibility Principle and improves readability and maintainability. 
+
+---
+
+**Core domain modules include**: `users`, `products`, `orders`, `payments`
+
+**Isolated modules include**: `auth`, `profiles`, `notifications`, and `reportings`.
+
+**Configuration layer**: The `config` directory contains centralized and strongly typed application configuration, separated to custom configuration files.
+
+---
+
+## Requirements
+
+- Node.js v22.14.0
+- npm (comes with Node.js)
+- it is possible to set Node.js version saved for the project
+```bash
+$ nvm use
+```
 
 ## Project setup
 
 ```bash
 $ npm install
+```
+
+## Environment Variables
+
+Create *(or rename `.env.example`)*   `.env` file for production  or `.env.development.local` for development in the root directory and add the necessary environment variables.
+Here is an example of the required environment variables:
+
+```env
+# Application Port
+PORT=3001
+
+# Database Configuration
+DATABASE_HOST=localhost
+DATABASE_PORT=5432
+DATABASE_USER=db-user
+DATABASE_PASSWORD=db-password
+DATABASE_NAME=db-name
 ```
 
 ## Compile and run the project
@@ -59,40 +140,12 @@ $ npm run test:cov
 
 ## Deployment
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
-
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
-```
-
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
-
-## Resources
-
-Check out a few resources that may come in handy when working with NestJS:
-
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
 
 ## Stay in touch
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+- Author - [Oleksii Bielikov](https://www.linkedin.com/in/oleksii-bielikov/)
+
 
 ## License
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+MIT licensed.
