@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  DefaultValuePipe,
   Delete,
   Get,
   Param,
@@ -30,8 +31,11 @@ export class UsersController {
   }
 
   @Get()
-  async getAll(@Query() query: ListAllUsersQuery): Promise<IUser[]> {
-    return this.usersService.getAll(query);
+  async getAll(
+    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+  ): Promise<IUser[]> {
+    return this.usersService.getAll({ limit, page } as ListAllUsersQuery);
   }
 
   @Patch(':id')
