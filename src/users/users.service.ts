@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { IUser } from './types/user.interface';
 import { CreateUserDto, ListAllUsersQuery, UpdateUserDto } from './dto';
 import { randomUUID } from 'crypto';
@@ -6,17 +6,27 @@ import { randomUUID } from 'crypto';
 @Injectable()
 export class UsersService {
   private readonly users: IUser[] = [];
-  private idCounter = 1;
+
+  private existEmail(email: string): boolean {
+    return this.users.some((user) => user.email === email);
+  }
 
   private delay<T>(value: T, ms: number): Promise<T> {
     return new Promise((resolve) => setTimeout(() => resolve(value), ms));
   }
 
   async create(user: CreateUserDto): Promise<IUser> {
+    if (this.existEmail(user.email)) {
+      throw new ConflictException({
+        message: `Email ${user.email} already exists`,
+        code: 'USER_EMAIL_ALREADY_EXISTS',
+        details: { "field": "email" },
+      })
+    }
     const newUser = { ...user, id: randomUUID() } as IUser;
     this.users.push(newUser);
     return this.delay(newUser, 100);
-  }
+  } 
 
   async getAll(query: ListAllUsersQuery): Promise<IUser[]> {
     const { page = 1, limit = 10 } = query;
