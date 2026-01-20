@@ -52,4 +52,12 @@ export class AppModule implements NestModule {
       )
       .forRoutes(UsersController);
   }
+
+  onModuleInit() {
+    console.log('AppModule initialized');
+  }
+
+  onModuleDestroy() {
+    console.log('AppModule destroyed');
+  }
 }
