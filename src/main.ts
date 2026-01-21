@@ -2,14 +2,21 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { appConfig } from './config/app/app.config';
 import { ConfigType } from '@nestjs/config';
-import { ValidationPipe } from '@nestjs/common';
+import { ValidationPipe, VersioningType } from '@nestjs/common';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 import { logger } from './common/middleware/logger.middleware';
+import { CatchErrorInterceptor } from './common/interceptors/catch-error.interceptor';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { cors: true });
+
+  app.setGlobalPrefix('api');
+  app.enableVersioning({
+    type: VersioningType.URI,
+    defaultVersion: '1',
+  });
 
   app.useGlobalPipes(
     new ValidationPipe({
@@ -25,6 +32,7 @@ async function bootstrap() {
   app.useGlobalInterceptors(
     new LoggingInterceptor(),
     new ResponseInterceptor(),
+    new CatchErrorInterceptor(),
   );
 
   app.use(logger);
