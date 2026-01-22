@@ -12,12 +12,14 @@ import {
   Put,
   Query,
 } from '@nestjs/common';
-import { CreateUserDto, UpdateUserDto, ListAllUsersQuery } from './dto';
-import { UsersService } from './users.service';
+import { CreateUserDto, UpdateUserDto, ListAllUsersQuery, UserResponseDto, UsersListResponseDto } from './dto';
+import { UsersService } from '../users.service';
 import { IUser } from './types/user.interface';
+import { ApiOkResponse } from '@nestjs/swagger';
 
-@Controller('users')
-export class UsersController {
+
+@Controller({ path: 'users', version: '1' })
+export class UsersV1Controller {
   constructor(private usersService: UsersService) {}
 
   @Post()
@@ -26,16 +28,19 @@ export class UsersController {
   }
 
   @Get(':id')
-  async getOne(@Param('id', ParseUUIDPipe) id: string): Promise<IUser> {
+  @ApiOkResponse({ type: UserResponseDto })
+  async getOne(@Param('id', ParseUUIDPipe) id: string): Promise<UserResponseDto> {
     return this.usersService.getById(id);
   }
 
   @Get()
+  @ApiOkResponse({ type: UsersListResponseDto })
   async getAll(
     @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
-  ): Promise<IUser[]> {
-    return this.usersService.getAll({ limit, page } as ListAllUsersQuery);
+  ): Promise<UsersListResponseDto> {
+    const users = await this.usersService.getAll({ limit, page } as ListAllUsersQuery);
+    return { users };
   }
 
   @Patch(':id')
