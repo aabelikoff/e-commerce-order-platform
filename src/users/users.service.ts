@@ -3,8 +3,8 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { IUser } from './types/user.interface';
-import { CreateUserDto, ListAllUsersQuery, UpdateUserDto } from './dto';
+import { IUser } from './v1/types/user.interface';
+import { CreateUserDto, ListAllUsersQuery, UpdateUserDto, UsersListResponseDto } from './v1/dto';
 import { randomUUID } from 'crypto';
 
 @Injectable()
@@ -41,13 +41,22 @@ export class UsersService {
     return this.delay(result, 100);
   }
 
-  async getAll(query: ListAllUsersQuery): Promise<IUser[]> {
+  async getAll(query: ListAllUsersQuery): Promise<UsersListResponseDto> {
+    const total = this.users.length;
     const { page = 1, limit = 10 } = query;
-    const startIndex = (page - 1) * limit;
-    const endIndex = startIndex + limit;
-    const paginatedUsers = this.users.slice(startIndex, endIndex);
-    const result = paginatedUsers.map(({ password, ...user }) => user);
-    return this.delay(result, 100);
+    const offset = (page - 1) * limit;
+    
+    const paginatedUsers = this.users.slice(offset, offset + limit);
+    const items = paginatedUsers.map(({ password, ...user }) => user);
+
+    return {
+      items,
+      pagination: {
+        limit,
+        offset,
+        total 
+      }
+    }
   }
 
   async getById(id: string): Promise<IUser> {
