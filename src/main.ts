@@ -8,6 +8,7 @@ import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 import { logger } from './common/middleware/logger.middleware';
 import { CatchErrorInterceptor } from './common/interceptors/catch-error.interceptor';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { cors: true });
@@ -36,6 +37,14 @@ async function bootstrap() {
   );
 
   app.use(logger);
+
+  const config = new DocumentBuilder()
+    .setTitle('API Documentation')
+    .setDescription('The API description')
+    .setVersion('1.0')
+    .build();
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('api/docs', app, document);
 
   const configService = app.get<ConfigType<typeof appConfig>>(appConfig.KEY);
 
