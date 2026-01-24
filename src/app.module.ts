@@ -18,8 +18,11 @@ import { NotificationsModule } from './notifications/notifications.module';
 import { appConfig } from './config/app/app.config';
 import { databaseConfig } from './config/database/database.config';
 
-import { logger, LoggerMiddleware } from './common/middleware/logger.middleware';
-import { UsersController } from './users/users.controller';
+import {
+  logger,
+  LoggerMiddleware,
+} from './common/middleware/logger.middleware';
+import { UsersV1Controller } from './users/v1/users.controller.v1';
 
 @Module({
   imports: [
@@ -50,7 +53,7 @@ export class AppModule implements NestModule {
         { method: RequestMethod.PATCH, path: 'users' },
         { method: RequestMethod.PUT, path: 'users' },
       )
-      .forRoutes(UsersController);
+      .forRoutes(UsersV1Controller);
   }
 
   onModuleInit() {
