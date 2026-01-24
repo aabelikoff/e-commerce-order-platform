@@ -12,11 +12,20 @@ import {
   Put,
   Query,
 } from '@nestjs/common';
-import { CreateUserDto, UpdateUserDto, ListAllUsersQuery, UserResponseDto, UsersListResponseDto } from './dto';
+import {
+  CreateUserDto,
+  UpdateUserDto,
+  ListAllUsersQuery,
+  UserResponseDto,
+  UsersListResponseDto,
+} from './dto';
 import { UsersService } from '../users.service';
 import { IUser } from './types/user.interface';
 import { ApiOkResponse } from '@nestjs/swagger';
-
+import {
+  ApiOkWrappedResponse,
+  ApiOkWrappedArrayResponse,
+} from '../../common/decorators';
 
 @Controller({ path: 'users', version: '1' })
 export class UsersV1Controller {
@@ -28,19 +37,24 @@ export class UsersV1Controller {
   }
 
   @Get(':id')
-  @ApiOkResponse({ type: UserResponseDto })
-  async getOne(@Param('id', ParseUUIDPipe) id: string): Promise<UserResponseDto> {
+  @ApiOkWrappedResponse(UserResponseDto)
+  async getOne(
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<UserResponseDto> {
     return this.usersService.getById(id);
   }
 
   @Get()
-  @ApiOkResponse({ type: UsersListResponseDto })
+  @ApiOkWrappedArrayResponse(UsersListResponseDto)
   async getAll(
     @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
   ): Promise<UsersListResponseDto> {
-    const users = await this.usersService.getAll({ limit, page } as ListAllUsersQuery);
-    return { users };
+    const users = await this.usersService.getAll({
+      limit,
+      page,
+    } as ListAllUsersQuery);
+    return users;
   }
 
   @Patch(':id')
