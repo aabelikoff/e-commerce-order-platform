@@ -15,6 +15,7 @@ import { ResponseListDto } from 'src/common/dto/response-list.dto';
 import { CursorPaginationQueryDto } from 'src/common/dto/cursor-pagination-query.dto';
 import { OffsetPaginationQueryDto } from 'src/common/dto/offset-pagination-query.dto';
 import { paginateOffset } from 'src/common/pagination/offset/paginate-offset';
+import { ProblemTypes } from 'src/common/types/problem-types';
 
 @Injectable()
 export class UsersService {
@@ -32,9 +33,11 @@ export class UsersService {
     const normalizedEmail = user.email.toLowerCase();
     if (this.existEmail(normalizedEmail)) {
       throw new ConflictException({
-        message: `Email ${user.email} already exists`,
-        code: 'USER_EMAIL_ALREADY_EXISTS',
-        details: { field: 'email' },
+        type: ProblemTypes.USER_EMAIL_EXISTS,
+        title: 'User email exists',
+        detail: `Email ${normalizedEmail} already exists` ,
+        code: 'USER_EMAIL_EXISTS',
+        errors: { email: ['already exists'] },
       });
     }
     const now = new Date();
