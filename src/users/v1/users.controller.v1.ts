@@ -15,9 +15,7 @@ import {
 import {
   CreateUserDto,
   UpdateUserDto,
-  ListAllUsersQuery,
   UserResponseDto,
-  UsersListResponseDto,
 } from './dto';
 import { UsersService } from '../users.service';
 import { IUser } from './types/user.interface';
@@ -26,6 +24,10 @@ import {
   ApiOkWrappedResponse,
   ApiOkWrappedArrayResponse,
 } from '../../common/decorators';
+import { ResponseListDto } from 'src/common/dto/response-list.dto';
+import { CursorPaginationQueryDto } from 'src/common/dto/cursor-pagination-query.dto';
+import { OffsetPaginationQueryDto } from 'src/common/dto/offset-pagination-query.dto';
+import { UsersListResponseDto } from './dto/user-response.dto';
 
 @Controller({ path: 'users', version: '1' })
 export class UsersV1Controller {
@@ -47,15 +49,20 @@ export class UsersV1Controller {
   @Get()
   @ApiOkWrappedArrayResponse(UsersListResponseDto)
   async getAll(
-    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
-    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
-  ): Promise<UsersListResponseDto> {
-    const users = await this.usersService.getAll({
-      limit,
-      page,
-    } as ListAllUsersQuery);
+    @Query() query: OffsetPaginationQueryDto,
+  ): Promise<ResponseListDto<IUser>> {
+    const users = await this.usersService.getAll(query);
     return users;
   }
+
+  // @Get()
+  // @ApiOkWrappedArrayResponse(UsersListResponseDto)
+  // async getAll(
+  //   @Query() query: CursorPaginationQueryDto
+  // ): Promise<ResponseListDto<IUser>> {
+  //   const users = await this.usersService.getAll(query);
+  //   return users;
+  // }
 
   @Patch(':id')
   async update(

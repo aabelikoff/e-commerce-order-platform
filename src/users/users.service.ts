@@ -4,12 +4,22 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { IUser } from './v1/types/user.interface';
-import { CreateUserDto, ListAllUsersQuery, UpdateUserDto, UsersListResponseDto } from './v1/dto';
+import {
+  CreateUserDto,
+  UpdateUserDto,
+} from './v1/dto';
 import { randomUUID } from 'crypto';
+import { usersMockData } from 'mocks/users-mock-data';
+import { paginateByCursor } from 'src/common/pagination/cursor/paginate-by-cursor';
+import { ResponseListDto } from 'src/common/dto/response-list.dto';
+import { CursorPaginationQueryDto } from 'src/common/dto/cursor-pagination-query.dto';
+import { OffsetPaginationQueryDto } from 'src/common/dto/offset-pagination-query.dto';
+import { paginateOffset } from 'src/common/pagination/offset/paginate-offset';
+import { ProblemTypes } from 'src/common/types/problem-types';
 
 @Injectable()
 export class UsersService {
-  private readonly users: IUser[] = [];
+  private readonly users: IUser[] = usersMockData;
 
   private existEmail(email: string): boolean {
     return this.users.some((user) => user.email === email);
@@ -23,9 +33,11 @@ export class UsersService {
     const normalizedEmail = user.email.toLowerCase();
     if (this.existEmail(normalizedEmail)) {
       throw new ConflictException({
-        message: `Email ${user.email} already exists`,
-        code: 'USER_EMAIL_ALREADY_EXISTS',
-        details: { field: 'email' },
+        type: ProblemTypes.USER_EMAIL_EXISTS,
+        title: 'User email exists',
+        detail: `Email ${normalizedEmail} already exists` ,
+        code: 'USER_EMAIL_EXISTS',
+        errors: { email: ['already exists'] },
       });
     }
     const now = new Date();
@@ -41,23 +53,14 @@ export class UsersService {
     return this.delay(result, 100);
   }
 
-  async getAll(query: ListAllUsersQuery): Promise<UsersListResponseDto> {
-    const total = this.users.length;
-    const { page = 1, limit = 10 } = query;
-    const offset = (page - 1) * limit;
-    
-    const paginatedUsers = this.users.slice(offset, offset + limit);
-    const items = paginatedUsers.map(({ password, ...user }) => user);
-
-    return {
-      items,
-      pagination: {
-        limit,
-        offset,
-        total 
-      }
-    }
+  async getAll(query: OffsetPaginationQueryDto): Promise<ResponseListDto<IUser>> {
+    return paginateOffset(query, this.users);
   }
+  // async getAll(
+  //   query: CursorPaginationQueryDto,
+  // ): Promise<ResponseListDto<IUser>> {
+  //   return paginateByCursor(query, this.users);
+  // }
 
   async getById(id: string): Promise<IUser> {
     const user = this.users.find((user) => user.id === id);
