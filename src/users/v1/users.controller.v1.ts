@@ -12,18 +12,13 @@ import {
   Put,
   Query,
 } from '@nestjs/common';
-import {
-  CreateUserDto,
-  UpdateUserDto,
-  UserResponseDto,
-} from './dto';
+import { CreateUserDto, UpdateUserDto, UserResponseDto } from './dto';
 import { UsersService } from '../users.service';
 import { IUser } from './types/user.interface';
-import { ApiOkResponse } from '@nestjs/swagger';
+import { ApiBody, ApiOkResponse, ApiQuery, ApiTags } from '@nestjs/swagger';
 import {
   ApiOkWrappedResponse,
-  ApiOkWrappedArrayResponse,
-} from '../../common/decorators';
+} from 'src/common/decorators';
 import { ResponseListDto } from 'src/common/dto/response-list.dto';
 import { CursorPaginationQueryDto } from 'src/common/dto/cursor-pagination-query.dto';
 import { OffsetPaginationQueryDto } from 'src/common/dto/offset-pagination-query.dto';
@@ -47,7 +42,7 @@ export class UsersV1Controller {
   }
 
   @Get()
-  @ApiOkWrappedArrayResponse(UsersListResponseDto)
+  @ApiOkWrappedResponse(UsersListResponseDto)
   async getAll(
     @Query() query: OffsetPaginationQueryDto,
   ): Promise<ResponseListDto<IUser>> {
@@ -56,7 +51,7 @@ export class UsersV1Controller {
   }
 
   // @Get()
-  // @ApiOkWrappedArrayResponse(UsersListResponseDto)
+  // @ApiOkWrappeResponse(UsersListResponseDto)
   // async getAll(
   //   @Query() query: CursorPaginationQueryDto
   // ): Promise<ResponseListDto<IUser>> {
