@@ -33,6 +33,7 @@ import { UsersV1Controller } from './users/v1/users.controller.v1';
       isGlobal: true,
     }),
     TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (cfg: ConfigService) => {
         const db = cfg.get<IDatabaseConfig>('database', {
