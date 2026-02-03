@@ -67,8 +67,8 @@ export class UsersV1Controller {
     return this.usersService.update(id, dto);
   }
 
-  @Delete(':id')
-  async remove(@Param('id', ParseUUIDPipe) id: string): Promise<IUser> {
-    return this.usersService.remove(id);
-  }
+  // @Delete(':id')
+  // async remove(@Param('id', ParseUUIDPipe) id: string): Promise<IUser> {
+  //   return this.usersService.remove(id);
+  // }
 }
