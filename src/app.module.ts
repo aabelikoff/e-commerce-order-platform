@@ -15,15 +15,20 @@ import { ProfilesModule } from './profiles/profiles.module';
 import { ReportingsModule } from './reportings/reportings.module';
 import { NotificationsModule } from './notifications/notifications.module';
 
-
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { getEnvFilePath, databaseConfig, appConfig , IDatabaseConfig} from './config';
+import {
+  getEnvFilePath,
+  databaseConfig,
+  appConfig,
+  IDatabaseConfig,
+} from './config';
 
 import {
   logger,
   LoggerMiddleware,
 } from './common/middleware/logger.middleware';
 import { UsersV1Controller } from './users/v1/users.controller.v1';
+import { User, Order, OrderItem, Product } from './database/entities';
 
 @Module({
   imports: [
@@ -38,7 +43,7 @@ import { UsersV1Controller } from './users/v1/users.controller.v1';
       useFactory: (cfg: ConfigService) => {
         const db = cfg.get<IDatabaseConfig>('database', {
           infer: true,
-        }) as IDatabaseConfig;  
+        }) as IDatabaseConfig;
         return {
           type: 'postgres',
           host: db.host,
@@ -48,6 +53,7 @@ import { UsersV1Controller } from './users/v1/users.controller.v1';
           database: db.name,
           autoLoadEntities: true,
           synchronize: false,
+          entities: [User, Order, OrderItem, Product],
         };
       },
     }),
