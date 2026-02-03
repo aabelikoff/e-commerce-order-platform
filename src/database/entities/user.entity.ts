@@ -1,11 +1,4 @@
-import {
-  Entity,
-  Column,
-  PrimaryGeneratedColumn,
-  CreateDateColumn,
-  UpdateDateColumn,
-  OneToMany,
-} from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
 import { Order } from './order.entity';
 
 @Entity({ name: 'users' })
@@ -22,10 +15,10 @@ export class User {
   @Column({ name: 'email', unique: true, nullable: false })
   email: string;
 
-  @Column({ name: 'is_active' })
+  @Column({ name: 'is_active', default: true })
   isActive: boolean;
 
-  @OneToMany(() => Order, (o) => o.user )
+  @OneToMany(() => Order, (o) => o.user)
   orders: Order[];
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })

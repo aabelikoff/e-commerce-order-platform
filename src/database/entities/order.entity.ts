@@ -1,5 +1,13 @@
-import * as typeorm from 'typeorm';
-import { Column, CreateDateColumn, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
+import {
+  Entity,
+  Column,
+  CreateDateColumn,
+  JoinColumn,
+  ManyToOne,
+  OneToMany,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 import { User } from './user.entity';
 import { OrderItem } from './order-item.entity';
 
@@ -10,7 +18,7 @@ export enum EOrderStatus {
   CANCELLED = 'cancelled',
 }
 
-@typeorm.Entity({ name: 'orders' })
+@Entity({ name: 'orders' })
 export class Order {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -23,16 +31,29 @@ export class Order {
   })
   status: EOrderStatus;
 
-  @Column({ name: 'total', type: 'numeric' })
-  total: number;
+  // snapshots
+  @Column({ name: 'items_subtotal', type: 'numeric', precision: 12, scale: 2, default: 0 })
+  itemsSubtotal: string;
 
-  @Column({ name: 'discount', type: 'numeric' })
-  discount: number;
+  @Column({ name: 'items_discount_total', type: 'numeric', precision: 12, scale: 2, default: 0 })
+  itemsDiscountTotal: string;
 
-  @ManyToOne(() => User, (u) => u.orders, {
-    nullable: false,
-    onDelete: 'RESTRICT',
-  })
+  @Column({ name: 'shipping_amount', type: 'numeric', precision: 12, scale: 2, default: 0 })
+  shippingAmount: string;
+
+  @Column({ name: 'order_discount_amount', type: 'numeric', precision: 12, scale: 2, default: 0 })
+  orderDiscountAmount: string;
+
+  @Column({ name: 'total_amount', type: 'numeric', precision: 12, scale: 2, default: 0 })
+  totalAmount: string;
+
+  @Column({ name: 'paid_amount', type: 'numeric', precision: 12, scale: 2, default: 0 })
+  paidAmount: string;
+
+  @Column({ name: 'paid_at', type: 'timestamptz', nullable: true })
+  paidAt: Date | null;
+
+  @ManyToOne(() => User, (u) => u.orders, { nullable: false, onDelete: 'RESTRICT' })
   @JoinColumn({ name: 'user_id' })
   user: User;
 

@@ -6,7 +6,7 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { OrderItem } from '.';
+import { OrderItem } from './order-item.entity';
 
 @Entity({ name: 'products' })
 export class Product {
@@ -16,11 +16,11 @@ export class Product {
   @Column({ name: 'name' })
   name: string;
 
-  @Column({ name: 'price', type: 'numeric' })
-  price: number;
+  @Column({ name: 'price', type: 'numeric', precision: 12, scale: 2 })
+  price: string;
 
   @Column({ name: 'balance', type: 'bigint' })
-  balance: number;
+  balance: string;
 
   @OneToMany(() => OrderItem, (i) => i.product)
   items: OrderItem[];
