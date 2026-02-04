@@ -6,13 +6,13 @@ export class User {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ name: 'first_name' })
+  @Column({ name: 'first_name', type: 'varchar', length: 100 })
   firstName: string;
 
-  @Column({ name: 'last_name' })
+  @Column({ name: 'last_name', type: 'varchar', length: 100 })
   lastName: string;
 
-  @Column({ name: 'email', unique: true, nullable: false })
+  @Column({ name: 'email', length: 254, unique: true, nullable: false })
   email: string;
 
   @Column({ name: 'is_active', default: true })
