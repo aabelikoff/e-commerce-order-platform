@@ -19,6 +19,9 @@ export class Product {
   @Column({ name: 'price', type: 'numeric', precision: 12, scale: 2 })
   price: string;
 
+  @Column({ name: 'description' })
+  description: string;
+
   @Column({ name: 'balance', type: 'bigint' })
   balance: string;
 
