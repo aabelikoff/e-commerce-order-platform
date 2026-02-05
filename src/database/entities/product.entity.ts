@@ -22,8 +22,8 @@ export class Product {
   @Column({ name: 'description', type: 'text' })
   description: string;
 
-  @Column({ name: 'balance', type: 'bigint' })
-  balance: string;
+  @Column({ name: 'stock', type: 'bigint' })
+  stock: string;
 
   @OneToMany(() => OrderItem, (i) => i.product)
   items: OrderItem[];

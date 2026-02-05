@@ -32,28 +32,70 @@ export class Order {
   status: EOrderStatus;
 
   // snapshots
-  @Column({ name: 'items_subtotal', type: 'numeric', precision: 12, scale: 2, default: 0 })
+  @Column({
+    name: 'items_subtotal',
+    type: 'numeric',
+    precision: 12,
+    scale: 2,
+    default: 0,
+  })
   itemsSubtotal: string;
 
-  @Column({ name: 'items_discount_total', type: 'numeric', precision: 12, scale: 2, default: 0 })
+  @Column({
+    name: 'items_discount_total',
+    type: 'numeric',
+    precision: 12,
+    scale: 2,
+    default: 0,
+  })
   itemsDiscountTotal: string;
 
-  @Column({ name: 'shipping_amount', type: 'numeric', precision: 12, scale: 2, default: 0 })
+  @Column({
+    name: 'shipping_amount',
+    type: 'numeric',
+    precision: 12,
+    scale: 2,
+    default: 0,
+  })
   shippingAmount: string;
 
-  @Column({ name: 'order_discount_amount', type: 'numeric', precision: 12, scale: 2, default: 0 })
+  @Column({
+    name: 'order_discount_amount',
+    type: 'numeric',
+    precision: 12,
+    scale: 2,
+    default: 0,
+  })
   orderDiscountAmount: string;
 
-  @Column({ name: 'total_amount', type: 'numeric', precision: 12, scale: 2, default: 0 })
+  @Column({
+    name: 'total_amount',
+    type: 'numeric',
+    precision: 12,
+    scale: 2,
+    default: 0,
+  })
   totalAmount: string;
 
-  @Column({ name: 'paid_amount', type: 'numeric', precision: 12, scale: 2, default: 0 })
+  @Column({
+    name: 'paid_amount',
+    type: 'numeric',
+    precision: 12,
+    scale: 2,
+    default: 0,
+  })
   paidAmount: string;
 
   @Column({ name: 'paid_at', type: 'timestamptz', nullable: true })
   paidAt: Date | null;
 
-  @ManyToOne(() => User, (u) => u.orders, { nullable: false, onDelete: 'RESTRICT' })
+  @Column({ name: 'idempotency_key', type: 'uuid', unique: true })
+  idempotencyKey: string;
+
+  @ManyToOne(() => User, (u) => u.orders, {
+    nullable: false,
+    onDelete: 'RESTRICT',
+  })
   @JoinColumn({ name: 'user_id' })
   user: User;
 
