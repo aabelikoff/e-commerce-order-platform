@@ -18,9 +18,4 @@ export class UpdateUserDto {
   @IsEmail()
   email?: string;
 
-  @ApiPropertyOptional({ description: 'Password', type: 'string' })
-  @IsString()
-  @IsNotEmpty()
-  @MinLength(6)
-  password?: string;
 }
