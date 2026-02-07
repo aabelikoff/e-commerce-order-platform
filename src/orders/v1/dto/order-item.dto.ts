@@ -1,4 +1,4 @@
-import { IsNumber, IsString, Min } from 'class-validator';
+import { IsNumber, IsOptional, IsString, Min, Validate } from 'class-validator';
 
 export class OrderItemDto {
   @IsString()

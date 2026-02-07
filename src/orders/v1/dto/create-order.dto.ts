@@ -2,6 +2,7 @@ import {
   ArrayMinSize,
   IsArray,
   IsString,
+  IsUUID,
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
@@ -11,6 +12,7 @@ import { OrderItemDto } from './order-item.dto';
 export class CreateOrderDto {
   @ApiProperty({ description: 'User id' })
   @IsString()
+  @IsUUID()
   userId: string;
 
   @ApiProperty({ description: '' })
@@ -18,5 +20,5 @@ export class CreateOrderDto {
   @ArrayMinSize(1)
   @ValidateNested({ each: true })
   @Type(() => OrderItemDto)
-  items: OrderItemDto;
+  items: OrderItemDto[];
 }
