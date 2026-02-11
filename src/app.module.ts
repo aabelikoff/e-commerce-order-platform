@@ -14,6 +14,8 @@ import { PaymentsModule } from './payments/payments.module';
 import { ProfilesModule } from './profiles/profiles.module';
 import { ReportingsModule } from './reportings/reportings.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { GraphQLModule } from '@nestjs/graphql';
+import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 
 import { TypeOrmModule } from '@nestjs/typeorm';
 import {
@@ -29,6 +31,7 @@ import {
 } from './common/middleware/logger.middleware';
 import { UsersV1Controller } from './users/v1/users.controller.v1';
 import { User, Order, OrderItem, Product } from './database/entities';
+import { AppGraphqlModule } from './graphql/graphql.module';
 
 @Module({
   imports: [
@@ -54,6 +57,7 @@ import { User, Order, OrderItem, Product } from './database/entities';
           autoLoadEntities: true,
           synchronize: false,
           entities: [User, Order, OrderItem, Product],
+          logging: ['query']
         };
       },
     }),
@@ -65,6 +69,7 @@ import { User, Order, OrderItem, Product } from './database/entities';
     ProfilesModule,
     ReportingsModule,
     NotificationsModule,
+    AppGraphqlModule,
   ],
   controllers: [],
   providers: [],

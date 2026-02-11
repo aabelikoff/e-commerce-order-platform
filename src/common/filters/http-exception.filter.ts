@@ -8,17 +8,33 @@ import {
 } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { ProblemDetails } from '../types/problem-details';
-
+import { GqlArgumentsHost } from '@nestjs/graphql';
 
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost) {
-    const ctx = host.switchToHttp();
-    const res = ctx.getResponse<Response>();
-    const req = ctx.getRequest<Request & { requestId?: string }>();
-
     const timestamp = new Date().toISOString();
-    const instance = req.originalUrl || req.url;
+
+    const gqlHost = GqlArgumentsHost.create(host);
+    const gqlCtx = gqlHost.getContext<{
+      req?: Request & { requestId?: string };
+      res?: Response;
+    }>();
+
+    if (gqlCtx?.req) throw exception;
+
+    const httpCtx = host.switchToHttp();
+    const httpRes = httpCtx.getResponse<Response>();
+    const httpReq = httpCtx.getRequest<Request & { requestId?: string }>();
+
+    const req = gqlCtx?.req ?? httpReq;
+    const res = gqlCtx?.res ?? httpRes;
+
+    if (!res || !req) {
+      throw exception;
+    }
+
+    const instance = req.originalUrl || req.url || 'graphql';
 
     if (exception instanceof HttpException) {
       const status = exception.getStatus();
@@ -30,7 +46,9 @@ export class HttpExceptionFilter implements ExceptionFilter {
 
       const title =
         payload?.title ??
-        (typeof payload?.error === 'string' ? payload.error : HttpStatus[status]) ??
+        (typeof payload?.error === 'string'
+          ? payload.error
+          : HttpStatus[status]) ??
         'Error';
 
       const detail =
@@ -59,10 +77,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
         requestId: req.requestId,
       };
 
-      return res
-        .status(status)
-        .type('application/problem+json')
-        .json(problem);
+      return res.status(status).type('application/problem+json').json(problem);
     }
 
     const problem: ProblemDetails = {
@@ -86,7 +101,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
 }
 
 function mapType(status: number, code?: string) {
-  // RFC allows about:blank как “generic error type”
+  // RFC allows about:blank as “generic error type”
   // Might be done as URL to documentation: https://api.example.com/problems/...
   if (code) return `urn:problem:${code.toLowerCase()}`;
 

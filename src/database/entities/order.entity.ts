@@ -7,6 +7,7 @@ import {
   OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
+  RelationId,
 } from 'typeorm';
 import { User } from './user.entity';
 import { OrderItem } from './order-item.entity';
@@ -98,6 +99,9 @@ export class Order {
   })
   @JoinColumn({ name: 'user_id' })
   user: User;
+
+  @RelationId((order: Order) => order.user)
+  userId: string;
 
   @OneToMany(() => OrderItem, (i) => i.order)
   items: OrderItem[];
