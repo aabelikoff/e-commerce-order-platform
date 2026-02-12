@@ -1,6 +1,7 @@
 import { ObjectType, Field, ID, Float } from '@nestjs/graphql';
 import { EOrderStatus } from '../enums/order-status.gql';
 import { OrderItemModel } from './order-item.model';
+import { UserModel } from '../user.model';
 
 @ObjectType()
 export class OrderModel {
@@ -16,6 +17,12 @@ export class OrderModel {
   @Field()
   createdAt: Date;
 
-  @Field(() => [OrderItemModel], { nullable: true })
-  items: OrderItemModel[];
+  @Field(() => ID)
+  userId: string;
+
+  @Field(() => UserModel, { nullable: true })
+  user?: UserModel;
+
+  @Field(() => [OrderItemModel], { nullable: 'itemsAndList' })
+  items?: OrderItemModel[];
 }

@@ -30,6 +30,7 @@ export class EntityModelMapper {
         id: oiEntity.id,
         quantity: Number(oiEntity.quantity),
         unitPrice: Number(oiEntity.unitPrice),
+        productId: oiEntity.productId,
         product: null as any, // ← будет резолвиться через ResolveField
       };
     };
@@ -41,6 +42,7 @@ export class EntityModelMapper {
         totalAmount: Number(order.totalAmount),
         createdAt: order.createdAt,
         items: order.items.map((o) => orderItemMapper(o)),
+        userId: order.userId
       };
     };
 

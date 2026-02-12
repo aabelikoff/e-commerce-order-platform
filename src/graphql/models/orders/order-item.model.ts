@@ -13,6 +13,9 @@ export class OrderItemModel {
   @Field(() => Float)
   unitPrice: number;
 
+   @Field(() => ID)
+  productId: string;
+
   @Field(() => ProductModel, { nullable: true })
-  product: ProductModel;
+  product?: ProductModel;
 }

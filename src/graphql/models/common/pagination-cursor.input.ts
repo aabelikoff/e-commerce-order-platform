@@ -8,6 +8,7 @@ import {
   IsOptional,
   IsInt,
   Min,
+  IsString,
 } from 'class-validator';
 
 @InputType()
@@ -19,6 +20,6 @@ export class PaginationCursorInput {
 
   @Field(() => String, { nullable: true })
   @IsOptional()
-  @ValidateNested()
+  @IsString()
   cursor?: string;
 }

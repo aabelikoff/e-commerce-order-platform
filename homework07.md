@@ -1,118 +1,222 @@
-# Part 1
+# Homework 07 — GraphQL for Orders + DataLoader
 
-## Why Code First
+## Part 1 — GraphQL Setup
+### 1.1 Why Code-First Approach
 
-1. project is already based on TS so domen model is in code;
-2. schema is generated from decorators thus there is less async between SDL and code
-3. nput/types/enums/nullability are declared in one place;
-4. Services and types are easier to reuse;
+**I chose code-first approach for the following reasons:**
 
-# Part 2: Schema creation
+- The project is already fully based on TypeScript, and the domain model exists in code.
 
-1. Created ObjectTypes: 
--**UserModel**, **ProductModel**, **OrderModel**, **OrderItemModel**,
+- The GraphQL schema is generated directly from decorators, which eliminates desynchronization between SDL and implementation.
 
+- Types, inputs, enums and nullability are declared in a single place.
 
-## Part 3: Query Resolver
+- Service layer and models are easier to reuse without duplicating definitions.
 
-### 3.2 Pagination Response Format
+- Refactoring is safer because schema changes are strongly typed.
 
-**Chose OrdersConnection pattern** (option 2) over simple array:
+***GraphQL endpoint is available at: /graphql***
 
-**Why OrdersConnection:**
-1. **Client needs metadata** - `hasNextPage` tells UI when to show "Load More"
-2. **Total count** - useful for "Showing X of Y results"
-3. **Explicit cursor** - `endCursor` makes pagination deterministic
-4. **Extensible** - can add `hasPreviousPage`, `startCursor` later
-5. **Industry standard** - follows Relay Connection spec
+***GraphQL Playground successfully executes smoke queries.***
 
-**Structure:**
-```typescript
-{
-  nodes: [Order!]!        // actual data
-  pageInfo: {
-    hasNextPage: Boolean! // pagination state
-    endCursor: String     // opaque cursor for next page
+## Part 2 — Schema as a Contract
+### 2.1 Domain Types
+
+**The following GraphQL ObjectTypes were implemented:**
+
+- UserModel
+
+- ProductModel
+
+- OrderModel
+
+- OrderItemModel
+
+**Relations:**
+
+- Order.items: [OrderItem!]!
+
+- OrderItem.product: Product!
+
+- Order.status uses enum OrderStatus
+
+Nullability is explicitly defined and matches the database constraints (no unnecessary nullable fields).
+
+### 2.2 Input Types
+
+**The following input types were created:**
+
+**OrdersFilterInput**
+
+status?: OrderStatus
+
+dateFrom?: DateTime
+
+dateTo?: DateTime
+
+**PaginationCursorInput**
+
+Cursor-based pagination:
+
+limit: number
+
+cursor?: string
+
+This input is reusable for any cursor-based batch query in the project.
+
+## Part 3 — Query Resolver
+### 3.1 Query orders
+
+Implemented query:
+```
+query Orders($filter: OrdersFilterInput, $pagination: PaginationCursorInput) {
+  orders(filter: $filter, pagination: $pagination) {
+    nodes {
+      id
+      status
+      createdAt
+      items {
+        quantity
+        product {
+          id
+          name
+          price
+        }
+      }
+    }
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+    totalCount
   }
-  totalCount: Int!        // total matching records
+}
+```
+Example variables:
+```
+{
+  "filter": {
+    "status": "PENDING",
+    "dateTo": "2026-02-23T18:02:02.835Z"
+  },
+  "pagination": {
+    "limit": 2,
+    "cursor": "eyJpZCI6Ijc0N2JiODcwLTNkNzYtNDcyNS1iNzQ2LTc5ODQ5MDFlYjM2OCIsImNyZWF0ZWRBdCI6IjIwMjYtMDItMTBUMTA6MTk6MzkuNjk5WiJ9"
+  }
+}
+```
+**Architecture Notes**
+
+Resolver is thin — it delegates all business logic to OrdersService.
+
+Filtering and pagination are handled inside the service layer.
+
+No business logic is duplicated in the GraphQL layer.
+
+### 3.2 Pagination Format
+
+I chose the OrdersConnection pattern.
+
+Why OrdersConnection:
+
+- Client requires pagination metadata (hasNextPage).
+
+- totalCount is needed for UI (e.g., "Showing X of Y").
+
+- Explicit endCursor makes pagination deterministic.
+
+- Easily extensible (can add hasPreviousPage, startCursor).
+
+- Follows industry-standard Relay-style pagination pattern.
+
+Structure:
+```
+{
+  nodes: [Order!]!;
+  pageInfo: {
+    hasNextPage: Boolean!;
+    endCursor: String;
+  };
+  totalCount: Int!;
 }
 ```
 
-**Trade-off:** Slightly more verbose than `[Order!]!`, but provides much better UX.
+## Part 4 — N+1 Problem and DataLoader
+### 4.1 Detecting the N+1 Problem
+**Step 1 — Enable SQL Logging**
 
-## Part 4: N+1 Problem Detection
-
-### 4.1 Demonstrating N+1 Issue
-
-**Setup:**
-1. Enabled SQL logging in TypeORM config:
-```typescript
+TypeORM logging was enabled:
+```
 TypeOrmModule.forRoot({
   logging: true,
   logger: 'advanced-console',
-})
+});
 ```
-
-2. Added debug logs in resolver:
-```typescript
+**Step 2 — Add Debug Logs in Resolver**
+```
 @ResolveField(() => ProductModel, { name: 'product' })
 async getProduct(@Parent() orderItem: OrderItem) {
   this.logger.warn(`🔴 N+1: Loading product for item ${orderItem.id}`);
-  // ... query product
+  return this.productRepo.findOne({
+    where: { id: orderItem.productId },
+  });
 }
 ```
+**Step 3 — Execute GraphQL Query**
 
-3. Executed test query:
-```graphql
-query TestN1 {
-  orders(pagination: { limit: 3 }) {
-    nodes {
-      items {
-        product { id name price }
+Executed:
+```
+orders {
+  nodes {
+    items {
+      product {
+        id
+        name
       }
     }
   }
 }
 ```
+**Observed SQL Logs (Proof of N+1)**
 
-### 4.2 Evidence - SQL Query Log
+- For multiple orders and items, the following pattern appeared:
 
-**Console output:**
+- One query per order to load order_items
+
+- One separate query per item to load products
+
+Example logs:
 ```
-📊 Query: orders
-🔍 Finding orders with limit: 3
+SELECT ... FROM "order_items" WHERE order_id = $1;
 
-query: SELECT "order"."id", "items"."id", "items"."quantity" 
-       FROM "orders" "order" 
-       LEFT JOIN "order_items" "items" ON "items"."order_id"="order"."id"
-       ORDER BY "order"."created_at" DESC LIMIT 4
+Resolver logs:
 
-✅ Found 3 orders
+🔴 N+1: Loading product for item 2f4be1c9...
+🔴 N+1: Loading product for item aa68a865...
+🔴 N+1: Loading product for item b4aeb94b...
 
-🔴 N+1: Loading product for item a1b2c3
-query: SELECT * FROM "products" WHERE "id" = 'a1b2c3'
+Followed by multiple individual product queries:
 
-🔴 N+1: Loading product for item d4e5f6
-query: SELECT * FROM "products" WHERE "id" = 'd4e5f6'
-
-🔴 N+1: Loading product for item g7h8i9
-query: SELECT * FROM "products" WHERE "id" = 'g7h8i9'
-
-🔴 N+1: Loading product for item j1k2l3
-query: SELECT * FROM "products" WHERE "id" = 'j1k2l3'
-
-... (8 more queries)
+SELECT ... FROM "products" WHERE id = $1 LIMIT 1;
+SELECT ... FROM "products" WHERE id = $1 LIMIT 1;
+SELECT ... FROM "products" WHERE id = $1 LIMIT 1;
 ```
+Even when the same product ID was requested multiple times, separate queries were executed.
 
-**Analysis:**
-- **1 query** to fetch orders + items
-- **8 separate queries** to fetch products (one per OrderItem)
-- **Total: 9 queries** for 3 orders with 8 items
+**Conclusion**
 
-**Problem:** O(N) queries where N = number of items. For 100 items → 101 SQL queries!
+For:
 
-**Root cause:** `@ResolveField` executes for each OrderItem individually, triggering separate database query per product.
+N orders
 
----
+M items per order
 
-**Next step:** Implement DataLoader to batch product queries into single `WHERE id IN (...)` query.
+The system performed:
+
+1 query for orders
+
+N queries for order_items
+
+N × M queries for products
+
+This clearly demonstrates the N+1 problem in the OrderItem → Product resolution.
