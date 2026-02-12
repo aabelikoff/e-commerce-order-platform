@@ -1,29 +1,21 @@
-import {
-  ArgsType,
-  Field,
-  GraphQLISODateTime,
-  InputType,
-} from '@nestjs/graphql';
+import { InputType, Field, GraphQLISODateTime } from '@nestjs/graphql';
 import { EOrderStatus } from '../enums/order-status.gql';
 import { IsDate, IsEnum, IsOptional } from 'class-validator';
-import { Type } from 'class-transformer';
 
 @InputType()
 export class OrdersFilterInput {
-  @Field(() => EOrderStatus, { nullable: true })
   @IsOptional()
   @IsEnum(EOrderStatus)
+  @Field(() => EOrderStatus, { nullable: true })
   status?: EOrderStatus;
 
-  @Field(() => GraphQLISODateTime, { nullable: true })
   @IsOptional()
-  @Type(() => Date)
   @IsDate()
+  @Field(() => GraphQLISODateTime, { nullable: true })
   dateFrom?: Date;
 
-  @Field(() => GraphQLISODateTime, { nullable: true })
   @IsOptional()
-  @Type(() => Date)
   @IsDate()
+  @Field({ nullable: true })
   dateTo?: Date;
 }

@@ -1,50 +1,21 @@
-import { Field, GraphQLISODateTime, ID, ObjectType } from '@nestjs/graphql';
+import { ObjectType, Field, ID, Float } from '@nestjs/graphql';
 import { EOrderStatus } from '../enums/order-status.gql';
-import { UserModel } from '../user.model';
 import { OrderItemModel } from './order-item.model';
-import { PageInfo } from '../common/cursor.model';
 
-@ObjectType({ description: 'Order model' })
+@ObjectType()
 export class OrderModel {
   @Field(() => ID)
   id: string;
 
-  @Field(() => EOrderStatus, { nullable: true })
-  status?: EOrderStatus;
+  @Field(() => EOrderStatus)
+  status: EOrderStatus;
 
-  @Field(() => String)
-  itemsSubtotal: string;
+  @Field(() => Float)
+  totalAmount: number;
 
-  @Field(() => String)
-  itemsDiscountTotal: string;
-
-  @Field(() => String)
-  shippingAmount: string;
-
-  @Field(() => String)
-  orderDiscountAmount: string;
-
-  @Field(() => String)
-  totalAmount: string;
-
-  @Field(() => String)
-  paidAmount: string;
-
-  @Field(() => UserModel)
-  user: UserModel;
-
-  @Field(() => GraphQLISODateTime)
+  @Field()
   createdAt: Date;
 
-  @Field(() => [OrderItemModel], { nullable: 'itemsAndList' })
+  @Field(() => [OrderItemModel], { nullable: true })
   items: OrderItemModel[];
-}
-
-@ObjectType()
-export class OrdersPage {
-  @Field(() => [OrderModel])
-  items!: OrderModel[];
-
-  @Field(() => PageInfo)
-  pagination!: PageInfo;
 }

@@ -1,30 +1,18 @@
-import {
-  Field,
-  GraphQLISODateTime,
-  ID,
-  ObjectType,
-  Int,
-  HideField,
-} from '@nestjs/graphql';
-import { EOrderStatus } from 'src/database/entities';
-import { UserModel } from '../user.model';
-import { OrderModel } from './order.model';
+import { ObjectType, Field, ID, Float, Int } from '@nestjs/graphql';
+import { EOrderStatus } from '../enums/order-status.gql';
 import { ProductModel } from '../product.model';
 
-@ObjectType({ description: 'OrderItem model' })
+@ObjectType()
 export class OrderItemModel {
   @Field(() => ID)
   id: string;
 
-  @Field(() => ProductModel)
-  product?: ProductModel | null;
-
-  @HideField()
-  productId: string;
-
-  @Field(() => Int)
+  @Field(() => Int, {nullable: false})
   quantity: number;
 
-  @Field(() => String)
-  discountAmount: string;
+  @Field(() => Float)
+  unitPrice: number;
+
+  @Field(() => ProductModel, { nullable: true })
+  product: ProductModel;
 }

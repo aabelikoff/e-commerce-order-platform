@@ -1,39 +1,29 @@
+import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { Module } from '@nestjs/common';
 import { GraphQLModule } from '@nestjs/graphql';
-import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
+import { HelloResolver } from './resolvers/hello.resolver';
+import { OrdersService } from './services/orders.service';
+import { OrdersResolver, OrderItemResolver } from './resolvers/orders.resolver';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { Order } from 'src/database/entities';
-import {
-  OrdersResolver,
-} from './resolvers/orders.resolver';
-import { OrdersQlService } from './services/orders-ql.service';
-import { LoadersModule } from './loaders/loaders.module';
-import { LoadersFactory } from './loaders/loaders.factory';
-import { OrderItemResolver } from './resolvers/order-items.resolver';
+import { User, Product, Order, OrderItem } from '../database/entities';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Order]),
     GraphQLModule.forRootAsync<ApolloDriverConfig>({
       driver: ApolloDriver,
-      imports: [LoadersModule],
-      inject: [LoadersFactory],
-      useFactory: (loadersFactory: LoadersFactory) => ({
+      useFactory: () => ({
         autoSchemaFile: true,
         path: '/graphql',
         graphiql: true,
         introspection: true,
         context: ({ req }) => ({
           req,
-          loaders: loadersFactory.create(),
         }),
       }),
     }),
+    TypeOrmModule.forFeature([User, Product, Order, OrderItem])
   ],
-  providers: [
-    OrdersQlService,
-    OrdersResolver,
-    OrderItemResolver,
-  ],
+  exports: [OrdersService],
+  providers: [HelloResolver, OrdersService, OrdersResolver, OrderItemResolver],
 })
 export class AppGraphqlModule {}
