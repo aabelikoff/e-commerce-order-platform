@@ -1,4 +1,3 @@
-// src/orders/models/orders-connection.model.ts
 import { ObjectType, Field, Int } from '@nestjs/graphql';
 import { OrderModel } from './order.model';
 import { PageInfo } from '../common/page-info.model';

@@ -1,4 +1,3 @@
-// src/common/models/page-info.model.ts
 import { ObjectType, Field } from '@nestjs/graphql';
 import { IsBoolean, IsOptional } from 'class-validator';
 

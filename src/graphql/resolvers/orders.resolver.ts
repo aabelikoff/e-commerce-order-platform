@@ -1,4 +1,3 @@
-// src/orders/orders.resolver.ts
 import { Resolver, Query, Args, ResolveField, Parent, Context } from '@nestjs/graphql';
 import { Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';

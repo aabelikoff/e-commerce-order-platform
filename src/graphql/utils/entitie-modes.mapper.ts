@@ -4,7 +4,6 @@ import { ProductModel } from '../models/product.model';
 import { OrderItemModel } from '../models/orders/order-item.model';
 import { OrderModel } from '../models/orders/order.model';
 
-// src/graphql/utils/entitie-modes.mapper.ts
 export class EntityModelMapper {
   static createMapper() {
     const userMapper = (userEntity: User): UserModel => {
@@ -31,7 +30,7 @@ export class EntityModelMapper {
         quantity: Number(oiEntity.quantity),
         unitPrice: Number(oiEntity.unitPrice),
         productId: oiEntity.productId,
-        product: null as any, // ← будет резолвиться через ResolveField
+        product: null as any,
       };
     };
 

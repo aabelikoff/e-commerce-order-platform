@@ -19,7 +19,7 @@ export class GqlAllExceptionsFilter implements GqlExceptionFilter {
     );
 
     if (exception instanceof HttpException) {
-      return exception; // Nest/Apollo сами превратят в GraphQL error корректно
+      return exception; 
     }
 
     return new GraphQLError('Internal error while processing request', {
