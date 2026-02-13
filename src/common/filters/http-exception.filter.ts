@@ -15,20 +15,9 @@ export class HttpExceptionFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost) {
     const timestamp = new Date().toISOString();
 
-    const gqlHost = GqlArgumentsHost.create(host);
-    const gqlCtx = gqlHost.getContext<{
-      req?: Request & { requestId?: string };
-      res?: Response;
-    }>();
-
-    if (gqlCtx?.req) throw exception;
-
     const httpCtx = host.switchToHttp();
-    const httpRes = httpCtx.getResponse<Response>();
-    const httpReq = httpCtx.getRequest<Request & { requestId?: string }>();
-
-    const req = gqlCtx?.req ?? httpReq;
-    const res = gqlCtx?.res ?? httpRes;
+    const res = httpCtx.getResponse<Response>();
+    const req = httpCtx.getRequest<Request & { requestId?: string }>();
 
     if (!res || !req) {
       throw exception;
