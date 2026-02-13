@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Order } from '../../database/entities';
@@ -9,7 +9,6 @@ import { decodeCursor, encodeCursor } from '../utils/cursor-string.util';
 
 @Injectable()
 export class OrdersService {
-  private readonly logger = new Logger(OrdersService.name);
 
   constructor(
     @InjectRepository(Order)
@@ -23,9 +22,6 @@ export class OrdersService {
     const limit = pagination?.limit || 20;
     const cursor = pagination?.cursor;
 
-    this.logger.log(
-      `🔍 Finding orders with limit: ${limit}, cursor: ${cursor}`,
-    );
 
     const query = this.orderRepo
       .createQueryBuilder('order')
@@ -57,8 +53,6 @@ export class OrdersService {
     }
 
     const orders = await query.getMany();
-
-    this.logger.log(`✅ Found ${orders.length} orders`);
 
     const hasNextPage = orders.length > limit;
     if (hasNextPage) {

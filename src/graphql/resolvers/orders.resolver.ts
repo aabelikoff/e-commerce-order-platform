@@ -1,5 +1,5 @@
 // src/orders/orders.resolver.ts
-import { Resolver, Query, Args, ResolveField, Parent } from '@nestjs/graphql';
+import { Resolver, Query, Args, ResolveField, Parent, Context } from '@nestjs/graphql';
 import { Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -13,6 +13,7 @@ import { ProductModel } from '../models/product.model';
 import { Product, Order, User, OrderItem } from '../../database/entities';
 import { EntityModelMapper } from '../utils/entitie-modes.mapper';
 import { UserModel } from '../models/user.model';
+import { type GraphQLContext } from '../loaders/loaders.types';
 
 @Resolver(() => OrderModel)
 export class OrdersResolver {
@@ -20,12 +21,12 @@ export class OrdersResolver {
 
   constructor(
     private readonly ordersService: OrdersService,
-    @InjectRepository(Product)
-    private readonly productRepo: Repository<Product>,
-    @InjectRepository(OrderItem)
-    private readonly orderItemRepo: Repository<OrderItem>,
-    @InjectRepository(User)
-    private readonly userRepo: Repository<User>,
+    // @InjectRepository(Product)
+    // private readonly productRepo: Repository<Product>,
+    // @InjectRepository(OrderItem)
+    // private readonly orderItemRepo: Repository<OrderItem>,
+    // @InjectRepository(User)
+    // private readonly userRepo: Repository<User>,
   ) {}
 
   @Query(() => OrdersConnection, { name: 'orders' })
@@ -50,12 +51,14 @@ export class OrdersResolver {
   }
 
   @ResolveField(() => [OrderItemModel], { name: 'items' })
-  async getItems(@Parent() order: OrderModel): Promise<OrderItemModel[]> {
+  async items(@Parent() order: OrderModel, @Context() ctx: GraphQLContext): Promise<OrderItemModel[]> {
     this.logger.log(`📦 ResolveField items for order ${order.id}`);
 
-    const items = await this.orderItemRepo.find({
-      where: { order: { id: order.id } },
-    });
+    // const items = await this.orderItemRepo.find({
+    //   where: { order: { id: order.id } },
+    // });
+
+    const items = await ctx.loaders.orderItemsByOrderIdLoader.load(order.id);
 
     return items.map((item) => ({
       id: item.id,
@@ -66,12 +69,14 @@ export class OrdersResolver {
   }
 
   @ResolveField(() => UserModel, { name: 'user' })
-  async user(@Parent() order: OrderModel): Promise<UserModel | null> {
+  async user(@Parent() order: OrderModel,  @Context() ctx: GraphQLContext): Promise<UserModel | null> {
     this.logger.log(`👤 ResolveField user for order ${order.id}`);
 
-    const user = await this.userRepo.findOne({
-      where: { id: order.userId },
-    });
+    // const user = await this.userRepo.findOne({
+    //   where: { id: order.userId },
+    // });
+
+    const user = await ctx.loaders.userByIdLoader.load(order.userId);
 
     if (user) {
       return {
@@ -89,7 +94,7 @@ export class OrdersResolver {
 @Resolver(() => OrderItemModel)
 export class OrderItemResolver {
   private readonly logger = new Logger(OrderItemResolver.name);
-
+  private readonly mapper = EntityModelMapper.createMapper();
   constructor(
     @InjectRepository(Product)
     private readonly productRepo: Repository<Product>,
@@ -98,15 +103,19 @@ export class OrderItemResolver {
   @ResolveField(() => ProductModel, { name: 'product' })
   async getProduct(
     @Parent() orderItem: OrderItemModel,
+    @Context() ctx: GraphQLContext
   ): Promise<ProductModel | null> {
-    this.logger.warn(`🔴 N+1: Loading product for item ${orderItem.id}`);
+    
+    // this.logger.warn(`🔴 N+1: Loading product for item ${orderItem.id}`);
+    // const product = await this.productRepo.findOne({
+    //   where: { id: orderItem.productId },
+    // });
 
-    const product = await this.productRepo.findOne({
-      where: { id: orderItem.productId },
-    });
+    this.logger.debug(`Resolving product for item ${orderItem.id}`);
+    const product = await ctx.loaders.productByIdLoader.load(orderItem.productId);
 
     if (product) {
-      return EntityModelMapper.createMapper().productMapper(product);
+      return this.mapper.productMapper(product);
     }
     return null;
   }
