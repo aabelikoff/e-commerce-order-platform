@@ -29,8 +29,6 @@ export class OrdersService {
 
     const query = this.orderRepo
       .createQueryBuilder('order')
-      // .leftJoinAndSelect('order.items', 'items') // загружаем items
-      // .addSelect('order.user_id','userId')
       .leftJoin('order.user', 'user')
       .addSelect('user.id', 'userId')
       .orderBy('order.createdAt', 'DESC')

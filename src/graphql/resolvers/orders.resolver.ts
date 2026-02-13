@@ -43,7 +43,6 @@ export class OrdersResolver {
         totalAmount: order.totalAmount,
         createdAt: order.createdAt,
         userId: order.userId,
-        // items: order.items,
       })),
       pageInfo: result.pageInfo,
       totalCount: result.totalCount,
@@ -63,7 +62,6 @@ export class OrdersResolver {
       quantity: Number(item.quantity),
       unitPrice: Number(item.unitPrice),
       productId: item.productId,
-      // product: null as any, // product пусть резолвится отдельно
     }));
   }
 
@@ -97,8 +95,6 @@ export class OrderItemResolver {
     private readonly productRepo: Repository<Product>,
   ) {}
 
-  // ❌ ВОТ ТУТ N+1 ПРОБЛЕМА!
-  // Для каждого OrderItem делается отдельный запрос к Product
   @ResolveField(() => ProductModel, { name: 'product' })
   async getProduct(
     @Parent() orderItem: OrderItemModel,
