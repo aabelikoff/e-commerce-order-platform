@@ -6,10 +6,11 @@ import { OrdersFilterInput } from '../models/orders/orders-filter.input';
 import { PaginationCursorInput } from '../models/common/pagination-cursor.input';
 import { OrdersConnection } from '../models/orders/orders-connection.model';
 import { decodeCursor, encodeCursor } from '../utils/cursor-string.util';
+import { EntityModelMapper } from '../utils/entity-modes.mapper';
 
 @Injectable()
 export class OrdersService {
-
+  private readonly mapper = EntityModelMapper.createMapper();
   constructor(
     @InjectRepository(Order)
     private readonly orderRepo: Repository<Order>,
@@ -44,6 +45,8 @@ export class OrdersService {
       query.andWhere('order.createdAt <= :dateTo', { dateTo: filter.dateTo });
     }
 
+    const totalCount = await query.clone().getCount();
+
     if (cursor) {
       const { id, createdAt } = decodeCursor(cursor);
       query.andWhere(
@@ -52,11 +55,13 @@ export class OrdersService {
       );
     }
 
-    const orders = await query.getMany();
+    // const orders = await query.getMany();
+    const { entities: orders, raw } = await query.getRawAndEntities();
 
     const hasNextPage = orders.length > limit;
     if (hasNextPage) {
       orders.pop();
+      raw.pop();
     }
 
     const endCursor =
@@ -67,18 +72,16 @@ export class OrdersService {
           )
         : null;
 
-    const totalCount = await this.orderRepo.count({
-      where: filter?.status ? { status: filter.status } : {},
-    });
 
     return {
-      nodes: orders.map((o) => {
+      nodes: orders.map((o,i) => {
         return {
           id: o.id,
           status: o.status,
           createdAt: o.createdAt,
           totalAmount: Number(o.totalAmount),
-          userId: o.userId,
+          userId: raw[i].userId,
+          items: []
         };
       }),
       pageInfo: {
