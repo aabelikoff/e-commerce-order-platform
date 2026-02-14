@@ -1,4 +1,11 @@
-import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+  RelationId,
+} from 'typeorm';
 import { Order } from './order.entity';
 import { Product } from './product.entity';
 
@@ -10,17 +17,35 @@ export class OrderItem {
   @Column({ name: 'unit_price', type: 'numeric', precision: 12, scale: 2 })
   unitPrice: string;
 
-  @Column({ name: 'discount_amount', type: 'numeric', precision: 12, scale: 2, default: 0 })
+  @Column({
+    name: 'discount_amount',
+    type: 'numeric',
+    precision: 12,
+    scale: 2,
+    default: 0,
+  })
   discountAmount: string;
 
   @Column({ name: 'quantity', type: 'bigint' })
   quantity: string;
 
-  @ManyToOne(() => Order, (o) => o.items, { nullable: false, onDelete: 'RESTRICT' })
+  @ManyToOne(() => Order, (o) => o.items, {
+    nullable: false,
+    onDelete: 'RESTRICT',
+  })
   @JoinColumn({ name: 'order_id' })
   order: Order;
 
-  @ManyToOne(() => Product, (p) => p.items, { nullable: false, onDelete: 'RESTRICT' })
+  @RelationId((item: OrderItem) => item.order)
+  orderId: string;
+
+  @ManyToOne(() => Product, (p) => p.items, {
+    nullable: false,
+    onDelete: 'RESTRICT',
+  })
   @JoinColumn({ name: 'product_id' })
   product: Product;
+
+  @RelationId((item: OrderItem) => item.product)
+  productId: string;
 }
