@@ -8,15 +8,22 @@ import {
   Max,
 } from 'class-validator';
 
-@InputType()
+@InputType({
+  description: 'Cursor-based pagination input',
+})
 export class PaginationCursorInput {
-  @Field(() => Int)
+  @Field(() => Int, {
+    description: 'Maximum number of records to return (1–100)',
+  })
   @IsInt()
   @Min(1)
   @Max(100)
   limit: number = 20;
 
-  @Field(() => String, { nullable: true })
+  @Field(() => String, {
+    nullable: true,
+    description: 'Opaque cursor returned from previous query for fetching next page',
+  })
   @IsOptional()
   @IsString()
   cursor?: string;

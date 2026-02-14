@@ -1,11 +1,17 @@
 import { ObjectType, Field } from '@nestjs/graphql';
-import { IsBoolean, IsOptional } from 'class-validator';
 
-@ObjectType()
+@ObjectType({
+  description: 'Pagination metadata returned with a paginated query',
+})
 export class PageInfo {
-  @Field()
+  @Field({
+    description: 'Indicates whether more records are available after the current page',
+  })
   hasNextPage: boolean;
 
-  @Field(() => String, { nullable: true })
+  @Field(() => String, {
+    nullable: true,
+    description: 'Cursor to be used for fetching the next page',
+  })
   endCursor?: string | null;
 }

@@ -1,16 +1,25 @@
 import { ObjectType, Field, ID, Float } from '@nestjs/graphql';
 
-@ObjectType()
+@ObjectType({ description: 'Represents a product available for purchase' })
 export class ProductModel {
-  @Field(() => ID)
+  @Field(() => ID, {
+    description: 'Unique identifier of the product (UUID)',
+  })
   id: string;
 
-  @Field(() => String)
-  name: string; 
+  @Field(() => String, {
+    description: 'Product name displayed to customers',
+  })
+  name: string;
 
-  @Field(() => Float)
+  @Field(() => Float, {
+    description: 'Current product price(snapshot) in system currency',
+  })
   price: number;
 
-  @Field(() => String, { nullable: true })
+  @Field(() => String, {
+    nullable: true,
+    description: 'Detailed product description',
+  })
   description?: string;
 }
