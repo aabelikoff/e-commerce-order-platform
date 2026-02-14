@@ -4,7 +4,6 @@ import DataLoader from 'dataloader';
 import { In, Repository } from 'typeorm';
 import { User, Product, OrderItem } from '../../database/entities';
 import { AppLoaders } from './loaders.types';
-import { App } from 'supertest/types';
 
 @Injectable()
 export class LoadersFactory {
@@ -50,7 +49,8 @@ export class LoadersFactory {
           if (orderIds.length === 0) return [];
 
           const orderItems = await this.orderItemsRepository.find({
-            where: { order: { id: In(orderIds) } },
+              where: { order: { id: In(orderIds) } },
+              relations: {order: true}
           });
 
           const orderItemsByOrderId = new Map(
@@ -58,7 +58,8 @@ export class LoadersFactory {
           );
 
           for (const orderItem of orderItems) {
-            orderItemsByOrderId.get(orderItem.orderId)?.push(orderItem);
+            const oid = (orderItem as any).orderId ?? orderItem.order?.id;
+            if (oid) orderItemsByOrderId.get(oid)?.push(orderItem);
           }
 
           return orderIds.map((oi) => orderItemsByOrderId.get(oi) ?? []);
