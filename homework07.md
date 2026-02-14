@@ -150,6 +150,19 @@ query TestN3 {
 
   }
 }
+
+query Order {
+  order(id: "199fa051-9cbb-4d8d-ba3d-9639eb8b97b2") {
+    id
+    status
+    createdAt
+    totalAmount
+    items {
+      id
+      product{price name}
+    }
+  }
+}
 ```
 
 **Architecture Notes**
