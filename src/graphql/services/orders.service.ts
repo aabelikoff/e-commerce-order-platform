@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Order } from '../../database/entities';
 import { OrdersFilterInput } from '../models/orders/orders-filter.input';
+import { OrderModel } from '../models/orders/order.model';
 import { PaginationCursorInput } from '../models/common/pagination-cursor.input';
 import { OrdersConnection } from '../models/orders/orders-connection.model';
 import { decodeCursor, encodeCursor } from '../utils/cursor-string.util';
@@ -14,7 +15,15 @@ export class OrdersService {
   constructor(
     @InjectRepository(Order)
     private readonly orderRepo: Repository<Order>,
-  ) {}
+  ) { }
+  
+  async findOrder(id: string): Promise<OrderModel> {
+    const order = await this.orderRepo.findOne({
+      where: { id },
+    });
+    if (!order) throw new Error(`Order not found: ${id}`);
+    return { ...this.mapper.orderMapper(order), items: [] };
+  }
 
   async findOrders(
     filter?: OrdersFilterInput,
@@ -22,7 +31,6 @@ export class OrdersService {
   ): Promise<OrdersConnection> {
     const limit = pagination?.limit || 20;
     const cursor = pagination?.cursor;
-
 
     const query = this.orderRepo
       .createQueryBuilder('order')
@@ -72,16 +80,15 @@ export class OrdersService {
           )
         : null;
 
-
     return {
-      nodes: orders.map((o,i) => {
+      nodes: orders.map((o, i) => {
         return {
           id: o.id,
           status: o.status,
           createdAt: o.createdAt,
           totalAmount: Number(o.totalAmount),
           userId: raw[i].userId,
-          items: []
+          items: [],
         };
       }),
       pageInfo: {

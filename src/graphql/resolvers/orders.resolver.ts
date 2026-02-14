@@ -34,6 +34,12 @@ export class OrdersResolver {
     // @InjectRepository(User)
     // private readonly userRepo: Repository<User>,
   ) {}
+  @Query(() => OrderModel, { name: 'order' })
+  async order(
+    @Args('id', { type: () => String }) id: string,
+  ): Promise<OrderModel> {
+    return this.ordersService.findOrder(id);
+  }
 
   @Query(() => OrdersConnection, { name: 'orders' })
   async orders(
@@ -106,9 +112,10 @@ export class OrdersResolver {
 export class OrderItemResolver {
   private readonly logger = new Logger(OrderItemResolver.name);
   private readonly mapper = EntityModelMapper.createMapper();
-  constructor() // @InjectRepository(Product)
-  // private readonly productRepo: Repository<Product>,
-  {}
+  constructor() {
+    // @InjectRepository(Product)
+    // private readonly productRepo: Repository<Product>,
+  }
 
   @ResolveField(() => ProductModel, { name: 'product' })
   async product(

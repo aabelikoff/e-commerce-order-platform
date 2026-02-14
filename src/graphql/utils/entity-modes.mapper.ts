@@ -40,7 +40,7 @@ export class EntityModelMapper {
         status: order.status,
         totalAmount: Number(order.totalAmount),
         createdAt: order.createdAt,
-        items: order.items.map((o) => orderItemMapper(o)),
+        items: order.items?.map((o) => orderItemMapper(o)),
         userId: order.userId
       };
     };
