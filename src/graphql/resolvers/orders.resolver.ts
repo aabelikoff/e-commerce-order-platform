@@ -6,7 +6,7 @@ import {
   Parent,
   Context,
 } from '@nestjs/graphql';
-import { Logger } from '@nestjs/common';
+import { Logger, UseFilters } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { OrdersService } from '../services/orders.service';
@@ -20,7 +20,11 @@ import { ProductModel } from '../models/product.model';
 import { EntityModelMapper } from '../utils/entity-modes.mapper';
 import { UserModel } from '../models/user.model';
 import { type GraphQLContext } from '../loaders/loaders.types';
+import { UseGuards } from '@nestjs/common';
+import { GqlAuthGuard } from '../../auth/guards/gql-auth.guard';
+import { GqlAllExceptionsFilter } from 'src/common/filters/gql-exception.filter';
 
+@UseFilters(GqlAllExceptionsFilter)
 @Resolver(() => OrderModel)
 export class OrdersResolver {
   private readonly logger = new Logger(OrdersResolver.name);
@@ -34,6 +38,7 @@ export class OrdersResolver {
     // @InjectRepository(User)
     // private readonly userRepo: Repository<User>,
   ) {}
+  @UseGuards(GqlAuthGuard)
   @Query(() => OrderModel, { name: 'order' })
   async order(
     @Args('id', { type: () => String }) id: string,
@@ -41,6 +46,7 @@ export class OrdersResolver {
     return this.ordersService.findOrder(id);
   }
 
+  @UseGuards(GqlAuthGuard)
   @Query(() => OrdersConnection, { name: 'orders' })
   async orders(
     @Args('filter', { nullable: true }) filter?: OrdersFilterInput,
@@ -108,6 +114,7 @@ export class OrdersResolver {
   }
 }
 
+@UseFilters(GqlAllExceptionsFilter)
 @Resolver(() => OrderItemModel)
 export class OrderItemResolver {
   private readonly logger = new Logger(OrderItemResolver.name);
