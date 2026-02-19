@@ -24,7 +24,6 @@ import { OffsetPaginationQueryDto } from 'src/common/dto/offset-pagination-query
 import { UsersListResponseDto } from './dto/user-response.dto';
 import { User } from 'src/database/entities';
 import { ERoles } from 'src/auth/access/roles';
-import { UserScopes } from 'src/auth/access/scopes';
 import { Roles, Scopes } from 'src/auth/decorators';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { AccessGuard } from 'src/auth/guards/access.guard';
