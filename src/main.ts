@@ -29,7 +29,7 @@ async function bootstrap() {
     }),
   );
 
-  app.useGlobalFilters(new HttpExceptionFilter(), new GqlAllExceptionsFilter());
+  app.useGlobalFilters(new HttpExceptionFilter());
 
   app.useGlobalInterceptors(
     new LoggingInterceptor(),
