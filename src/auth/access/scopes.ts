@@ -1,23 +1,23 @@
-export enum OrderScopes {
+export enum EOrderScopes {
   ORDER_READ = 'order:read',
   ORDER_WRITE = 'order:write',
 }
 
-export enum ProductScopes {
+export enum EProductScopes {
   PRODUCT_READ = 'product:read',
   PRODUCT_WRITE = 'product:write',
 }
 
-export enum UserScopes {
+export enum EUserScopes {
   USER_READ = 'user:read',
   USER_WRITE = 'user:write',
 }
 
-export enum PaymentScopes {
+export enum EPaymentScopes {
   PAYMENT_READ = 'payment:read',
   PAYMENT_WRITE = 'payment:write',
 }
 
-export enum RefundScopes {
+export enum ERefundScopes {
   REFUND_WRITE = 'refund:write',
 }
