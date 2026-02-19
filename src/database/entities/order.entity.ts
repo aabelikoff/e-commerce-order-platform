@@ -11,6 +11,7 @@ import {
 } from 'typeorm';
 import { User } from './user.entity';
 import { OrderItem } from './order-item.entity';
+import { Payment } from './payment.entity';
 
 export enum EOrderStatus {
   PENDING = 'pending',
@@ -105,6 +106,9 @@ export class Order {
 
   @OneToMany(() => OrderItem, (i) => i.order)
   items: OrderItem[];
+
+  @OneToMany(() => Payment, (p) => p.order)
+  payments: Payment[];
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt: Date;
