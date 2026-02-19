@@ -11,7 +11,7 @@ import { AuthModule } from './auth/auth.module';
 import { ProductsModule } from './products/products.module';
 import { OrdersModule } from './orders/orders.module';
 import { PaymentsModule } from './payments/payments.module';
-import { ProfilesModule } from './profiles/profiles.module';
+import { ProfilesModule } from './database/entities/profiles/profiles.module';
 import { ReportingsModule } from './reportings/reportings.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { GraphQLModule } from '@nestjs/graphql';
@@ -32,11 +32,12 @@ import {
 import { UsersV1Controller } from './users/v1/users.controller.v1';
 import { User, Order, OrderItem, Product } from './database/entities';
 import { AppGraphqlModule } from './graphql/graphql.module';
+import { authConfig } from './config/auth/auth.config';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
-      load: [appConfig, databaseConfig],
+      load: [appConfig, databaseConfig, authConfig],
       envFilePath: getEnvFilePath(),
       isGlobal: true,
     }),
