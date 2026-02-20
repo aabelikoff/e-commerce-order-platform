@@ -1,5 +1,8 @@
 import { registerEnumType } from '@nestjs/graphql';
-import { EOrderStatus } from 'src/database/entities';
+import { EPaymentStatus, EOrderStatus } from '../../../database/entities';
 
 registerEnumType(EOrderStatus, { name: 'EOrderStatus' });
 export { EOrderStatus };
+    
+registerEnumType(EPaymentStatus, { name: 'EPaymentStatus' });
+export { EPaymentStatus };

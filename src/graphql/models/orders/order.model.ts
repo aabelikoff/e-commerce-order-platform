@@ -8,7 +8,7 @@ import {
 import { EOrderStatus } from '../enums/order-status.gql';
 import { OrderItemModel } from './order-item.model';
 import { UserModel } from '../user.model';
-import { PaymentModel } from './payment.model';
+import { PaymentModel } from '../payment.model';
 
 @ObjectType({
   description: 'Represents a customer order in the system',
