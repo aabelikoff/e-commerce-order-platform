@@ -1,10 +1,12 @@
 import {
   Column,
+  CreateDateColumn,
   Entity,
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
   RelationId,
+  UpdateDateColumn,
 } from 'typeorm';
 import { Order } from './order.entity';
 
@@ -48,13 +50,13 @@ export class Payment {
   })
   paidAmount: string;
 
-  @Column({
+  @CreateDateColumn({
     name: 'created_at',
     type: 'timestamptz',
   })
   createdAt: Date;
 
-  @Column({
+  @UpdateDateColumn({
     name: 'updated_at',
     type: 'timestamptz',
   })
