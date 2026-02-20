@@ -6,6 +6,9 @@ import * as bcrypt from 'bcrypt';
 import { User } from 'src/database/entities';
 import { AuthUser, JwtAccessPayload } from './types';
 import { LoginDto } from './dto/login.dto';
+import { checkArrayToEnum } from 'src/common/utils/chek-array-to-enum.utils';
+import { EUnitedScopes } from './access/scopes';
+import { ERoles } from './access/roles';
 
 @Injectable()
 export class AuthService {
@@ -37,8 +40,8 @@ export class AuthService {
     const safeUser: AuthUser = {
       sub: user.id,
       email: user.email,
-      roles: user.roles ?? [],
-      scopes: user.scopes ?? [],
+      roles: (user.roles ?? []) as ERoles[],
+      scopes: (user.scopes ?? []) as EUnitedScopes[],
     };
 
     return safeUser;

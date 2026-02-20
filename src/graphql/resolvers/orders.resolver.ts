@@ -23,6 +23,7 @@ import { type GraphQLContext } from '../loaders/loaders.types';
 import { UseGuards } from '@nestjs/common';
 import { GqlAuthGuard } from '../../auth/guards/gql-auth.guard';
 import { GqlAllExceptionsFilter } from 'src/common/filters/gql-exception.filter';
+import { PaymentModel } from '../models/orders/payment.model';
 
 @UseFilters(GqlAllExceptionsFilter)
 @Resolver(() => OrderModel)
@@ -46,7 +47,7 @@ export class OrdersResolver {
     return this.ordersService.findOrder(id);
   }
 
-  @UseGuards(GqlAuthGuard)
+  // @UseGuards(GqlAuthGuard)
   @Query(() => OrdersConnection, { name: 'orders' })
   async orders(
     @Args('filter', { nullable: true }) filter?: OrdersFilterInput,
@@ -63,6 +64,7 @@ export class OrdersResolver {
         createdAt: order.createdAt,
         userId: order.userId,
         items: [],
+        payments: []
       })),
       pageInfo: result.pageInfo,
       totalCount: result.totalCount,
@@ -111,6 +113,25 @@ export class OrdersResolver {
       lastName: user.lastName,
       email: user.email,
     } as UserModel;
+  }
+
+  @ResolveField(() => [PaymentModel], { name: 'payments' })
+  async payments(
+    @Parent() order: OrderModel,
+    @Context() ctx: GraphQLContext,
+  ): Promise<PaymentModel[]> {
+    this.logger.log(`📦 ResolveField payments for order ${order.id}`);
+
+    const payments = await ctx.loaders.paymentsByOrderIdLoader.load(order.id);
+
+    return (payments ?? []).map((payment) => ({
+      id: payment.id,
+      status: payment.status,
+      paidAt: payment.paidAt,
+      paidAmount: payment.paidAmount,
+      createdAt: payment.createdAt,
+      updatedAt: payment.updatedAt,
+    }));
   }
 }
 
