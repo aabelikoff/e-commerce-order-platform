@@ -89,6 +89,7 @@ export class OrdersService {
           totalAmount: Number(o.totalAmount),
           userId: raw[i].userId,
           items: [],
+          payments: []
         };
       }),
       pageInfo: {

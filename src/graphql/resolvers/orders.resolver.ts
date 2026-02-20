@@ -23,7 +23,7 @@ import { type GraphQLContext } from '../loaders/loaders.types';
 import { UseGuards } from '@nestjs/common';
 import { GqlAuthGuard } from '../../auth/guards/gql-auth.guard';
 import { GqlAllExceptionsFilter } from 'src/common/filters/gql-exception.filter';
-import { PaymentModel } from '../models/orders/payment.model';
+import { PaymentModel } from '../models/payment.model';
 
 @UseFilters(GqlAllExceptionsFilter)
 @Resolver(() => OrderModel)
@@ -64,7 +64,7 @@ export class OrdersResolver {
         createdAt: order.createdAt,
         userId: order.userId,
         items: [],
-        payments: []
+        payments: [],
       })),
       pageInfo: result.pageInfo,
       totalCount: result.totalCount,
