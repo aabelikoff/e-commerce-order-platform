@@ -34,6 +34,17 @@ export class EntityModelMapper {
       };
     };
 
+    const paymentMapper = (paymentEntity: any): any => {
+      return {
+        id: paymentEntity.id,
+        status: paymentEntity.status,
+        paidAt: paymentEntity.paidAt,
+        paidAmount: Number(paymentEntity.paidAmount),
+        createdAt: paymentEntity.createdAt,
+        updatedAt: paymentEntity.updatedAt,
+      };
+    };
+
     const orderMapper = (order: Order): OrderModel => {
       return {
         id: order.id,
@@ -41,7 +52,8 @@ export class EntityModelMapper {
         totalAmount: Number(order.totalAmount),
         createdAt: order.createdAt,
         items: order.items?.map((o) => orderItemMapper(o)),
-        userId: order.userId
+        userId: order.userId,
+        payments: order.payments?.map((p) => paymentMapper(p))
       };
     };
 
