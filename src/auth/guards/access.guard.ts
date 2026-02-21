@@ -6,7 +6,6 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { Roles, Scopes } from '../decorators';
 import { getUser } from '../../common/utils/request.utils';
 import { ROLES_KEY, SCOPES_KEY } from '../decorators';
 
