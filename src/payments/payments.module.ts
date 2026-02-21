@@ -12,5 +12,6 @@ import { Order } from 'src/database/entities/order.entity';
   imports: [TypeOrmModule.forFeature([Payment, Order])],
   controllers: [PaymentsController],
   providers: [PaymentsService, CanPayGuard, JwtAuthGuard],
+  exports: [PaymentsService],
 })
 export class PaymentsModule {}
