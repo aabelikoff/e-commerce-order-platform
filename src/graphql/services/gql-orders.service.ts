@@ -1,4 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Order } from '../../database/entities';
@@ -8,6 +12,9 @@ import { PaginationCursorInput } from '../models/common/pagination-cursor.input'
 import { OrdersConnection } from '../models/orders/orders-connection.model';
 import { decodeCursor, encodeCursor } from '../utils/cursor-string.util';
 import { EntityModelMapper } from '../utils/entity-modes.mapper';
+import { AuthUser } from '../../auth/types';
+import { ERoles } from '../../auth/access/roles';
+import { EOrderScopes } from '../../auth/access/scopes';
 
 @Injectable()
 export class OrdersService {
@@ -15,30 +22,65 @@ export class OrdersService {
   constructor(
     @InjectRepository(Order)
     private readonly orderRepo: Repository<Order>,
-  ) { }
-  
-  async findOrder(id: string): Promise<OrderModel> {
-    const order = await this.orderRepo.findOne({
-      where: { id },
-    });
-    if (!order) throw new Error(`Order not found: ${id}`);
-    return { ...this.mapper.orderMapper(order), items: [] };
+  ) {}
+
+  private checkAdminAccessToRead(user: AuthUser) {
+    const roles = user.roles || [];
+    const scopes = user.scopes || [];
+    const isStaff = roles.some(
+      (role) => role === ERoles.ADMIN || role === ERoles.SUPPORT,
+    );
+    const hasReadScope = scopes.some(
+      (scope) => scope === EOrderScopes.ORDER_READ,
+    );
+    if (isStaff && !hasReadScope) {
+      throw new ForbiddenException('Access denied: missing order:read scope');
+    }
+    return [isStaff, hasReadScope];
+  }
+
+  async findOrder(user: AuthUser, id: string): Promise<OrderModel> {
+    const [isStaff] = this.checkAdminAccessToRead(user);
+
+    const qb = this.orderRepo
+      .createQueryBuilder('order')
+      .leftJoin('order.user', 'user')
+      .where('order.id = :id', { id });
+
+    if (!isStaff) {
+      qb.andWhere('user.id = :userId', { userId: user.sub });
+    }
+
+    const order = await qb.getOne();
+    if (!order) {
+      throw new NotFoundException(`Order not found: ${id}`);
+    }
+    return this.mapper.orderMapper(order);
   }
 
   async findOrders(
+    user: AuthUser,
     filter?: OrdersFilterInput,
     pagination?: PaginationCursorInput,
   ): Promise<OrdersConnection> {
     const limit = pagination?.limit || 20;
     const cursor = pagination?.cursor;
+    const userId = user.sub;
+
+    const [isStaff] = this.checkAdminAccessToRead(user);
 
     const query = this.orderRepo
       .createQueryBuilder('order')
       .leftJoin('order.user', 'user')
       .addSelect('user.id', 'userId')
+      .where('1=1')
       .orderBy('order.createdAt', 'DESC')
       .addOrderBy('order.id', 'DESC')
       .take(limit + 1);
+
+    if (!isStaff) {
+      query.andWhere('user.id = :userId', { userId });
+    }
 
     if (filter?.status) {
       query.andWhere('order.status = :status', { status: filter.status });
@@ -63,7 +105,6 @@ export class OrdersService {
       );
     }
 
-    // const orders = await query.getMany();
     const { entities: orders, raw } = await query.getRawAndEntities();
 
     const hasNextPage = orders.length > limit;
@@ -89,7 +130,7 @@ export class OrdersService {
           totalAmount: Number(o.totalAmount),
           userId: raw[i].userId,
           items: [],
-          payments: []
+          payments: [],
         };
       }),
       pageInfo: {
