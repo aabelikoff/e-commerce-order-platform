@@ -1,7 +1,14 @@
-import { ObjectType, Field, ID, Float, GraphQLISODateTime } from '@nestjs/graphql';
+import {
+  ObjectType,
+  Field,
+  ID,
+  Float,
+  GraphQLISODateTime,
+} from '@nestjs/graphql';
 import { EOrderStatus } from '../enums/order-status.gql';
 import { OrderItemModel } from './order-item.model';
 import { UserModel } from '../user.model';
+import { PaymentModel } from '../payment.model';
 
 @ObjectType({
   description: 'Represents a customer order in the system',
@@ -13,7 +20,8 @@ export class OrderModel {
   id: string;
 
   @Field(() => EOrderStatus, {
-    description: 'Current status of the order (PENDING, PAID, SHIPPED, CANCELLED)',
+    description:
+      'Current status of the order (PENDING, PAID, SHIPPED, CANCELLED)',
   })
   status: EOrderStatus;
 
@@ -43,4 +51,10 @@ export class OrderModel {
     description: 'List of items included in the order',
   })
   items: OrderItemModel[];
+
+  @Field(() => [PaymentModel], {
+    nullable: false,
+    description: 'List of payments associated with the order',
+  })
+  payments: PaymentModel[];
 }

@@ -15,6 +15,29 @@ export class User {
   @Column({ name: 'email', length: 254, unique: true, nullable: false })
   email: string;
 
+  @Column({
+    name: 'password_hash',
+    type: 'varchar',
+    length: 255,
+    nullable: true,
+    select: false,
+  })
+  passwordHash: string;
+
+  @Column({
+    type: 'text',
+    array: true,
+    default: () => 'ARRAY[]::text[]',
+  })
+  roles: string[];
+
+  @Column({
+    type: 'text',
+    array: true,
+    default: () => 'ARRAY[]::text[]',
+  })
+  scopes: string[];
+
   @Column({ name: 'is_active', default: true })
   isActive: boolean;
 

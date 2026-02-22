@@ -2,7 +2,7 @@ import {
   BadRequestException,
   ConflictException,
   Injectable,
-  InternalServerErrorException,
+  NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import {
@@ -14,6 +14,8 @@ import {
 } from 'src/database/entities';
 import { DataSource, Repository } from 'typeorm';
 import { CreateOrderDto } from './v1/dto/create-order.dto';
+import { AuthUser } from 'src/auth/types';
+import { ERoles } from 'src/auth/access/roles';
 
 @Injectable()
 export class OrdersService {
@@ -204,6 +206,57 @@ export class OrdersService {
       throw e;
     } finally {
       await qr.release();
+    }
+  }
+
+  // TODO: add pagination, filters, sorting, etc. For now it just returns all orders for user or all orders if user is staff
+  async findAll(user: AuthUser): Promise<Order[]> {
+    const isStaff = user.roles?.some(
+      (r) => r === ERoles.ADMIN || r === ERoles.SUPPORT,
+    );
+
+    const query = this.ordersRepository
+      .createQueryBuilder('order')
+      .leftJoin('order.user', 'user')
+      // .leftJoinAndSelect('order.items', 'items')
+      // .leftJoinAndSelect('order.payments', 'payments')
+      // .leftJoinAndSelect('order.user', 'user')
+      .orderBy('order.createdAt', 'DESC')
+      .addOrderBy('order.id', 'DESC');
+
+    if (!isStaff) {
+      query.where('user.id = :userId', { userId: user.sub });
+    }
+
+    return await query.getMany();
+  }
+
+  async findOne(user: AuthUser, id: string): Promise<Order> {
+    const isStaff = user.roles?.some(
+      (r) => r === ERoles.ADMIN || r === ERoles.SUPPORT,
+    );
+
+    const query = this.ordersRepository
+      .createQueryBuilder('order')
+      .leftJoin('order.user', 'user')
+      .where('order.id = :id', { id });
+
+    if (!isStaff) {
+      query.andWhere('user.id = :userId', { userId: user.sub });
+    }
+
+    const order = await query.getOne();
+
+    if (!order) {
+      throw new NotFoundException('Order not found');
+    }
+    return order;
+  }
+
+  async delete(id: string): Promise<void> {
+    const result = await this.ordersRepository.delete(id);
+    if (result.affected === 0) {
+      throw new NotFoundException('Order not found');
     }
   }
 }

@@ -6,10 +6,10 @@ import {
   Parent,
   Context,
 } from '@nestjs/graphql';
-import { Logger } from '@nestjs/common';
+import { Logger, UseFilters } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { OrdersService } from '../services/orders.service';
+import { OrdersService } from '../services/gql-orders.service';
 import { OrderModel } from '../models/orders/order.model';
 import { OrdersConnection } from '../models/orders/orders-connection.model';
 import { OrdersFilterInput } from '../models/orders/orders-filter.input';
@@ -20,7 +20,12 @@ import { ProductModel } from '../models/product.model';
 import { EntityModelMapper } from '../utils/entity-modes.mapper';
 import { UserModel } from '../models/user.model';
 import { type GraphQLContext } from '../loaders/loaders.types';
+import { UseGuards } from '@nestjs/common';
+import { GqlAuthGuard } from '../../auth/guards/gql-auth.guard';
+import { GqlAllExceptionsFilter } from 'src/common/filters/gql-exception.filter';
+import { PaymentModel } from '../models/payment.model';
 
+@UseFilters(GqlAllExceptionsFilter)
 @Resolver(() => OrderModel)
 export class OrdersResolver {
   private readonly logger = new Logger(OrdersResolver.name);
@@ -34,21 +39,29 @@ export class OrdersResolver {
     // @InjectRepository(User)
     // private readonly userRepo: Repository<User>,
   ) {}
+  @UseGuards(GqlAuthGuard)
   @Query(() => OrderModel, { name: 'order' })
   async order(
+    @Context() ctx: GraphQLContext,
     @Args('id', { type: () => String }) id: string,
   ): Promise<OrderModel> {
-    return this.ordersService.findOrder(id);
+    return this.ordersService.findOrder(ctx.req.user!, id);
   }
 
+  @UseGuards(GqlAuthGuard)
   @Query(() => OrdersConnection, { name: 'orders' })
   async orders(
     @Args('filter', { nullable: true }) filter?: OrdersFilterInput,
     @Args('pagination', { nullable: true }) pagination?: PaginationCursorInput,
+    @Context() ctx?: GraphQLContext,
   ): Promise<OrdersConnection> {
     this.logger.log('📊 Query: orders');
-    const result = await this.ordersService.findOrders(filter, pagination);
-
+    const result = await this.ordersService.findOrders(
+      ctx?.req.user!,
+      filter,
+      pagination,
+    );
+    console.log('GraphQL Context:', ctx?.req.user); // Debug log for context
     return {
       nodes: result.nodes.map((order) => ({
         id: order.id,
@@ -57,6 +70,7 @@ export class OrdersResolver {
         createdAt: order.createdAt,
         userId: order.userId,
         items: [],
+        payments: [],
       })),
       pageInfo: result.pageInfo,
       totalCount: result.totalCount,
@@ -106,8 +120,28 @@ export class OrdersResolver {
       email: user.email,
     } as UserModel;
   }
+
+  @ResolveField(() => [PaymentModel], { name: 'payments' })
+  async payments(
+    @Parent() order: OrderModel,
+    @Context() ctx: GraphQLContext,
+  ): Promise<PaymentModel[]> {
+    this.logger.log(`📦 ResolveField payments for order ${order.id}`);
+
+    const payments = await ctx.loaders.paymentsByOrderIdLoader.load(order.id);
+
+    return (payments ?? []).map((payment) => ({
+      id: payment.id,
+      status: payment.status,
+      paidAt: payment.paidAt,
+      paidAmount: payment.paidAmount,
+      createdAt: payment.createdAt,
+      updatedAt: payment.updatedAt,
+    }));
+  }
 }
 
+@UseFilters(GqlAllExceptionsFilter)
 @Resolver(() => OrderItemModel)
 export class OrderItemResolver {
   private readonly logger = new Logger(OrderItemResolver.name);

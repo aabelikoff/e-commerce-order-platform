@@ -3,13 +3,12 @@ import { config } from 'dotenv';
 import { join, resolve } from 'path';
 import { getEnvFilePath } from '../config/env/env-path.config';
 import { SeederOptions } from 'typeorm-extension';
+import UsersSeed from './seeds/users.seeder';
+import ProductsSeed from './seeds/products.seeder';
+import OrdersSeed from './seeds/orders.seeder';
 
 config({ path: resolve(process.cwd(), getEnvFilePath()) });
 
-const seedsGlob = join(__dirname, 'seeds', '**', '*.seeder{.ts,.js}').replace(
-  /\\/g,
-  '/',
-);
 const migrationsGlob = join(__dirname, 'migrations', '*{.ts,.js}').replace(
   /\\/g,
   '/',
@@ -28,7 +27,7 @@ const options: DataSourceOptions & SeederOptions = {
   database: process.env.DB_NAME,
   entities: [entitiesGlob],
   migrations: [migrationsGlob],
-  seeds: [seedsGlob],
+  seeds: [UsersSeed, ProductsSeed, OrdersSeed],
   synchronize: false,
   seedTracking: true,
 };

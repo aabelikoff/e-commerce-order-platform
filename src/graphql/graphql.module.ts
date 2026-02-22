@@ -2,7 +2,7 @@ import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { Module } from '@nestjs/common';
 import { GraphQLModule } from '@nestjs/graphql';
 import { HelloResolver } from './resolvers/hello.resolver';
-import { OrdersService } from './services/orders.service';
+import { OrdersService } from './services/gql-orders.service';
 import { OrdersResolver, OrderItemResolver } from './resolvers/orders.resolver';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { User, Product, Order, OrderItem } from '../database/entities';

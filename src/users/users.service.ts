@@ -3,7 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { CreateUserDto, UpdateUserDto } from './v1/dto';
+import { CreateUserDto, UpdateUserDto, UserResponseDto } from './v1/dto';
 import { paginateByCursor } from 'src/common/pagination/cursor/paginate-by-cursor';
 import { ResponseListDto } from 'src/common/dto/response-list.dto';
 import { CursorPaginationQueryDto } from 'src/common/dto/cursor-pagination-query.dto';
@@ -13,6 +13,7 @@ import { ProblemTypes } from 'src/common/types/problem-types';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from 'src/database/entities';
 import { Repository } from 'typeorm';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UsersService {
@@ -42,15 +43,26 @@ export class UsersService {
     this.usersRepository.delete(id);
   }
 
-  async create(user: CreateUserDto): Promise<User> {
-    const normalizedEmail = user.email.toLowerCase();
+  async create(user: CreateUserDto): Promise<UserResponseDto> {
+    const passwordHash = await bcrypt.hash(user.password, 10);
 
     const newUser = {
-      ...user,
-      email: normalizedEmail,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
       isActive: true,
-    } as User;
-    return this.usersRepository.save(newUser);
+      passwordHash,
+    };
+    const resultUser = this.usersRepository.create(newUser);
+    await this.usersRepository.save(resultUser);
+    return {
+      id: resultUser.id,
+      firstName: resultUser.firstName,
+      lastName: resultUser.lastName,
+      email: resultUser.email,
+      createdAt: resultUser.createdAt,
+      updatedAt: resultUser.updatedAt,
+    }
   }
 
   // async getAll(

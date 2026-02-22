@@ -11,6 +11,7 @@ import {
   Post,
   Put,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import { CreateUserDto, UpdateUserDto, UserResponseDto } from './dto';
 import { UsersService } from '../users.service';
@@ -22,13 +23,17 @@ import { CursorPaginationQueryDto } from 'src/common/dto/cursor-pagination-query
 import { OffsetPaginationQueryDto } from 'src/common/dto/offset-pagination-query.dto';
 import { UsersListResponseDto } from './dto/user-response.dto';
 import { User } from 'src/database/entities';
+import { ERoles } from 'src/auth/access/roles';
+import { Roles, Scopes } from 'src/auth/decorators';
+import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
+import { AccessGuard } from 'src/auth/guards/access.guard';
 
 @Controller({ path: 'users', version: '1' })
 export class UsersV1Controller {
   constructor(private usersService: UsersService) {}
 
   @Post()
-  async create(@Body() dto: CreateUserDto): Promise<User> {
+  async create(@Body() dto: CreateUserDto): Promise<UserResponseDto> {
     return this.usersService.create(dto);
   }
 
@@ -40,6 +45,9 @@ export class UsersV1Controller {
     return this.usersService.getById(id);
   }
 
+  @UseGuards(JwtAuthGuard, AccessGuard)
+  @Roles(ERoles.ADMIN, ERoles.SUPPORT)
+  // @Scopes(UserScopes.USER_READ)
   @Get()
   @ApiOkWrappedResponse(UsersListResponseDto)
   async getAll(

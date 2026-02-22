@@ -1,0 +1,220 @@
+﻿{
+  "info": {
+    "name": "E-Commerce - REST Checklist (scopes-payments)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3001" },
+    { "key": "emailAlice", "value": "alice@example.com" },
+    { "key": "emailBob", "value": "bob@example.com" },
+    { "key": "password", "value": "password" },
+    { "key": "tokenAlice", "value": "" },
+    { "key": "tokenBob", "value": "" },
+    { "key": "orderIdAlice", "value": "" },
+    { "key": "orderIdBob", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "1) Login (Alice) -> set tokenAlice",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "content-type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"email\":\"{{emailAlice}}\",\"password\":\"{{password}}\"}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": "{{baseUrl}}/api/v1/auth/login"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('login returns accessToken', () => {",
+              "  pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+              "  const json = pm.response.json();",
+              "  pm.expect(json).to.have.property('data');",
+              "  pm.expect(json.data).to.have.property('accessToken');",
+              "  pm.collectionVariables.set('tokenAlice', json.data.accessToken);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "2) GET /orders (no token) -> 401",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/v1/orders"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('unauthorized', () => {",
+              "  pm.expect(pm.response.code).to.eql(401);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "3) GET /orders (Alice token) -> 200 + set orderIdAlice",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{tokenAlice}}" }],
+        "url": "{{baseUrl}}/api/v1/orders"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('alice orders loaded', () => {",
+              "  pm.expect(pm.response.code).to.eql(200);",
+              "  const json = pm.response.json();",
+              "  const orders = json.data ?? [];",
+              "  pm.expect(orders).to.be.an('array').that.is.not.empty;",
+              "  pm.collectionVariables.set('orderIdAlice', orders[0].id);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "4) Login (Bob) -> set tokenBob",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "content-type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"email\":\"{{emailBob}}\",\"password\":\"{{password}}\"}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": "{{baseUrl}}/api/v1/auth/login"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('login returns accessToken', () => {",
+              "  pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+              "  const json = pm.response.json();",
+              "  pm.expect(json).to.have.property('data');",
+              "  pm.expect(json.data).to.have.property('accessToken');",
+              "  pm.collectionVariables.set('tokenBob', json.data.accessToken);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "5) GET /orders (Bob token) -> 200 + set orderIdBob",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{tokenBob}}" }],
+        "url": "{{baseUrl}}/api/v1/orders"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('pick order for non-owner test', () => {",
+              "  pm.expect(pm.response.code).to.eql(200);",
+              "  const json = pm.response.json();",
+              "  const orders = json.data ?? [];",
+              "  pm.expect(orders).to.be.an('array').that.is.not.empty;",
+              "  const aliceOrderId = pm.collectionVariables.get('orderIdAlice');",
+              "  const otherOrder = orders.find((o) => o.id !== aliceOrderId);",
+              "  pm.expect(otherOrder, 'Need order different from Alice order').to.exist;",
+              "  pm.collectionVariables.set('orderIdBob', otherOrder.id);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "6) POST /orders/:id/pay (owner) -> 201",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Authorization", "value": "Bearer {{tokenAlice}}" }],
+        "url": "{{baseUrl}}/api/v1/orders/{{orderIdAlice}}/pay"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('paid as owner', () => {",
+              "  pm.expect(pm.response.code).to.eql(201);",
+              "  const json = pm.response.json();",
+              "  pm.expect(json).to.have.property('data');",
+              "  pm.expect(json.data).to.have.property('status', 'PAID');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "7) POST /orders/:id/pay (other user) -> 403",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Authorization", "value": "Bearer {{tokenAlice}}" }],
+        "url": "{{baseUrl}}/api/v1/orders/{{orderIdBob}}/pay"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('forbidden for non-owner', () => {",
+              "  pm.expect(pm.response.code).to.eql(403);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "8) POST /orders/:id/pay (staff + payments:write) -> 201",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Authorization", "value": "Bearer {{tokenBob}}" }],
+        "url": "{{baseUrl}}/api/v1/orders/{{orderIdAlice}}/pay"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('paid as staff', () => {",
+              "  pm.expect(pm.response.code).to.eql(201);",
+              "  const json = pm.response.json();",
+              "  pm.expect(json).to.have.property('data');",
+              "  pm.expect(json.data).to.have.property('status', 'PAID');",
+              "});"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

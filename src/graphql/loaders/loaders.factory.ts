@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import DataLoader from 'dataloader';
 import { In, Repository } from 'typeorm';
-import { User, Product, OrderItem } from '../../database/entities';
+import { User, Product, OrderItem, Payment } from '../../database/entities';
 import { AppLoaders } from './loaders.types';
 
 @Injectable()
@@ -15,6 +15,8 @@ export class LoadersFactory {
     private productsRepository: Repository<Product>,
     @InjectRepository(OrderItem)
     private orderItemsRepository: Repository<OrderItem>,
+    @InjectRepository(Payment)
+    private paymentsRepository: Repository<Payment>,
   ) {}
 
   create(): AppLoaders {
@@ -65,6 +67,27 @@ export class LoadersFactory {
           return orderIds.map((oi) => orderItemsByOrderId.get(oi) ?? []);
         },
       ),
+
+      paymentsByOrderIdLoader: new DataLoader<string, Payment[]>(
+        async (orderIds: string[]): Promise<Payment[][]> => {
+          if (orderIds.length === 0) return [];
+
+          const payments = await this.paymentsRepository.find({
+            where: { orderId: In(orderIds) },
+          });
+
+          const paymentsByOrderId = new Map(
+            orderIds.map((orderId) => [orderId, [] as Payment[]]),
+          );
+
+          for (const payment of payments) {
+            const oid = payment.orderId;
+            if (oid) paymentsByOrderId.get(oid)?.push(payment);
+          }
+
+          return orderIds.map((oid) => paymentsByOrderId.get(oid) ?? []);
+        }
+      )
     };
   }
 }
