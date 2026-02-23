@@ -18,8 +18,9 @@ import {
 import { Order } from 'src/database/entities/order.entity';
 import { Payment } from 'src/database/entities/payment.entity';
 import { Product } from 'src/database/entities/product.entity';
+import { ProductImage } from 'src/database/entities/product-image.entity';
 import { User } from 'src/database/entities/user.entity';
-import { Repository } from 'typeorm';
+import { EntityManager, Repository } from 'typeorm';
 import { PresignFileDto } from './dto/presign-file.dto';
 import { S3Service } from './s3.service';
 import { CompleteUploadDto } from './dto/complete-upload.dto';
@@ -33,6 +34,8 @@ export class FilesService {
     private readonly usersRepository: Repository<User>,
     @InjectRepository(Product)
     private readonly productsRepository: Repository<Product>,
+    @InjectRepository(ProductImage)
+    private readonly productImagesRepository: Repository<ProductImage>,
     @InjectRepository(Order)
     private readonly ordersRepository: Repository<Order>,
     @InjectRepository(Payment)
@@ -86,29 +89,43 @@ export class FilesService {
   }
 
   async completeUpload(user: AuthUser, dto: CompleteUploadDto) {
-    const file = await this.findByIdOrThrow(dto.fileId);
-    this.assertCanComplete(file, user);
+    return await this.filesRepository.manager.transaction(async (manager) => {
+      const fileRepository = manager.getRepository(FileRecord);
+      const file = await fileRepository.findOne({
+        where: { id: dto.fileId },
+        lock: { mode: 'pessimistic_write' },
+      });
 
-    if (file.status === EFileStatus.READY) {
-      return this.toPublicView(file);
-    }
+      if (!file) {
+        throw new NotFoundException('File not found');
+      }
 
-    if (file.status !== EFileStatus.PENDING) {
-      throw new ConflictException(
-        `File cannot be completed from status "${file.status}"`,
-      );
-    }
+      this.assertCanComplete(file, user);
 
-    const exists = await this.s3Service.objectExists(file.key);
-    if (!exists) {
-      throw new BadRequestException('File object is missing in storage');
-    }
+      if (file.status === EFileStatus.READY) {
+        await this.bindFileToDomain(manager, file);
+        return this.toPublicView(file);
+      }
 
-    file.status = EFileStatus.READY;
-    const saved = await this.filesRepository.save(file);
+      if (file.status !== EFileStatus.PENDING) {
+        throw new ConflictException(
+          `File cannot be completed from status "${file.status}"`,
+        );
+      }
 
-    return this.toPublicView(saved);
+      const exists = await this.s3Service.objectExists(file.key);
+      if (!exists) {
+        throw new BadRequestException('File object is missing in storage');
+      }
+
+      file.status = EFileStatus.READY;
+      const saved = await fileRepository.save(file);
+      await this.bindFileToDomain(manager, saved);
+
+      return this.toPublicView(saved);
+    });
   }
+
   private async assertCanUploadForOwner(
     user: AuthUser,
     ownerType: EFileOwnerType,
@@ -260,5 +277,73 @@ export class FilesService {
     if (!isStaff && !isOwner) {
       throw new ForbiddenException('Not authorized to complete this file.');
     }
+  }
+
+  private async bindFileToDomain(
+    manager: EntityManager,
+    file: FileRecord,
+  ): Promise<void> {
+    switch (file.ownerType) {
+      case EFileOwnerType.USER:
+        await this.bindUserAvatar(manager, file);
+        return;
+
+      case EFileOwnerType.PRODUCT:
+        await this.bindProductImage(manager, file);
+        return;
+      // TODO: add domain binding for these owners
+      case EFileOwnerType.ORDER:
+      case EFileOwnerType.PAYMENT:
+        return;
+
+      default:
+        return;
+    }
+  }
+
+  private async bindUserAvatar(
+    manager: EntityManager,
+    file: FileRecord,
+  ): Promise<void> {
+    await manager.getRepository(User).update(
+      { id: file.ownerId },
+      { avatarFileId: file.id },
+    );
+  }
+
+  private async bindProductImage(
+    manager: EntityManager,
+    file: FileRecord,
+  ): Promise<void> {
+    await manager.getRepository(Product).findOne({
+      where: { id: file.ownerId },
+      lock: { mode: 'pessimistic_write' },
+    });
+
+    const productImagesRepository = manager.getRepository(ProductImage);
+
+    const alreadyLinked = await productImagesRepository.exists({
+      where: {
+        productId: file.ownerId,
+        fileId: file.id,
+      },
+    });
+
+    if (alreadyLinked) {
+      return;
+    }
+
+    const existingCount = await productImagesRepository.count({
+      where: { productId: file.ownerId },
+    });
+
+    const productImage = productImagesRepository.create({
+      productId: file.ownerId,
+      fileId: file.id,
+      sortOrder: existingCount,
+      isPrimary: existingCount === 0,
+    });
+
+    await productImagesRepository.save(productImage);
   }
 }
