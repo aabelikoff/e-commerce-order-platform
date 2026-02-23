@@ -11,7 +11,6 @@ import { AuthModule } from './auth/auth.module';
 import { ProductsModule } from './products/products.module';
 import { OrdersModule } from './orders/orders.module';
 import { PaymentsModule } from './payments/payments.module';
-import { ProfilesModule } from './database/entities/profiles/profiles.module';
 import { ReportingsModule } from './reportings/reportings.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { GraphQLModule } from '@nestjs/graphql';
@@ -70,7 +69,6 @@ import { S3Service } from './files/s3.service';
     ProductsModule,
     OrdersModule,
     PaymentsModule,
-    ProfilesModule,
     ReportingsModule,
     NotificationsModule,
     AppGraphqlModule,
