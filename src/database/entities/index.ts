@@ -4,3 +4,4 @@ export * from './order-item.entity';
 export * from './product.entity';
 export * from './payment.entity';
 export * from './file-record.entity';
+export * from './product-image.entity'
