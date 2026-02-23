@@ -11,7 +11,6 @@ import { AuthModule } from './auth/auth.module';
 import { ProductsModule } from './products/products.module';
 import { OrdersModule } from './orders/orders.module';
 import { PaymentsModule } from './payments/payments.module';
-import { ProfilesModule } from './database/entities/profiles/profiles.module';
 import { ReportingsModule } from './reportings/reportings.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { GraphQLModule } from '@nestjs/graphql';
@@ -33,11 +32,14 @@ import { UsersV1Controller } from './users/v1/users.controller.v1';
 import { User, Order, OrderItem, Product } from './database/entities';
 import { AppGraphqlModule } from './graphql/graphql.module';
 import { authConfig } from './config/auth/auth.config';
+import { s3Config } from './config/s3';
+import { FilesModule } from './files/files.module';
+import { S3Service } from './files/s3.service';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
-      load: [appConfig, databaseConfig, authConfig],
+      load: [appConfig, databaseConfig, authConfig, s3Config],
       envFilePath: getEnvFilePath(),
       isGlobal: true,
     }),
@@ -58,7 +60,7 @@ import { authConfig } from './config/auth/auth.config';
           autoLoadEntities: true,
           synchronize: false,
           entities: [User, Order, OrderItem, Product],
-          logging: ['query']
+          logging: ['query'],
         };
       },
     }),
@@ -67,13 +69,13 @@ import { authConfig } from './config/auth/auth.config';
     ProductsModule,
     OrdersModule,
     PaymentsModule,
-    ProfilesModule,
     ReportingsModule,
     NotificationsModule,
     AppGraphqlModule,
+    FilesModule,
   ],
   controllers: [],
-  providers: [],
+  providers: [S3Service],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
