@@ -10,7 +10,10 @@ export default class UsersSeed implements Seeder {
 
     const passwordHash = await bcrypt.hash('password', 10);
 
-    await repo.upsert(seedUsers.map((user) => ({ ...user, passwordHash })), ['email']); 
+    await repo.upsert(
+      seedUsers.map((user) => ({ ...user, passwordHash })),
+      ['email'],
+    );
 
     console.log('UsersSeed done');
   }
@@ -22,14 +25,21 @@ const seedUsers = [
     lastName: 'Walker',
     email: 'alice@example.com',
     roles: ['user'],
-    scopes: ['order:read', 'order:write'],
+    scopes: ['order:read', 'order:write', 'user:read', 'user:write'],
   },
   {
     firstName: 'Bob',
     lastName: 'Miller',
     email: 'bob@example.com',
     roles: ['support'],
-    scopes: ['order:read', 'payment:read', 'payment:write'],
+    scopes: [
+      'order:read',
+      'payment:read',
+      'payment:write',
+      'user:write',
+      'product:write',
+      'product:read',
+    ],
   },
   {
     firstName: 'Admin',
@@ -42,6 +52,10 @@ const seedUsers = [
       'payment:read',
       'payment:write',
       'refund:write',
+      'user:write',
+      'user:read',
+      'product:read',
+      'product:write',
     ],
   },
 ];
