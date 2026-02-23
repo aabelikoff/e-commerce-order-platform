@@ -34,14 +34,18 @@ export class FilesService {
     private readonly usersRepository: Repository<User>,
     @InjectRepository(Product)
     private readonly productsRepository: Repository<Product>,
-    @InjectRepository(ProductImage)
-    private readonly productImagesRepository: Repository<ProductImage>,
     @InjectRepository(Order)
     private readonly ordersRepository: Repository<Order>,
     @InjectRepository(Payment)
     private readonly paymentsRepository: Repository<Payment>,
     private readonly s3Service: S3Service,
   ) {}
+
+  async getFileById(user: AuthUser, id: string) {
+    const file = await this.findByIdOrThrow(id);
+    this.assertUserOrStaff(file, user);
+    return this.toPublicView(file);
+  }
 
   async createPresignedUpload(user: AuthUser, dto: PresignFileDto) {
     await this.assertCanUploadForOwner(user, dto.ownerType, dto.ownerId);
@@ -100,7 +104,7 @@ export class FilesService {
         throw new NotFoundException('File not found');
       }
 
-      this.assertCanComplete(file, user);
+      this.assertUserOrStaff(file, user);
 
       if (file.status === EFileStatus.READY) {
         await this.bindFileToDomain(manager, file);
@@ -266,7 +270,7 @@ export class FilesService {
     };
   }
 
-  private assertCanComplete(file: FileRecord, user: AuthUser): void {
+  private assertUserOrStaff(file: FileRecord, user: AuthUser): void {
     const isStaff = !!user.roles?.some(
       (role) => role === ERoles.ADMIN || role === ERoles.SUPPORT,
     );
@@ -275,7 +279,7 @@ export class FilesService {
       file.ownerType === EFileOwnerType.USER && file.ownerId === user.sub;
 
     if (!isStaff && !isOwner) {
-      throw new ForbiddenException('Not authorized to complete this file.');
+      throw new ForbiddenException('Not authorized to access this file.');
     }
   }
 
@@ -305,20 +309,27 @@ export class FilesService {
     manager: EntityManager,
     file: FileRecord,
   ): Promise<void> {
-    await manager.getRepository(User).update(
-      { id: file.ownerId },
-      { avatarFileId: file.id },
-    );
+    const result = await manager
+      .getRepository(User)
+      .update({ id: file.ownerId }, { avatarFileId: file.id });
+
+    if (!result.affected) {
+      throw new NotFoundException('User owner not found');
+    }
   }
 
   private async bindProductImage(
     manager: EntityManager,
     file: FileRecord,
   ): Promise<void> {
-    await manager.getRepository(Product).findOne({
+    const product = await manager.getRepository(Product).findOne({
       where: { id: file.ownerId },
       lock: { mode: 'pessimistic_write' },
     });
+
+    if (!product) {
+      throw new NotFoundException('Product not found');
+    }
 
     const productImagesRepository = manager.getRepository(ProductImage);
 

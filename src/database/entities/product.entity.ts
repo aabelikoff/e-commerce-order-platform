@@ -5,7 +5,6 @@ import {
   OneToMany,
   CreateDateColumn,
   UpdateDateColumn,
-  JoinColumn,
 } from 'typeorm';
 import { OrderItem } from './order-item.entity';
 import { ProductImage } from './product-image.entity';

@@ -1,4 +1,12 @@
-import { Body, Controller, Post, Req, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Post,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import { Request } from 'express';
 import {
   EOrderScopes,
@@ -40,5 +48,19 @@ export class FilesController {
     @Body() dto: CompleteUploadDto,
   ) {
     return await this.filesService.completeUpload(req.user, dto);
+  }
+
+  @Scopes(
+    EUserScopes.USER_READ,
+    EProductScopes.PRODUCT_READ,
+    EOrderScopes.ORDER_READ,
+    EPaymentScopes.PAYMENT_READ,
+  )
+  @Get(':id')
+  async getById(
+    @Req() req: Request & { user: AuthUser },
+    @Param('id') id: string,
+  ) {
+    return await this.filesService.getFileById(req.user, id);
   }
 }
