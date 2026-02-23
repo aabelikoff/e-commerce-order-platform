@@ -1,0 +1,554 @@
+{
+  "info": {
+    "name": "E-Commerce Files Module Checklist (presigned S3 flow) [custom]",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3001/api/v1" },
+    { "key": "emailAlice", "value": "alice@example.com" },
+    { "key": "emailBob", "value": "bob@example.com" },
+    { "key": "password", "value": "password" },
+    { "key": "tokenAlice", "value": "" },
+    { "key": "tokenBob", "value": "" },
+    { "key": "aliceUserId", "value": "" },
+    { "key": "bobUserId", "value": "" },
+    { "key": "productId", "value": "" },
+    { "key": "avatarFileId", "value": "" },
+    { "key": "avatarUploadUrl", "value": "" },
+    { "key": "productFileId", "value": "" },
+    { "key": "productUploadUrl", "value": "" },
+    { "key": "missingUploadFileId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "1) Login Alice -> tokenAlice",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "content-type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"email\":\"{{emailAlice}}\",\"password\":\"{{password}}\"}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": "{{baseUrl}}/auth/login"
+      },
+      "event": [{
+        "listen": "test",
+        "script": {
+          "type": "text/javascript",
+          "exec": [
+            "pm.test('login alice', () => {",
+            "  pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+            "  const json = pm.response.json();",
+            "  const data = json.data ?? json;",
+            "  pm.expect(data).to.have.property('accessToken');",
+            "  pm.collectionVariables.set('tokenAlice', data.accessToken);",
+            "});"
+          ]
+        }
+      }]
+    },
+    {
+      "name": "2) Auth me Alice -> aliceUserId",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{tokenAlice}}" }],
+        "url": "{{baseUrl}}/auth/me"
+      },
+      "event": [{
+        "listen": "test",
+        "script": {
+          "type": "text/javascript",
+          "exec": [
+            "pm.test('auth me alice', () => {",
+            "  pm.expect(pm.response.code).to.eql(200);",
+            "  const json = pm.response.json();",
+            "  const data = json.data ?? json;",
+            "  pm.expect(data).to.have.property('sub');",
+            "  pm.collectionVariables.set('aliceUserId', data.sub);",
+            "});"
+          ]
+        }
+      }]
+    },
+    {
+      "name": "3) Login Bob (support/admin) -> tokenBob",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "content-type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"email\":\"{{emailBob}}\",\"password\":\"{{password}}\"}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": "{{baseUrl}}/auth/login"
+      },
+      "event": [{
+        "listen": "test",
+        "script": {
+          "type": "text/javascript",
+          "exec": [
+            "pm.test('login bob', () => {",
+            "  pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+            "  const json = pm.response.json();",
+            "  const data = json.data ?? json;",
+            "  pm.expect(data).to.have.property('accessToken');",
+            "  pm.collectionVariables.set('tokenBob', data.accessToken);",
+            "});"
+          ]
+        }
+      }]
+    },
+    {
+      "name": "4) Auth me Bob -> bobUserId",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{tokenBob}}" }],
+        "url": "{{baseUrl}}/auth/me"
+      },
+      "event": [{
+        "listen": "test",
+        "script": {
+          "type": "text/javascript",
+          "exec": [
+            "pm.test('auth me bob', () => {",
+            "  pm.expect(pm.response.code).to.eql(200);",
+            "  const json = pm.response.json();",
+            "  const data = json.data ?? json;",
+            "  pm.expect(data).to.have.property('sub');",
+            "  pm.collectionVariables.set('bobUserId', data.sub);",
+            "});"
+          ]
+        }
+      }]
+    },
+    {
+      "name": "5) GET /products -> set productId",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/products?limit=1&offset=0"
+      },
+      "event": [{
+        "listen": "test",
+        "script": {
+          "type": "text/javascript",
+          "exec": [
+            "pm.test('products list returns first product id', () => {",
+            "  pm.expect(pm.response.code).to.eql(200);",
+            "  const json = pm.response.json();",
+            "  const data = json.data ?? json;",
+            "  pm.expect(data).to.have.property('items');",
+            "  pm.expect(data.items).to.be.an('array').and.to.have.length.above(0);",
+            "  pm.expect(data.items[0]).to.have.property('id');",
+            "  pm.collectionVariables.set('productId', data.items[0].id);",
+            "});"
+          ]
+        }
+      }]
+    },
+    {
+      "name": "6) POST /files/presign (Alice avatar) -> avatarFileId + avatarUploadUrl",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "content-type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{tokenAlice}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"ownerType\":\"user\",\"ownerId\":\"{{aliceUserId}}\",\"contentType\":\"image/png\",\"sizeBytes\":5,\"originalName\":\"avatar.png\"}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": "{{baseUrl}}/files/presign"
+      },
+      "event": [{
+        "listen": "test",
+        "script": {
+          "type": "text/javascript",
+          "exec": [
+            "pm.test('presign avatar ok', () => {",
+            "  pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+            "  const json = pm.response.json();",
+            "  const data = json.data ?? json;",
+            "  pm.expect(data).to.have.property('fileId');",
+            "  pm.expect(data).to.have.property('uploadUrl');",
+            "  pm.collectionVariables.set('avatarFileId', data.fileId);",
+            "  pm.collectionVariables.set('avatarUploadUrl', data.uploadUrl);",
+            "});"
+          ]
+        }
+      }]
+    },
+    {
+      "name": "7) PUT avatar bytes to presigned URL",
+      "request": {
+        "method": "PUT",
+        "header": [
+          { "key": "Content-Type", "value": "image/png" },
+          { "key": "Content-Length", "value": "5" }
+        ],
+        "body": { "mode": "raw", "raw": "hello" },
+        "url": "{{avatarUploadUrl}}"
+      },
+      "event": [{
+        "listen": "test",
+        "script": {
+          "type": "text/javascript",
+          "exec": [
+            "pm.test('upload avatar bytes ok', () => {",
+            "  pm.expect(pm.response.code).to.be.below(300);",
+            "});"
+          ]
+        }
+      }]
+    },
+    {
+      "name": "8) POST /files/complete (Alice avatar) -> READY + publicUrl",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "content-type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{tokenAlice}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"fileId\":\"{{avatarFileId}}\"}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": "{{baseUrl}}/files/complete"
+      },
+      "event": [{
+        "listen": "test",
+        "script": {
+          "type": "text/javascript",
+          "exec": [
+            "pm.test('complete avatar -> ready', () => {",
+            "  pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+            "  const json = pm.response.json();",
+            "  const data = json.data ?? json;",
+            "  pm.expect(data.status).to.eql('ready');",
+            "  pm.expect(data).to.have.property('publicUrl');",
+            "  pm.expect(data.publicUrl).to.be.a('string').and.not.empty;",
+            "});"
+          ]
+        }
+      }]
+    },
+    {
+      "name": "9) POST /files/complete repeat (idempotent) -> READY",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "content-type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{tokenAlice}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"fileId\":\"{{avatarFileId}}\"}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": "{{baseUrl}}/files/complete"
+      },
+      "event": [{
+        "listen": "test",
+        "script": {
+          "type": "text/javascript",
+          "exec": [
+            "pm.test('complete is idempotent', () => {",
+            "  pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+            "  const json = pm.response.json();",
+            "  const data = json.data ?? json;",
+            "  pm.expect(data.status).to.eql('ready');",
+            "});"
+          ]
+        }
+      }]
+    },
+    {
+      "name": "10) GET /files/:id (Alice avatar file) -> 200",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{tokenAlice}}" }],
+        "url": "{{baseUrl}}/files/{{avatarFileId}}"
+      },
+      "event": [{
+        "listen": "test",
+        "script": {
+          "type": "text/javascript",
+          "exec": [
+            "pm.test('get file by id ok', () => {",
+            "  pm.expect(pm.response.code).to.eql(200);",
+            "  const json = pm.response.json();",
+            "  const data = json.data ?? json;",
+            "  pm.expect(data.id).to.eql(pm.collectionVariables.get('avatarFileId'));",
+            "  pm.expect(data.status).to.eql('ready');",
+            "});"
+          ]
+        }
+      }]
+    },
+    {
+      "name": "11) POST /files/presign (Bob product image) -> productFileId + productUploadUrl",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "content-type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{tokenBob}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"ownerType\":\"product\",\"ownerId\":\"{{productId}}\",\"contentType\":\"image/png\",\"sizeBytes\":5,\"originalName\":\"product.png\"}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": "{{baseUrl}}/files/presign"
+      },
+      "event": [{
+        "listen": "test",
+        "script": {
+          "type": "text/javascript",
+          "exec": [
+            "pm.test('presign product image ok (requires staff)', () => {",
+            "  pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+            "  const json = pm.response.json();",
+            "  const data = json.data ?? json;",
+            "  pm.expect(data).to.have.property('fileId');",
+            "  pm.expect(data).to.have.property('uploadUrl');",
+            "  pm.collectionVariables.set('productFileId', data.fileId);",
+            "  pm.collectionVariables.set('productUploadUrl', data.uploadUrl);",
+            "});"
+          ]
+        }
+      }]
+    },
+    {
+      "name": "12) PUT product image bytes to presigned URL",
+      "request": {
+        "method": "PUT",
+        "header": [
+          { "key": "Content-Type", "value": "image/png" },
+          { "key": "Content-Length", "value": "5" }
+        ],
+        "body": { "mode": "raw", "raw": "hello" },
+        "url": "{{productUploadUrl}}"
+      },
+      "event": [{
+        "listen": "test",
+        "script": {
+          "type": "text/javascript",
+          "exec": [
+            "pm.test('upload product image bytes ok', () => {",
+            "  pm.expect(pm.response.code).to.be.below(300);",
+            "});"
+          ]
+        }
+      }]
+    },
+    {
+      "name": "13) POST /files/complete (Bob product image) -> READY",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "content-type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{tokenBob}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"fileId\":\"{{productFileId}}\"}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": "{{baseUrl}}/files/complete"
+      },
+      "event": [{
+        "listen": "test",
+        "script": {
+          "type": "text/javascript",
+          "exec": [
+            "pm.test('complete product image -> ready', () => {",
+            "  pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+            "  const json = pm.response.json();",
+            "  const data = json.data ?? json;",
+            "  pm.expect(data.status).to.eql('ready');",
+            "  pm.expect(data.ownerType).to.eql('product');",
+            "});"
+          ]
+        }
+      }]
+    },
+    {
+      "name": "14) GET /files/:id (Alice tries Bob product file) -> 403",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{tokenAlice}}" }],
+        "url": "{{baseUrl}}/files/{{productFileId}}"
+      },
+      "event": [{
+        "listen": "test",
+        "script": {
+          "type": "text/javascript",
+          "exec": [
+            "pm.test('forbidden for non-staff on product file', () => {",
+            "  pm.expect(pm.response.code).to.eql(403);",
+            "});"
+          ]
+        }
+      }]
+    },
+    {
+      "name": "15) GET /files/:id (Bob product file) -> 200",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{tokenBob}}" }],
+        "url": "{{baseUrl}}/files/{{productFileId}}"
+      },
+      "event": [{
+        "listen": "test",
+        "script": {
+          "type": "text/javascript",
+          "exec": [
+            "pm.test('staff can access product file', () => {",
+            "  pm.expect(pm.response.code).to.eql(200);",
+            "  const json = pm.response.json();",
+            "  const data = json.data ?? json;",
+            "  pm.expect(data.id).to.eql(pm.collectionVariables.get('productFileId'));",
+            "});"
+          ]
+        }
+      }]
+    },
+    {
+      "name": "16) POST /files/presign (Alice product owner) -> 403",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "content-type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{tokenAlice}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"ownerType\":\"product\",\"ownerId\":\"{{productId}}\",\"contentType\":\"image/png\",\"sizeBytes\":5}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": "{{baseUrl}}/files/presign"
+      },
+      "event": [{
+        "listen": "test",
+        "script": {
+          "type": "text/javascript",
+          "exec": [
+            "pm.test('non-staff cannot presign for product', () => {",
+            "  pm.expect(pm.response.code).to.eql(403);",
+            "});"
+          ]
+        }
+      }]
+    },
+    {
+      "name": "17) POST /files/presign no token -> 401",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "content-type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"ownerType\":\"user\",\"ownerId\":\"{{aliceUserId}}\",\"contentType\":\"image/png\",\"sizeBytes\":5}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": "{{baseUrl}}/files/presign"
+      },
+      "event": [{
+        "listen": "test",
+        "script": {
+          "type": "text/javascript",
+          "exec": [
+            "pm.test('unauthorized', () => {",
+            "  pm.expect(pm.response.code).to.eql(401);",
+            "});"
+          ]
+        }
+      }]
+    },
+    {
+      "name": "18) POST /files/presign invalid ownerId format -> 400",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "content-type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{tokenAlice}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"ownerType\":\"user\",\"ownerId\":\"not-a-uuid\",\"contentType\":\"image/png\",\"sizeBytes\":5}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": "{{baseUrl}}/files/presign"
+      },
+      "event": [{
+        "listen": "test",
+        "script": {
+          "type": "text/javascript",
+          "exec": [
+            "pm.test('validation error', () => {",
+            "  pm.expect(pm.response.code).to.eql(400);",
+            "});"
+          ]
+        }
+      }]
+    },
+    {
+      "name": "19) POST /files/presign (no upload) -> store missingUploadFileId",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "content-type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{tokenAlice}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"ownerType\":\"user\",\"ownerId\":\"{{aliceUserId}}\",\"contentType\":\"image/png\",\"sizeBytes\":5,\"originalName\":\"missing.png\"}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": "{{baseUrl}}/files/presign"
+      },
+      "event": [{
+        "listen": "test",
+        "script": {
+          "type": "text/javascript",
+          "exec": [
+            "pm.test('presign without upload setup', () => {",
+            "  pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+            "  const json = pm.response.json();",
+            "  const data = json.data ?? json;",
+            "  pm.collectionVariables.set('missingUploadFileId', data.fileId);",
+            "});"
+          ]
+        }
+      }]
+    },
+    {
+      "name": "20) POST /files/complete without S3 upload -> 400",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "content-type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{tokenAlice}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"fileId\":\"{{missingUploadFileId}}\"}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": "{{baseUrl}}/files/complete"
+      },
+      "event": [{
+        "listen": "test",
+        "script": {
+          "type": "text/javascript",
+          "exec": [
+            "pm.test('cannot complete missing object', () => {",
+            "  pm.expect(pm.response.code).to.eql(400);",
+            "});"
+          ]
+        }
+      }]
+    }
+  ]
+}
