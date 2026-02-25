@@ -1,0 +1,90 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: ecommerce-order-postgres
+    restart: unless-stopped
+    env_file:
+      - .env.production
+    environment:
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME:-ecommerce}
+    networks:
+      - internal
+    volumes:
+      - pgdata_ecommerce_order:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-ecommerce}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+  
+  migrate:
+    container_name: ecommerce-order-migrate
+    depends_on:
+      postgres:
+          condition: service_healthy
+    build:
+      context: .
+      target: build
+    restart: "no"
+    env_file:
+      - .env.production
+    environment:
+      NODE_ENV: production
+      DB_HOST: postgres
+      DB_PORT: 5432
+    networks:
+      - internal
+    command: npm run migration:run
+
+  seed:
+    container_name: ecommerce-order-seed
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    build:
+      context: .
+      target: build
+    restart: "no"
+    env_file:
+      - .env.production
+    environment:
+      NODE_ENV: production
+      DB_HOST: postgres
+      DB_PORT: 5432
+    networks:
+      - internal
+    command: npm run db:seed
+
+  api:
+    container_name: ecommerce-order-api
+    depends_on:
+      postgres:
+        condition: service_healthy
+    build:
+      context: .
+      target: prod-distroless
+    restart: unless-stopped
+    env_file:
+      - .env.production
+    environment:
+      NODE_ENV: production
+      DB_HOST: postgres
+      DB_PORT: 5432
+    ports:
+      - "127.0.0.1:8080:3001"
+    networks:
+      - internal
+      - public
+
+volumes:
+  pgdata_ecommerce_order:
+
+networks:
+  internal:
+    internal: true
+  public: {}
