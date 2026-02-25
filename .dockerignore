@@ -3,10 +3,13 @@ node_modules
 dist
 
 # docker
+compose*.yml
 docker-compose*.yml
 
 # VS Code
 .vscode
+.idea
+.DS_Store
 
 #git
 .git
