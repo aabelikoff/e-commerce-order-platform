@@ -1,0 +1,73 @@
+services:
+  api:
+    depends_on:
+      postgres:
+        condition: service_healthy
+    build:
+      context: .
+      target: dev
+    restart: unless-stopped
+    env_file:
+      - .env.development
+    environment:
+      NODE_ENV: development
+      DB_HOST: postgres
+      DB_PORT: 5432
+      AWS_S3_ENDPOINT: http://minio:9000
+      CHOKIDAR_USEPOLLING: "true"
+      CHOKIDAR_INTERVAL: "1000"
+      WATCHPACK_POLLING: "true"
+      TSC_WATCHFILE: FixedPollingInterval
+      TSC_WATCHDIRECTORY: FixedPollingInterval
+      TSC_NONPOLLING_WATCHER: "false"
+    command: ['npm', 'run', 'start:dev']
+    volumes:
+      - .:/app
+      - /app/node_modules
+    ports:
+      - '127.0.0.1:8080:3001'
+    networks:
+      - internal
+      - public
+
+  minio:
+    image: minio/minio:latest
+    container_name: ecommerce-orders-minio
+    restart: unless-stopped
+    env_file:
+      - .env.development
+    environment:
+      MINIO_ROOT_USER: ${AWS_ACCESS_KEY_ID}
+      MINIO_ROOT_PASSWORD: ${AWS_SECRET_ACCESS_KEY}
+    command: server /data --console-address ":9001"
+    ports:
+      - '${MINIO_API_PORT:-9000}:9000'
+      - '${MINIO_CONSOLE_PORT:-9001}:9001'
+    volumes:
+      - minio_ecommerce:/data
+    networks:
+      - public
+
+  minio-init:
+    image: minio/mc:latest
+    container_name: ecommerce-minio-init
+    depends_on:
+      - minio
+    restart: 'no'
+    env_file:
+      - .env.development
+    networks:
+      - public
+    entrypoint: >
+      /bin/sh -c "
+      until mc alias set local http://minio:9000 ${AWS_ACCESS_KEY_ID} ${AWS_SECRET_ACCESS_KEY}; do
+        echo 'waiting for minio...';
+        sleep 2;
+      done;
+      mc mb --ignore-existing local/${AWS_S3_BUCKET};
+      mc anonymous set none local/${AWS_S3_BUCKET};
+      echo 'minio bucket is ready';
+      "
+
+volumes:
+  minio_ecommerce:
