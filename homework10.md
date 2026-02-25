@@ -20,12 +20,14 @@
 ## Prod-like Local Run (`compose.yml`)
 
 Services:
+
 - `api` (NestJS backend, `prod-distroless`)
 - `postgres` (official `postgres:16`)
 - `migrate` (one-off migrations job)
 - `seed` (one-off seed job)
 
 Notes:
+
 - `postgres` is only on private `internal` network and has no published ports
 - `api` is on `internal` + `public`
 - `api` is published on `127.0.0.1:8080 -> 3001`
@@ -56,7 +58,13 @@ docker compose --env-file .env.production -f compose.yml run --rm seed
 docker compose --env-file .env.production -f compose.yml up -d api
 ```
 
-5. Check API
+5. Start Alltogether
+
+```bash
+docker compose --env-fil .env.production -f compose.yml up --buil
+```
+
+6. Check API
 
 ```bash
 curl http://127.0.0.1:8080
@@ -73,6 +81,7 @@ docker compose --env-file .env.production -f compose.yml up --build
 ## Dev Run (`compose.dev.yml`)
 
 `compose.dev.yml` is an override for `compose.yml`:
+
 - switches `api` to Docker target `dev`
 - runs `npm run start:dev`
 - uses bind mount for project source
@@ -127,6 +136,7 @@ ecommerse-api  dev         561f81e79269  About a minute ago   914MB
 ```
 
 Expected pattern:
+
 - `dev` / `build` are largest (devDependencies + sources)
 - `prod` is smaller
 - `prod-distroless` is smallest runtime
@@ -139,12 +149,14 @@ docker history ecommerse-api:distroless
 ```
 
 What it shows:
+
 - image layers and their sizes
 - largest runtime layer is production `node_modules`
 - `dist` layer is much smaller than dependencies
 - `prod-distroless` runtime is smaller and has no shell/package manager
 
 Short conclusion:
+
 - `prod-distroless` is smaller because runtime contains only distroless Node base + production `node_modules` + `dist`
 - it is safer because it runs non-root and has no shell/package manager in runtime image
 
@@ -164,6 +176,7 @@ User is not root.
 ### `prod-distroless`
 
 `id` utility is unavailable in distroless images. Non-root is guaranteed by base image:
+
 - `gcr.io/distroless/nodejs20-debian12:nonroot`
 
 ## Environment Files
@@ -173,6 +186,7 @@ User is not root.
 - `.env.development` - used for dev compose override
 
 Important:
+
 - inside containers DB host must be `postgres` (service name), not `localhost`
 - in dev with MinIO, API endpoint should be `http://minio:9000`
 
