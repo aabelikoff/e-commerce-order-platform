@@ -24,7 +24,10 @@
     "migration:revert": "npm run typeorm -- migration:revert -d src/database/data-source.ts",
     "migration:create": "npm run typeorm -- migration:create",
     "migration:show": "npm run typeorm -- migration:show -d src/database/data-source.ts",
-    "db:seed": "cross-env SEED_ENABLED=true ts-node -r tsconfig-paths/register src/database/seeds/seed-runner/run-seeds.ts"
+    "db:seed": "cross-env SEED_ENABLED=true ts-node -r tsconfig-paths/register src/database/seeds/seed-runner/run-seeds.ts",
+    "docker:dev": "docker compose --env-file .env.production -f compose.yml -f compose.dev.yml up --build",
+    "docker:stop": "docker compose down",
+    "docker:restart": "docker compose down && docker compose up"
   },
   "dependencies": {
     "@apollo/server": "^5.4.0",
