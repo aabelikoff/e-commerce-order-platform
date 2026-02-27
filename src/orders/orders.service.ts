@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -16,6 +17,7 @@ import { DataSource, Repository } from 'typeorm';
 import { CreateOrderDto } from './v1/dto/create-order.dto';
 import { AuthUser } from 'src/auth/types';
 import { ERoles } from 'src/auth/access/roles';
+import { OrdersEventsService } from './orders-events.service';
 
 @Injectable()
 export class OrdersService {
@@ -23,6 +25,7 @@ export class OrdersService {
     private readonly dataSource: DataSource,
     @InjectRepository(Order)
     private readonly ordersRepository: Repository<Order>,
+    private readonly ordersEventsService: OrdersEventsService,
   ) {}
 
   async create(
@@ -211,9 +214,7 @@ export class OrdersService {
 
   // TODO: add pagination, filters, sorting, etc. For now it just returns all orders for user or all orders if user is staff
   async findAll(user: AuthUser): Promise<Order[]> {
-    const isStaff = user.roles?.some(
-      (r) => r === ERoles.ADMIN || r === ERoles.SUPPORT,
-    );
+    const isStaff = this.isStaff(user.roles);
 
     const query = this.ordersRepository
       .createQueryBuilder('order')
@@ -232,9 +233,7 @@ export class OrdersService {
   }
 
   async findOne(user: AuthUser, id: string): Promise<Order> {
-    const isStaff = user.roles?.some(
-      (r) => r === ERoles.ADMIN || r === ERoles.SUPPORT,
-    );
+    const isStaff = this.isStaff(user.roles);
 
     const query = this.ordersRepository
       .createQueryBuilder('order')
@@ -257,6 +256,66 @@ export class OrdersService {
     const result = await this.ordersRepository.delete(id);
     if (result.affected === 0) {
       throw new NotFoundException('Order not found');
+    }
+  }
+
+  private isStaff(roles: string[]): boolean {
+    return roles?.some((r) => r === ERoles.ADMIN || r === ERoles.SUPPORT);
+  }
+
+  async updateStatus(
+    orderId: string,
+    status: EOrderStatus,
+    user: AuthUser,
+  ): Promise<Order> {
+    if (!this.isStaff(user.roles)) {
+      throw new ForbiddenException(`Only staff can change order status`);
+    }
+
+    const order = await this.ordersRepository.findOne({
+      where: { id: orderId },
+    });
+    if (!order) {
+      throw new NotFoundException(`Order ${orderId} not found`);
+    }
+
+    if (order.status === status) {
+      return order;
+    }
+    const fromStatus = order.status;
+
+    order.status = status;
+    order.statusVersion = (order.statusVersion ?? 0) + 1;
+    const saved = await this.ordersRepository.save(order);
+
+    this.ordersEventsService.publishStatusChanged({
+      type: 'order.status_changed',
+      orderId: saved.id,
+      version: saved.statusVersion,
+      fromStatus,
+      toStatus: status,
+      changedAt: saved.updatedAt.toISOString(),
+    });
+
+    return saved;
+  }
+
+  async canSubscribeToOrder(orderId: string, user: AuthUser): Promise<void> {
+    const order = await this.ordersRepository.findOne({ where: { id: orderId } });
+    if (!order) {
+      throw new NotFoundException('Order not found');
+    }
+
+    this.assertCanAccessOrder(order, user);
+  }
+
+  private assertCanAccessOrder(order: Order, user: AuthUser): void {
+    if (this.isStaff(user.roles)) {
+      return;
+    }
+
+    if (order.userId !== user.sub) {
+      throw new ForbiddenException('Access denied');
     }
   }
 }
