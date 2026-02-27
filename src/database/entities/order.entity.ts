@@ -110,6 +110,9 @@ export class Order {
   @OneToMany(() => Payment, (p) => p.order)
   payments: Payment[];
 
+  @Column({name: 'status_version', type: 'integer'})
+  statusVersion: number;
+
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt: Date;
 
