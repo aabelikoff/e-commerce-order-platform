@@ -4,7 +4,9 @@ import {
   Delete,
   Get,
   HttpCode,
+  Patch,
   Param,
+  ParseUUIDPipe,
   Post,
   Req,
   UseGuards,
@@ -21,6 +23,7 @@ import { AuthUser } from 'src/auth/types';
 import { EOrderScopes } from 'src/auth/access/scopes';
 import { Request } from 'express';
 import { ERoles } from 'src/auth/access/roles';
+import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
 
 @UseGuards(JwtAuthGuard, AccessGuard)
 @Controller('orders')
@@ -54,6 +57,16 @@ export class OrdersV1Controller {
   ) {
     const user = req.user;
     return await this.orderService.findOne(user, id);
+  }
+
+  @Roles(ERoles.ADMIN)
+  @Patch(':id/status')
+  async updateStatus(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateOrderStatusDto,
+    @Req() req: Request & { user: AuthUser },
+  ) {
+    return await this.orderService.updateStatus(id, dto.status, req.user);
   }
 
   @Roles(ERoles.ADMIN)
