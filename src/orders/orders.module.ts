@@ -9,6 +9,6 @@ import { OrdersEventsService } from './orders-events.service';
   imports: [TypeOrmModule.forFeature([Order, OrderItem, Product, User])],
   controllers: [OrdersV1Controller],
   providers: [OrdersService, OrdersEventsService],
-  exports: [OrdersEventsService]
+  exports: [OrdersEventsService, OrdersService]
 })
 export class OrdersModule {}
