@@ -33,7 +33,7 @@ export class OrdersEventsService implements OnModuleDestroy {
                     this.metrics.emitted += 1;
                 }),
                 catchError((err) => {
-                    this.logger.error(`Orders stream error (orderId = ${group$.key})`, err?.stach ?? String(err));
+                    this.logger.error(`Orders stream error (orderId = ${group$.key})`, err?.stack ?? String(err));
                     return EMPTY;
                 })
             );
