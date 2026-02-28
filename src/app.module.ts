@@ -35,6 +35,7 @@ import { authConfig } from './config/auth/auth.config';
 import { s3Config } from './config/s3';
 import { FilesModule } from './files/files.module';
 import { S3Service } from './files/s3.service';
+import { RealtimeModule } from './realtime/realtime.module';
 
 @Module({
   imports: [
@@ -73,6 +74,7 @@ import { S3Service } from './files/s3.service';
     NotificationsModule,
     AppGraphqlModule,
     FilesModule,
+    RealtimeModule,
   ],
   controllers: [],
   providers: [S3Service],
