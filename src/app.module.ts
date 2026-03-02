@@ -36,11 +36,12 @@ import { s3Config } from './config/s3';
 import { FilesModule } from './files/files.module';
 import { S3Service } from './files/s3.service';
 import { RealtimeModule } from './realtime/realtime.module';
+import { rabbitMQConfig } from './config/rabbitmq/index';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
-      load: [appConfig, databaseConfig, authConfig, s3Config],
+      load: [appConfig, databaseConfig, authConfig, s3Config, rabbitMQConfig],
       envFilePath: getEnvFilePath(),
       isGlobal: true,
     }),
