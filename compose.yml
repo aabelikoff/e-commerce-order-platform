@@ -80,6 +80,13 @@ services:
     networks:
       - internal
       - public
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: ecommerce-rabbitmq
+    restart: unless-stopped
+    ports:
+      - "5673:5672"
+      - "15673:15672"
 
 volumes:
   pgdata_ecommerce_order:

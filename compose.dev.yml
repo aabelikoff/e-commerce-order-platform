@@ -14,12 +14,12 @@ services:
       DB_HOST: postgres
       DB_PORT: 5432
       AWS_S3_ENDPOINT: http://minio:9000
-      CHOKIDAR_USEPOLLING: "true"
-      CHOKIDAR_INTERVAL: "1000"
-      WATCHPACK_POLLING: "true"
+      CHOKIDAR_USEPOLLING: 'true'
+      CHOKIDAR_INTERVAL: '1000'
+      WATCHPACK_POLLING: 'true'
       TSC_WATCHFILE: FixedPollingInterval
       TSC_WATCHDIRECTORY: FixedPollingInterval
-      TSC_NONPOLLING_WATCHER: "false"
+      TSC_NONPOLLING_WATCHER: 'false'
     command: ['npm', 'run', 'start:dev']
     volumes:
       - .:/app
@@ -68,6 +68,14 @@ services:
       mc anonymous set none local/${AWS_S3_BUCKET};
       echo 'minio bucket is ready';
       "
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: ecommerce-rabbitmq
+    restart: unless-stopped
+    ports:
+      - '5673:5672'
+      - '15673:15672'
 
 volumes:
   minio_ecommerce:
