@@ -3,8 +3,10 @@ import {
   ConflictException,
   ForbiddenException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
+import { randomUUID } from 'crypto';
 import { InjectRepository } from '@nestjs/typeorm';
 import {
   EOrderStatus,
@@ -12,20 +14,26 @@ import {
   OrderItem,
   Product,
   User,
-} from 'src/database/entities';
+} from '../database/entities';
 import { DataSource, Repository } from 'typeorm';
 import { CreateOrderDto } from './v1/dto/create-order.dto';
 import { AuthUser } from 'src/auth/types';
 import { ERoles } from 'src/auth/access/roles';
 import { OrdersEventsService } from './orders-events.service';
+import { RabbitmqService } from '../rabbitmq/rabbitmq.service';
+import { OrdersProcessMessage } from './orders-queue.types';
+import { ORDERS_PROCESS_ROUTING_KEY } from 'src/rabbitmq/rabbitmq.topology';
 
 @Injectable()
 export class OrdersService {
+  private readonly logger = new Logger(OrdersService.name);
+
   constructor(
     private readonly dataSource: DataSource,
     @InjectRepository(Order)
     private readonly ordersRepository: Repository<Order>,
     private readonly ordersEventsService: OrdersEventsService,
+    private readonly rabbitMqService: RabbitmqService
   ) {}
 
   async create(
@@ -190,12 +198,31 @@ export class OrdersService {
         where: { id: order.id },
         relations: { items: true },
       });
+
+      const message: OrdersProcessMessage = {
+        messageId: randomUUID(),
+        orderId: order.id,
+        createdAt: order.createdAt.toISOString(),
+        attempt: 1,
+      };
+
+      try {
+        await this.rabbitMqService.publish(ORDERS_PROCESS_ROUTING_KEY, message);
+      } catch (publishError: any) {
+        this.logger.error(
+          `Failed to publish order processing message for orderId=${order.id}`,
+          publishError?.stack ?? String(publishError),
+        );
+      }
+
       return {
         order: createdOrder,
         created: true,
       };
     } catch (e: any) {
-      await qr.rollbackTransaction();
+      if (qr.isTransactionActive) {
+        await qr.rollbackTransaction();
+      }
       // 235050 - PSQL Error code for unique violation
       // It is used for case when 2 tx are in race condition
       if (e?.code === '23505') {
