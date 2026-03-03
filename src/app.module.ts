@@ -37,6 +37,7 @@ import { FilesModule } from './files/files.module';
 import { S3Service } from './files/s3.service';
 import { RealtimeModule } from './realtime/realtime.module';
 import { rabbitMQConfig } from './config/rabbitmq/index';
+import { RabbitmqModule } from './rabbitmq/rabbitmq.module';
 
 @Module({
   imports: [
@@ -76,6 +77,7 @@ import { rabbitMQConfig } from './config/rabbitmq/index';
     AppGraphqlModule,
     FilesModule,
     RealtimeModule,
+    RabbitmqModule,
   ],
   controllers: [],
   providers: [S3Service],
