@@ -76,6 +76,8 @@ services:
     ports:
       - '5673:5672'
       - '15673:15672'
+    networks:
+      - public
 
 volumes:
   minio_ecommerce:
