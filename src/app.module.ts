@@ -38,6 +38,7 @@ import { S3Service } from './files/s3.service';
 import { RealtimeModule } from './realtime/realtime.module';
 import { rabbitMQConfig } from './config/rabbitmq/index';
 import { RabbitmqModule } from './rabbitmq/rabbitmq.module';
+import { OutboxModule } from './outbox/outbox.module';
 
 @Module({
   imports: [
@@ -78,6 +79,7 @@ import { RabbitmqModule } from './rabbitmq/rabbitmq.module';
     FilesModule,
     RealtimeModule,
     RabbitmqModule,
+    OutboxModule,
   ],
   controllers: [],
   providers: [S3Service],
