@@ -6,3 +6,4 @@ export * from './payment.entity';
 export * from './file-record.entity';
 export * from './product-image.entity';
 export * from './processed-message.entity';
+export * from './outbox-event.entity';
