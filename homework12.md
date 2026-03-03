@@ -33,6 +33,14 @@ OR
 npm run docker:status
 ```
 
+Stop:
+
+```bash
+docker compose --env-file .env.development -f compose.yml -f compose.dev.yml down
+OR
+npm run docker:stop
+```
+
 URLs:
 
 - API: `http://localhost:8080`
