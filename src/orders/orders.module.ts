@@ -6,9 +6,10 @@ import { OrderItem, Order, Product, User } from 'src/database/entities';
 import { OrdersEventsService } from './orders-events.service';
 import { RabbitmqModule } from 'src/rabbitmq/rabbitmq.module';
 import { OrdersProcessorConsumer } from './orders-processor.consumer';
+import { OutboxModule } from 'src/outbox/outbox.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Order, OrderItem, Product, User]), RabbitmqModule],
+  imports: [TypeOrmModule.forFeature([Order, OrderItem, Product, User]), RabbitmqModule, OutboxModule],
   controllers: [OrdersV1Controller],
   providers: [OrdersService, OrdersEventsService, OrdersProcessorConsumer],
   exports: [OrdersEventsService, OrdersService]

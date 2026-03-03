@@ -3,7 +3,6 @@ import {
   ConflictException,
   ForbiddenException,
   Injectable,
-  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { randomUUID } from 'crypto';
@@ -14,26 +13,25 @@ import {
   OrderItem,
   Product,
   User,
+  OutboxEvent,
+  EOutboxEventStatus,
 } from '../database/entities';
 import { DataSource, Repository } from 'typeorm';
 import { CreateOrderDto } from './v1/dto/create-order.dto';
 import { AuthUser } from 'src/auth/types';
 import { ERoles } from 'src/auth/access/roles';
 import { OrdersEventsService } from './orders-events.service';
-import { RabbitmqService } from '../rabbitmq/rabbitmq.service';
 import { OrdersProcessMessage } from './orders-queue.types';
-import { ORDERS_PROCESS_ROUTING_KEY } from 'src/rabbitmq/rabbitmq.topology';
+import { OutboxService } from 'src/outbox/outbox.service';
 
 @Injectable()
 export class OrdersService {
-  private readonly logger = new Logger(OrdersService.name);
-
   constructor(
     private readonly dataSource: DataSource,
     @InjectRepository(Order)
     private readonly ordersRepository: Repository<Order>,
     private readonly ordersEventsService: OrdersEventsService,
-    private readonly rabbitMqService: RabbitmqService
+    private readonly outboxService: OutboxService,
   ) {}
 
   async create(
@@ -192,12 +190,7 @@ export class OrdersService {
         },
       );
 
-      await qr.commitTransaction();
-
-      const createdOrder = await this.ordersRepository.findOneOrFail({
-        where: { id: order.id },
-        relations: { items: true },
-      });
+      // 8) Insert OutboxEvent
 
       const message: OrdersProcessMessage = {
         messageId: randomUUID(),
@@ -206,14 +199,20 @@ export class OrdersService {
         attempt: 1,
       };
 
-      try {
-        await this.rabbitMqService.publish(ORDERS_PROCESS_ROUTING_KEY, message);
-      } catch (publishError: any) {
-        this.logger.error(
-          `Failed to publish order processing message for orderId=${order.id}`,
-          publishError?.stack ?? String(publishError),
-        );
-      }
+      await this.outboxService.add(
+        'order',
+        order.id,
+        'order.process_requested',
+        message as unknown as Record<string, unknown>,
+        manager
+      );
+
+      await qr.commitTransaction();
+
+      const createdOrder = await this.ordersRepository.findOneOrFail({
+        where: { id: order.id },
+        relations: { items: true },
+      });
 
       return {
         order: createdOrder,
@@ -328,7 +327,9 @@ export class OrdersService {
   }
 
   async canSubscribeToOrder(orderId: string, user: AuthUser): Promise<void> {
-    const order = await this.ordersRepository.findOne({ where: { id: orderId } });
+    const order = await this.ordersRepository.findOne({
+      where: { id: orderId },
+    });
     if (!order) {
       throw new NotFoundException('Order not found');
     }
