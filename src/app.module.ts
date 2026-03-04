@@ -64,7 +64,8 @@ import { OutboxModule } from './outbox/outbox.module';
           autoLoadEntities: true,
           synchronize: false,
           entities: [User, Order, OrderItem, Product],
-          logging: ['query'],
+          // logging: ['query'],
+          logging: false
         };
       },
     }),
