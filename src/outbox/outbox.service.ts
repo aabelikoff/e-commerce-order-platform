@@ -50,12 +50,16 @@ export class OutboxService {
         'rabbitMq.outboxRelayBatchSize',
       ) ??
       50;
+    const maxAttempts =
+      this.configService.get<IRabbitMq['maxAttempts']>('rabbitMq.maxAttempts') ??
+      3;
 
     return repo
       .createQueryBuilder('e')
       .where('e.status IN (:...statuses)', {
         statuses: [EOutboxEventStatus.PENDING, EOutboxEventStatus.FAILED],
       })
+      .andWhere('e.attempts < :maxAttempts', { maxAttempts })
       .andWhere('(e.next_retry_at IS NULL OR e.next_retry_at <= now())')
       .orderBy('e.created_at', 'ASC')
       .limit(batchSize)
