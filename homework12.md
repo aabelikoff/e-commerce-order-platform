@@ -1,16 +1,17 @@
-# Homework 12: RabbitMQ Order Processing Queue
+# Homework 12: RabbitMQ Order Processing with Outbox Pattern
 
 ## Goal
 
-Build a reliable async order processing workflow with RabbitMQ:
+Build a reliable asynchronous order processing workflow:
 
-- API accepts orders quickly.
-- Heavy processing is done by a worker.
-- Retry with attempt limit is implemented.
-- Messages that exceed retry limit go to DLQ.
-- Worker is idempotent (no duplicate side effects).
+- API accepts `POST /orders` quickly.
+- Heavy processing is handled by a worker.
+- Retries are controlled and limited.
+- Failed messages after retry limit go to DLQ.
+- Consumer is idempotent.
+- Producer reliability is improved with Outbox Pattern.
 
-## Stack
+## Tech Stack
 
 - NestJS + TypeScript
 - PostgreSQL
@@ -20,147 +21,159 @@ Build a reliable async order processing workflow with RabbitMQ:
 ## Run
 
 ```bash
-docker compose --env-file .env.development -f compose.yml -f compose.dev.yml up -d --build
-OR
 npm run docker:dev
 ```
 
-Check status:
+or
 
 ```bash
-docker compose --env-file .env.development -f compose.yml -f compose.dev.yml ps
-OR
+docker compose --env-file .env.development -f compose.yml -f compose.dev.yml up -d --build
+```
+
+Status:
+
+```bash
 npm run docker:status
 ```
 
 Stop:
 
 ```bash
-docker compose --env-file .env.development -f compose.yml -f compose.dev.yml down
-OR
 npm run docker:stop
 ```
 
-URLs:
+Useful URLs:
 
 - API: `http://localhost:8080`
 - RabbitMQ UI: `http://localhost:15673` (`guest/guest`)
 
-## RabbitMQ Config
+## RabbitMQ Topology
 
-Environment variables:
-
-- `RABBITMQ_URL`
-- `RABBITMQ_PREFETCH`
-- `RABBITMQ_MAX_ATTEMPTS`
-- `RABBITMQ_RETRY_DELAY_MS`
-
-## Topology
-
-Topology is created programmatically in `RabbitmqService.assertInfrastructure()`.
+Topology is asserted in `RabbitmqService.assertInfrastructure()`.
 
 - Exchange: `orders.exchange` (`direct`, durable)
 - Queue: `orders.process` (durable)
 - Queue: `orders.dlq` (durable)
-- Binding: `orders.process` <- `orders.exchange` by routing key `orders.process`
-- Binding: `orders.dlq` <- `orders.exchange` by routing key `orders.dlq`
+- Binding: `orders.process` <- `orders.exchange` with routing key `orders.process`
+- Binding: `orders.dlq` <- `orders.exchange` with routing key `orders.dlq`
 
-How to verify in RabbitMQ UI:
+## Message Contracts
 
-1. Open `Exchanges` and check `orders.exchange`.
-2. Open `Queues and Streams` and check `orders.process` and `orders.dlq`.
-3. Open queue details and verify bindings.
-
-## Producer (Orders API)
-
-Endpoint: `POST http://localhost:8080/api/v1/orders` (local run)
-
-Behavior:
-
-1. Create order in DB with status `pending`.
-2. After DB commit, publish message to `orders.exchange` with routing key `orders.process`.
-
-Message format (`OrdersProcessMessage`):
+### OrdersProcessMessage
 
 ```json
 {
   "messageId": "uuid",
   "orderId": "uuid",
-  "createdAt": "ISO datetime",
+  "createdAt": "ISO date",
   "attempt": 1,
   "simulate": "alwaysFail"
 }
 ```
 
-`simulate` is optional and used only for retry/DLQ demo.
+- `simulate` is optional and used only for retry/DLQ demonstration.
 
-## Worker (Consumer)
-
-Consumer: `OrdersProcessorConsumer`
-
-Requirements implemented:
-
-- Manual ack (`noAck: false`)
-- Transactional DB processing
-- Ack after processing decision
-
-Processing flow:
-
-1. Receive message from `orders.process`.
-2. Start DB transaction.
-3. Run idempotency check (`processed_messages`).
-4. Run business update (`orders.status = processed`, set `processed_at`).
-5. Commit transaction.
-6. Ack message.
-
-## Retry and DLQ
-
-Implemented strategy: `republish + ack`.
-
-Policy:
-
-- `maxAttempts = 3`
-- Delay between retries: exponential backoff based on `RABBITMQ_RETRY_DELAY_MS`
-- After limit, publish to `orders.dlq`
-
-Failure flow:
-
-- If `attempt < maxAttempts`: republish to `orders.process` with `attempt + 1`, then ack original message.
-- If `attempt >= maxAttempts`: publish to `orders.dlq`, then ack original message.
-
-DLQ payload format (`OrdersDlqMessage`):
+### OrdersDlqMessage
 
 ```json
 {
   "messageId": "uuid",
   "orderId": "uuid",
-  "createdAt": "ISO datetime",
+  "createdAt": "ISO date",
   "attempt": 3,
-  "failedAt": "ISO datetime",
+  "failedAt": "ISO date",
   "errorReason": "string"
 }
 ```
+
+## Producer Flow (Orders API + Outbox)
+
+Endpoint: `POST /api/v1/orders`
+
+`OrdersService.create()`:
+
+1. Starts DB transaction.
+2. Creates order with status `pending`.
+3. Creates outbox event in `outbox_events` with status `pending`.
+4. Commits transaction.
+5. Returns HTTP response immediately.
+
+Important: API does not publish directly to RabbitMQ inside request flow anymore. RabbitMQ publishing is delegated to Outbox Relay.
+
+## Outbox Pattern
+
+### outbox_events table
+
+Columns:
+
+- `id` uuid PK
+- `aggregate_type` varchar
+- `aggregate_id` uuid
+- `event_type` varchar
+- `payload` jsonb
+- `status` enum: `pending | processing | sent | failed`
+- `attempts` int
+- `next_retry_at` timestamptz nullable
+- `last_error` text nullable
+- `sent_at` timestamptz nullable
+- `created_at`, `updated_at`
+
+### Outbox Relay
+
+`OutboxRelayService` runs on interval:
+
+1. Claims batch with transaction and `FOR UPDATE SKIP LOCKED`.
+2. Publishes each event payload to RabbitMQ (`orders.exchange` / `orders.process`).
+3. On success: marks event as `sent`, sets `sent_at`.
+4. On failure: increments attempts, sets `failed`, calculates `next_retry_at`, stores `last_error`.
+
+This removes the "DB commit succeeded but publish failed" gap in synchronous producer flow.
+
+## Consumer Flow
+
+`OrdersProcessorConsumer`:
+
+- Uses manual ack (`noAck: false`).
+- Processes inside transaction.
+- Commits DB changes first, then acknowledges message.
+
+Flow:
+
+1. Receive message from `orders.process`.
+2. Start DB transaction.
+3. Idempotency insert into `processed_messages`.
+4. If duplicate: commit + ack + stop.
+5. If new: business processing (`orders.status = processed`, set `processed_at`).
+6. Commit.
+7. Ack.
+
+## Retry + DLQ Strategy
+
+Implemented strategy: **republish + ack**.
+
+Config:
+
+- `RABBITMQ_MAX_ATTEMPTS=3`
+- `RABBITMQ_RETRY_DELAY_MS=5000`
+
+Failure behavior:
+
+- if `attempt < maxAttempts`: wait backoff, republish with `attempt + 1`, ack original.
+- if `attempt >= maxAttempts`: publish to `orders.dlq`, ack original.
 
 ## Idempotency
 
 Table: `processed_messages`
 
-Columns:
+- `message_id` has unique constraint.
 
-- `id` (uuid, PK)
-- `message_id` (uuid, UNIQUE)
-- `order_id` (uuid, FK -> `orders.id`)
-- `handler` (varchar)
-- `processed_at` (timestamptz)
+Algorithm in consumer transaction:
 
-Algorithm:
+- `INSERT ... ON CONFLICT (message_id) DO NOTHING RETURNING id`
+- if no returned row: duplicate delivery, commit + ack without side effects.
+- if inserted: continue normal processing.
 
-1. In transaction run:
-   `INSERT ... ON CONFLICT (message_id) DO NOTHING RETURNING id`
-2. If no row is returned, message is duplicate delivery.
-3. For duplicate message: commit + ack + return without repeating side effects.
-
-Race safety is guaranteed by DB unique constraint on `message_id`.
+Safe with parallel workers because uniqueness is enforced by DB.
 
 ## Logging
 
@@ -169,41 +182,65 @@ Worker logs include:
 - `messageId`
 - `orderId`
 - `attempt`
-- result: `success | retry | dlq | duplicate`
-- short error reason for retry/dlq
+- `result`: `success | retry | dlq | duplicate`
+- short error reason for `retry`/`dlq`
 
-## Demo Scenarios
+## Demonstration Checklist
 
-### 1) Happy path
+### 1. Happy Path
 
-1. Send `POST  http://localhost:8080/api/v1/orders` (local run).
-2. Verify:
-   - initially `orders.status = pending`
-   - then `orders.status = processed`, `processed_at` is not null
-3. Verify row in `processed_messages`.
-4. Verify worker log contains `result=success`.
+1. Call `POST /api/v1/orders`.
+2. Verify order transitions from `pending` to `processed`.
+3. Verify `processed_messages` row is created.
+4. Verify log line `result=success`.
 
-### 2) Retry
+### 2. Retry
 
-1. Enable failure simulation (`simulate: "alwaysFail"`).
-2. Create order.
-3. Verify worker logs contain `result=retry` for attempts 1 and 2.
+1. Send message with `simulate: "alwaysFail"`.
+2. Verify logs:
+   - `result=retry ... attempt=1`
+   - `result=retry ... attempt=2`
 
-### 3) DLQ
+### 3. DLQ
 
-1. After attempt 3 failure, message goes to `orders.dlq`.
-2. In RabbitMQ UI, use `Get messages` on `orders.dlq`.
-3. Verify payload contains `errorReason` and expected ids.
-4. Verify worker log contains `result=dlq`.
+1. After max attempts, verify:
+   - log `result=dlq ... attempt=3`
+   - message appears in `orders.dlq`.
 
-### 4) Idempotency
+### 4. Idempotency
 
-1. Take a previously processed `messageId`.
-2. Manually publish same message again to `orders.exchange` with routing key `orders.process`.
-3. Verify worker log contains `result=duplicate`.
-4. Verify `processed_messages` row count for that `messageId` remains `1`.
+1. Republish already successful `messageId` manually.
+2. Verify log `result=duplicate`.
+3. Verify no duplicate side effects and no extra `processed_messages` row for same `messageId`.
 
-## Notes
+## Commands Used for Verification
 
-- Producer currently logs publish errors after DB commit.
-- For production-grade delivery guarantee, add Outbox Pattern.
+API logs:
+
+```bash
+docker compose --env-file .env.development -f compose.yml -f compose.dev.yml logs api --tail=200
+```
+
+Outbox state:
+
+```sql
+SELECT status, attempts, sent_at, last_error
+FROM outbox_events
+ORDER BY created_at DESC
+LIMIT 10;
+```
+
+## Result
+
+All required acceptance criteria for Homework 12 are implemented:
+
+- `orders.process` and `orders.dlq`
+- asynchronous API + worker
+- manual ack and transactional flow
+- bounded retry + DLQ
+- idempotent consumer
+- documented topology and reproducible scenarios
+
+Plus bonus:
+
+- Outbox Pattern + relay for safer producer delivery.

@@ -15,6 +15,7 @@ The main goal of the project is to demonstrate a clean, well-structured, and sca
 - [Run Tests](#run-tests)
 - [Deployment](#deployment)
 - [Docker / Containers](#docker--containers)
+- [Homework 12 (RabbitMQ + Outbox)](#homework-12-rabbitmq--outbox)
 - [Stay in Touch](#stay-in-touch)
 - [License](#license)
 
@@ -264,6 +265,37 @@ docker build --target prod-distroless -t ecommerse-api:distroless .
 - Use `--env-file .env.production` / `--env-file .env.development` in compose commands so `${...}` values are substituted correctly.
 - `postgres` is intentionally not published to host (`no ports:` in `compose.yml`).
 
+
+## RabbitMQ + Outbox
+
+Implementation details are documented in:
+
+- `homework12.md`
+
+Quick run for this homework:
+
+```bash
+npm run docker:dev
+npm run docker:status
+```
+
+RabbitMQ management UI:
+
+- `http://localhost:15673` (`guest/guest`)
+
+Useful logs command:
+
+```bash
+docker compose --env-file .env.development -f compose.yml -f compose.dev.yml logs api --tail=200
+```
+
+Implemented in this homework:
+
+- RabbitMQ topology (`orders.exchange`, `orders.process`, `orders.dlq`)
+- Orders worker with manual ack
+- Retry with limit and DLQ
+- Idempotent processing via `processed_messages`
+- Outbox Pattern (`outbox_events` + relay)
 ## Stay in Touch
 
 - Author - [Oleksii Bielikov](https://www.linkedin.com/in/oleksii-bielikov/)
@@ -271,3 +303,7 @@ docker build --target prod-distroless -t ecommerse-api:distroless .
 ## License
 
 MIT licensed.
+
+
+
+
