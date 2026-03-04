@@ -13,8 +13,6 @@ import {
   OrderItem,
   Product,
   User,
-  OutboxEvent,
-  EOutboxEventStatus,
 } from '../database/entities';
 import { DataSource, Repository } from 'typeorm';
 import { CreateOrderDto } from './v1/dto/create-order.dto';
@@ -197,6 +195,7 @@ export class OrdersService {
         orderId: order.id,
         createdAt: order.createdAt.toISOString(),
         attempt: 1,
+        // simulate: 'alwaysFail'
       };
 
       await this.outboxService.add(
