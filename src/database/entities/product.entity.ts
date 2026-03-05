@@ -7,6 +7,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { OrderItem } from './order-item.entity';
+import { ProductImage } from './product-image.entity';
 
 @Entity({ name: 'products' })
 export class Product {
@@ -27,6 +28,9 @@ export class Product {
 
   @OneToMany(() => OrderItem, (i) => i.product)
   items: OrderItem[];
+
+  @OneToMany(() => ProductImage, (img) => img.product)
+  images: ProductImage[];
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt: Date;
