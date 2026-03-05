@@ -12,7 +12,7 @@ import { RabbitmqService } from '../rabbitmq/rabbitmq.service';
 import {
   ORDERS_DLQ_ROUTING_KEY,
   ORDERS_PROCESS_QUEUE,
-  ORDERS_PROCESS_ROUTING_KEY,
+  ORDERS_RETRY_ROUTING_KEY,
 } from '../rabbitmq/rabbitmq.topology';
 import { EOrderStatus } from '../database/entities';
 import { OrdersDlqMessage, OrdersProcessMessage } from './orders-queue.types';
@@ -101,11 +101,11 @@ export class OrdersProcessorConsumer
 
         try {
           const backOffDelay = this.backOffTime(attempt, retryDelayMs);
-          await this.delay(backOffDelay);
           await this.rabbitMqService.publish(
-            ORDERS_PROCESS_ROUTING_KEY,
+            ORDERS_RETRY_ROUTING_KEY,
             retryPayload,
             { retryOf: messageId },
+            { expiration: String(backOffDelay) },
           );
           channel.ack(msg);
           this.logger.warn(
@@ -211,10 +211,6 @@ export class OrdersProcessorConsumer
     } finally {
       await qr.release();
     }
-  }
-
-  private async delay(ms: number): Promise<void> {
-    await new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   private backOffTime(attempt: number, baseDelay: number) {

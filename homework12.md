@@ -53,8 +53,10 @@ Topology is asserted in `RabbitmqService.assertInfrastructure()`.
 
 - Exchange: `orders.exchange` (`direct`, durable)
 - Queue: `orders.process` (durable)
+- Queue: `orders.retry` (durable, DLX -> `orders.exchange` with DL routing key `orders.process`)
 - Queue: `orders.dlq` (durable)
 - Binding: `orders.process` <- `orders.exchange` with routing key `orders.process`
+- Binding: `orders.retry` <- `orders.exchange` with routing key `orders.retry`
 - Binding: `orders.dlq` <- `orders.exchange` with routing key `orders.dlq`
 
 ## Message Contracts
@@ -149,7 +151,7 @@ Flow:
 
 ## Retry + DLQ Strategy
 
-Implemented strategy: **republish + ack**.
+Implemented strategy: **republish-to-retry-queue + ack**.
 
 Config:
 
@@ -158,8 +160,15 @@ Config:
 
 Failure behavior:
 
-- if `attempt < maxAttempts`: wait backoff, republish with `attempt + 1`, ack original.
+- if `attempt < maxAttempts`: compute backoff, republish to `orders.retry` with `attempt + 1` and message TTL (`expiration`), ack original.
 - if `attempt >= maxAttempts`: publish to `orders.dlq`, ack original.
+
+Retry delay is broker-driven:
+
+- worker does not sleep/block (`await delay` removed from consumer);
+- message is stored in `orders.retry` until TTL expires;
+- after TTL RabbitMQ dead-letters it to `orders.exchange` with routing key `orders.process`;
+- message is consumed again as the next attempt.
 
 ## Idempotency
 
@@ -234,10 +243,10 @@ LIMIT 10;
 
 All required acceptance criteria for Homework 12 are implemented:
 
-- `orders.process` and `orders.dlq`
+- `orders.process`, `orders.retry`, and `orders.dlq`
 - asynchronous API + worker
 - manual ack and transactional flow
-- bounded retry + DLQ
+- bounded retry (broker-delayed) + DLQ
 - idempotent consumer
 - documented topology and reproducible scenarios
 

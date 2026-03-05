@@ -7,13 +7,15 @@ import {
 import { ConfigService } from '@nestjs/config';
 import type { Channel, ChannelModel, Options } from 'amqplib';
 import * as amqp from 'amqplib';
-import { IRabbitMq } from 'src/config/rabbitmq';
+import { IRabbitMq } from '../config/rabbitmq';
 import {
   ORDERS_DLQ_QUEUE,
   ORDERS_DLQ_ROUTING_KEY,
   ORDERS_EXCHANGE,
   ORDERS_PROCESS_QUEUE,
   ORDERS_PROCESS_ROUTING_KEY,
+  ORDERS_RETRY_QUEUE,
+  ORDERS_RETRY_ROUTING_KEY,
 } from './rabbitmq.topology';
 
 @Injectable()
@@ -51,11 +53,23 @@ export class RabbitmqService implements OnModuleInit, OnModuleDestroy {
     const channel = this.getChannel();
     await channel.assertExchange(ORDERS_EXCHANGE, 'direct', { durable: true });
     await channel.assertQueue(ORDERS_PROCESS_QUEUE, { durable: true });
+    await channel.assertQueue(ORDERS_RETRY_QUEUE, {
+      durable: true,
+      arguments: {
+        'x-dead-letter-exchange': ORDERS_EXCHANGE,
+        'x-dead-letter-routing-key': ORDERS_PROCESS_ROUTING_KEY,
+      },
+    });
     await channel.assertQueue(ORDERS_DLQ_QUEUE, { durable: true });
     await channel.bindQueue(
       ORDERS_PROCESS_QUEUE,
       ORDERS_EXCHANGE,
       ORDERS_PROCESS_ROUTING_KEY,
+    );
+    await channel.bindQueue(
+      ORDERS_RETRY_QUEUE,
+      ORDERS_EXCHANGE,
+      ORDERS_RETRY_ROUTING_KEY,
     );
     await channel.bindQueue(ORDERS_DLQ_QUEUE, ORDERS_EXCHANGE, ORDERS_DLQ_ROUTING_KEY);
   }
