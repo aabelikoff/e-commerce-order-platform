@@ -10,6 +10,9 @@ RUN npm ci
 # 2) dev
 FROM deps AS dev
 ENV NODE_ENV=development
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends procps \
+    && rm -rf /var/lib/apt/lists/*
 COPY . .
 EXPOSE 3001
 CMD ["npm", "run", "start:dev"]
@@ -48,7 +51,6 @@ COPY --from=prod-deps --chown=nonroot:nonroot /app/package.json ./package.json
 
 EXPOSE 3001
 CMD ["dist/main.js"]
-
 
 
 

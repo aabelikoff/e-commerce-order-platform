@@ -131,8 +131,8 @@ docker image ls | findstr ecommerse-api
 # outcome
 ecommerse-api  distroless  c3fbdb32d93b  42 seconds ago       447MB
 ecommerse-api  prod        1da1fb6d4256  57 seconds ago       565MB
-ecommerse-api  build       c11224d5c754  About a minute ago   917MB
-ecommerse-api  dev         561f81e79269  About a minute ago   914MB
+ecommerse-api  build       c11224d5c754  About a minute ago   968MB
+ecommerse-api  dev         561f81e79269  About a minute ago   966MB
 ```
 
 Expected pattern:
@@ -146,6 +146,8 @@ Expected pattern:
 ```bash
 docker history ecommerse-api:prod
 docker history ecommerse-api:distroless
+docker image inspect ecommerse-api:prod --format '{{.Config.User}}'
+docker image inspect ecommerse-api:distroless --format '{{.Config.User}}'
 ```
 
 What it shows:
