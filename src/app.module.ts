@@ -39,11 +39,13 @@ import { RealtimeModule } from './realtime/realtime.module';
 import { rabbitMQConfig } from './config/rabbitmq/index';
 import { RabbitmqModule } from './rabbitmq/rabbitmq.module';
 import { OutboxModule } from './outbox/outbox.module';
+import { kafkaConfig } from './config/kafka';
+import { KafkaModule } from './kafka/kafka.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
-      load: [appConfig, databaseConfig, authConfig, s3Config, rabbitMQConfig],
+      load: [appConfig, databaseConfig, authConfig, s3Config, rabbitMQConfig, kafkaConfig],
       envFilePath: getEnvFilePath(),
       isGlobal: true,
     }),
@@ -81,6 +83,7 @@ import { OutboxModule } from './outbox/outbox.module';
     RealtimeModule,
     RabbitmqModule,
     OutboxModule,
+    KafkaModule,
   ],
   controllers: [],
   providers: [S3Service],
