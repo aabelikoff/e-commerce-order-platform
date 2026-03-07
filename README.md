@@ -235,6 +235,14 @@ Run dev stack:
 docker compose --env-file .env.development -f compose.yml -f compose.dev.yml up --build
 ```
 
+Or use npm scripts:
+
+```bash
+npm run docker:dev
+npm run docker:status
+npm run docker:logs
+```
+
 Hot reload check:
 1. Start the dev stack
 2. Edit any file in `src/` (for example `src/payments/payments.service.ts`)
@@ -248,6 +256,20 @@ docker compose --env-file .env.production -f compose.yml run --rm seed
 ```
 
 `migrate` and `seed` use the `build` target (not `prod-distroless`) because they require CLI/dev tooling (`typeorm-ts-node-commonjs`, `ts-node`).
+
+### Docker Scripts (Dev Stack)
+
+The project includes helper scripts in `package.json` for the dev compose stack:
+
+```bash
+npm run docker:dev      # up -d --build (compose.yml + compose.dev.yml)
+npm run docker:status   # show containers status
+npm run docker:logs     # follow api logs
+npm run docker:stop     # stop containers (keep containers and data)
+npm run docker:start    # start previously stopped containers
+npm run docker:down     # stop and remove containers/networks
+npm run docker:restart  # full restart (down + up -d --build)
+```
 
 ### Docker Image Builds / Optimization Proof
 
@@ -331,5 +353,4 @@ This setup keeps operational processing in RabbitMQ and uses Kafka for domain ev
 ## License
 
 MIT licensed.
-
 

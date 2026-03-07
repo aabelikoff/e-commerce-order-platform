@@ -27,8 +27,10 @@
     "db:seed": "cross-env SEED_ENABLED=true ts-node -r tsconfig-paths/register src/database/seeds/seed-runner/run-seeds.ts",
     "docker:dev": "docker compose --env-file .env.development -f compose.yml -f compose.dev.yml up -d --build",
     "docker:status": "docker compose --env-file .env.development -f compose.yml -f compose.dev.yml ps",
-    "docker:stop": "docker compose --env-file .env.development -f compose.yml -f compose.dev.yml down",
-    "docker:restart": "docker compose down && docker compose up",
+    "docker:down": "docker compose --env-file .env.development -f compose.yml -f compose.dev.yml down",
+    "docker:stop": "docker compose --env-file .env.development -f compose.yml -f compose.dev.yml stop",
+    "docker:start": "docker compose --env-file .env.development -f compose.yml -f compose.dev.yml start",
+    "docker:restart": "docker compose --env-file .env.development -f compose.yml -f compose.dev.yml down && docker compose --env-file .env.development -f compose.yml -f compose.dev.yml up -d --build",
     "docker:logs": "docker compose --env-file .env.development -f compose.yml -f compose.dev.yml logs -f api"
   },
   "dependencies": {
