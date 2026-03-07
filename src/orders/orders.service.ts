@@ -21,6 +21,7 @@ import { ERoles } from 'src/auth/access/roles';
 import { OrdersEventsService } from './orders-events.service';
 import { OrdersProcessMessage } from './orders-queue.types';
 import { OutboxService } from 'src/outbox/outbox.service';
+import { OrderEventEnvelopeV1 } from './orders-kafka-events.types';
 
 @Injectable()
 export class OrdersService {
@@ -205,6 +206,27 @@ export class OrdersService {
         message as unknown as Record<string, unknown>,
         manager
       );
+
+      const event: OrderEventEnvelopeV1 = {
+        eventId: randomUUID(),
+        eventName: 'OrderPlaced',
+        occurredAt: order.createdAt.toISOString(),
+        schemaVersion: 1,
+        order: {
+          orderId: order.id,
+          userId: dto.userId,
+          totalAmount: calc.total_amount,
+          currency: 'USD' //TODO: implement different currency options
+        }
+      }
+
+      await this.outboxService.add(
+        'order',
+        order.id,
+        'order.placed',
+        event as unknown as Record<string, unknown>,
+        manager
+      )
 
       await qr.commitTransaction();
 
