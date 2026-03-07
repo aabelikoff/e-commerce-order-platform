@@ -6,10 +6,14 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { DataSource } from 'typeorm';
-import { IRabbitMq } from 'src/config/rabbitmq';
+import { IRabbitMq } from '../config/rabbitmq';
 import { RabbitmqService } from '../rabbitmq/rabbitmq.service';
 import { OutboxService } from './outbox.service';
 import { ORDERS_PROCESS_ROUTING_KEY } from 'src/rabbitmq/rabbitmq.topology';
+import { KafkaService } from '../kafka/kafka.service';
+import { OutboxEvent } from 'src/database/entities';
+import { IKafkaConfig } from 'src/config/kafka';
+import { OrderEventEnvelopeV1 } from 'src/orders/orders-kafka-events.types';
 
 @Injectable()
 export class OutboxRelayService
@@ -25,6 +29,7 @@ export class OutboxRelayService
     private readonly dataSource: DataSource,
     private readonly outboxService: OutboxService,
     private readonly rabbitmqService: RabbitmqService,
+    private readonly kafkaService: KafkaService,
   ) {}
 
   onApplicationBootstrap(): void {
@@ -49,6 +54,36 @@ export class OutboxRelayService
       this.timer = null;
     }
   }
+  private async publish(e: OutboxEvent) {
+    switch (e.eventType) {
+      case 'order.process_requested': {
+        await this.rabbitmqService.publish(
+          ORDERS_PROCESS_ROUTING_KEY,
+          e.payload,
+        );
+        break;
+      }
+      case 'order.placed': {
+        const topic = this.configService.get<IKafkaConfig['topicOrdersEvents']>(
+          'kafka.topicOrdersEvents',
+        );
+        if (!topic) {
+          throw new Error('Not specified topic');
+        }
+        const key = (e.payload as OrderEventEnvelopeV1)['order'][
+          'orderId'
+        ];
+        if (!key) {
+          throw new Error('Not specified orderId');
+        }
+        await this.kafkaService.publish(topic, key, e.payload);
+        break;
+      }
+      default: {
+        throw new Error('Unknown event');
+      }
+    }
+  }
 
   async relayTick(): Promise<void> {
     await this.dataSource.transaction(async (manager) => {
@@ -56,7 +91,9 @@ export class OutboxRelayService
 
       for (const e of events) {
         try {
-          await this.rabbitmqService.publish(ORDERS_PROCESS_ROUTING_KEY, e.payload);
+          
+          await this.publish(e);
+
           await this.outboxService.markSent(e.id, manager);
         } catch (err: unknown) {
           const nextRetryAt = this.nextRetryAt(e.attempts + 1);
@@ -76,7 +113,10 @@ export class OutboxRelayService
   }
 
   private backOffTime(attempt: number, baseDelay: number): number {
-    return Math.min(baseDelay * this.FACTOR ** (attempt - 1), this.MAX_DELAY_MS);
+    return Math.min(
+      baseDelay * this.FACTOR ** (attempt - 1),
+      this.MAX_DELAY_MS,
+    );
   }
 
   private nextRetryAt(attempts: number): Date {

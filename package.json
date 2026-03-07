@@ -28,7 +28,8 @@
     "docker:dev": "docker compose --env-file .env.development -f compose.yml -f compose.dev.yml up -d --build",
     "docker:status": "docker compose --env-file .env.development -f compose.yml -f compose.dev.yml ps",
     "docker:stop": "docker compose --env-file .env.development -f compose.yml -f compose.dev.yml down",
-    "docker:restart": "docker compose down && docker compose up"
+    "docker:restart": "docker compose down && docker compose up",
+    "docker:logs": "docker compose --env-file .env.development -f compose.yml -f compose.dev.yml logs -f api"
   },
   "dependencies": {
     "@apollo/server": "^5.4.0",
@@ -53,6 +54,7 @@
     "class-validator": "^0.14.3",
     "dataloader": "^2.2.3",
     "graphql": "^16.12.0",
+    "kafkajs": "^2.2.4",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
     "pg": "^8.18.0",

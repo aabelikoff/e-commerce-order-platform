@@ -16,6 +16,7 @@ The main goal of the project is to demonstrate a clean, well-structured, and sca
 - [Deployment](#deployment)
 - [Docker / Containers](#docker--containers)
 - [Homework 12 (RabbitMQ + Outbox)](#homework-12-rabbitmq--outbox)
+- [Kafka (OrderPlaced Stream)](#kafka-orderplaced-stream)
 - [Stay in Touch](#stay-in-touch)
 - [License](#license)
 
@@ -296,6 +297,25 @@ Implemented in this homework:
 - Retry with limit and DLQ
 - Idempotent processing via `processed_messages`
 - Outbox Pattern (`outbox_events` + relay)
+
+## Kafka (OrderPlaced Stream)
+
+Current Kafka integration in this project:
+
+- `order.placed` events are written to outbox in order transaction flow
+- `OutboxRelayService` routes:
+  - `order.process_requested` -> RabbitMQ
+  - `order.placed` -> Kafka (`KAFKA_TOPIC_ORDERS_EVENTS`)
+- Kafka message key is `orderId` (ordering per order)
+- Two consumer groups are wired:
+  - `OrdersAnalyticsConsumer` (`orders-analytics`)
+  - `OrdersCrmConsumer` (`orders-crm`)
+
+Important status note:
+
+- `OrdersAnalyticsConsumer` and `OrdersCrmConsumer` are currently demo placeholders (logging-only).
+- Real business behavior for Analytics/CRM (metrics tables, dedup persistence, campaign triggers, etc.) is planned and can be implemented later.
+
 ## Stay in Touch
 
 - Author - [Oleksii Bielikov](https://www.linkedin.com/in/oleksii-bielikov/)
@@ -303,7 +323,6 @@ Implemented in this homework:
 ## License
 
 MIT licensed.
-
 
 
 
