@@ -7,7 +7,7 @@ import { ConfigService } from '@nestjs/config';
 import { EachMessagePayload } from 'kafkajs';
 import { IKafkaConfig } from 'src/config/kafka';
 import { KafkaService } from 'src/kafka/kafka.service';
-import { EOrderConsumers, OrderEventEnvelopeV1 } from './orders-kafka-events.types';
+import { OrderEventEnvelopeV1 } from './orders-kafka-events.types';
 
 @Injectable()
 export class OrdersAnalyticsConsumer implements OnApplicationBootstrap {
@@ -31,7 +31,13 @@ export class OrdersAnalyticsConsumer implements OnApplicationBootstrap {
       this.logger.warn('Kafka topic for orders events is not configured');
       return;
     }
-    const groupId = EOrderConsumers.ANALYTICS_CONSUMER;
+    const groupId = this.configService.get<
+      IKafkaConfig['ordersAnalyticsGroupId']
+    >('kafka.ordersAnalyticsGroupId');
+    if (!groupId) {
+      this.logger.warn('Kafka orders analytics group is not configured');
+      return;
+    }
 
     await this.kafkaService.consume(groupId, topic, async (payload) => {
       await this.handleMessage(payload);

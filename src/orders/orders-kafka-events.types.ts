@@ -28,8 +28,3 @@ export type OrderEventEnvelopeV1 = {
   occurredAt: string;
   order: OrderEventPayload;
 };
-
-export enum EOrderConsumers {
-  ANALYTICS_CONSUMER = 'analytics-consumer',
-  CRM_CONSUMER = 'crm-consumer',
-}

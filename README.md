@@ -16,7 +16,7 @@ The main goal of the project is to demonstrate a clean, well-structured, and sca
 - [Deployment](#deployment)
 - [Docker / Containers](#docker--containers)
 - [Homework 12 (RabbitMQ + Outbox)](#homework-12-rabbitmq--outbox)
-- [Kafka (OrderPlaced Stream)](#kafka-orderplaced-stream)
+- [Kafka Event Streams](#kafka-event-streams)
 - [Stay in Touch](#stay-in-touch)
 - [License](#license)
 
@@ -298,23 +298,31 @@ Implemented in this homework:
 - Idempotent processing via `processed_messages`
 - Outbox Pattern (`outbox_events` + relay)
 
-## Kafka (OrderPlaced Stream)
+## Kafka Event Streams
 
-Current Kafka integration in this project:
+Kafka is used in this project as an event-streaming layer for domain events.
 
-- `order.placed` events are written to outbox in order transaction flow
-- `OutboxRelayService` routes:
-  - `order.process_requested` -> RabbitMQ
-  - `order.placed` -> Kafka (`KAFKA_TOPIC_ORDERS_EVENTS`)
-- Kafka message key is `orderId` (ordering per order)
-- Two consumer groups are wired:
-  - `OrdersAnalyticsConsumer` (`orders-analytics`)
-  - `OrdersCrmConsumer` (`orders-crm`)
+Current domain streams:
 
-Important status note:
+- `orders` domain:
+  - topic: `KAFKA_TOPIC_ORDERS_EVENTS`
+  - key strategy: `orderId` (preserves per-order ordering)
+  - consumers: `OrdersAnalyticsConsumer`, `OrdersCrmConsumer`
 
-- `OrdersAnalyticsConsumer` and `OrdersCrmConsumer` are currently demo placeholders (logging-only).
-- Real business behavior for Analytics/CRM (metrics tables, dedup persistence, campaign triggers, etc.) is planned and can be implemented later.
+- `payments` domain:
+  - topic: `KAFKA_TOPIC_PAYMENTS_EVENTS`
+  - key strategy: `orderId`
+  - producer: `PaymentsEventsPublisher`
+  - consumers: `PaymentsAnalyticsConsumer`, `PaymentsAuditConsumer`
+
+Runtime behavior:
+
+- Kafka settings (topics, brokers, group IDs) are configured through typed `kafka` config and environment variables.
+- `orders` flow publishes `order.placed` through Outbox Relay.
+- `payments` flow publishes payment lifecycle events from the payments service.
+- Consumer implementations are lightweight and currently focused on stream validation/processing logs.
+
+This setup keeps operational processing in RabbitMQ and uses Kafka for domain event streaming across modules.
 
 ## Stay in Touch
 
@@ -323,6 +331,5 @@ Important status note:
 ## License
 
 MIT licensed.
-
 
 

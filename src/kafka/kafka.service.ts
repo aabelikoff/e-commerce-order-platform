@@ -122,7 +122,7 @@ export class KafkaService implements OnModuleInit, OnModuleDestroy {
       throw new Error('Kafka admin is not initialized');
     }
 
-    const partitions = Number(this.configService.get<string>('KAFKA_TOPIC_PARTITIONS') ?? '3');
+    const partitions = cfg.topicPartitions;
     const desiredTopic = cfg.topicOrdersEvents;
     if (!desiredTopic) {
       throw new Error('Kafka orders topic is not configured');
