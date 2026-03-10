@@ -1,100 +1,120 @@
-# Homework 13: gRPC Payments Service (Orders -> Payments)
+# Homework 13: gRPC Payments Extraction (Orders -> Payments)
 
 ## Goal
 
-Practice end-to-end gRPC integration in NestJS:
+Implemented and verified:
 
-- define and use `.proto` contract (`proto3`)
-- run a dedicated gRPC server (`payments-service`) as a separate entrypoint/process
-- connect gRPC client in `orders-service`
-- apply real timeout/deadline from env/config
+- `.proto` contract (`proto3`) for Payments
+- dedicated NestJS gRPC server as separate process/entrypoint (`payments-service`)
+- gRPC client integration in Orders service
+- client timeout/deadline from env (`PAYMENTS_RPC_TIMEOUT_MS`)
+- one end-to-end happy path: `Orders -> Payments.Authorize -> paymentId/status`
 
-## Contract
+## 1) Contract
 
-Proto file:
+Proto:
 
 - `proto/payments/v1/payments.proto`
 
-Package/service:
+Contains:
 
-- `package payments.v1`
 - `service Payments`
+- `Authorize`
+- `GetPaymentStatus`
+- `Capture`
+- `Refund`
 
-Methods:
+Main request/response fields:
 
-- `Authorize(AuthorizeRequest) returns (AuthorizeResponse)`
-- `GetPaymentStatus(GetPaymentStatusRequest) returns (GetPaymentStatusResponse)`
-- `Capture`, `Refund` are present (basic/stub behavior)
+- `AuthorizeRequest`: `orderId`, `userId`, `total.amount`, `total.currency`, `idempotencyKey`
+- `AuthorizeResponse`: `paymentId`, `status`
+- `GetPaymentStatusRequest`: `paymentId`
+- `GetPaymentStatusResponse`: `paymentId`, `status`, `orderId`
 
-Generated TS contract:
+Generated types/client:
 
 - `src/generated/payments/v1/payments.ts`
 
-## Payments Service
+## 2) payments-service (gRPC server)
 
-Dedicated gRPC server entrypoint:
+Entrypoint:
 
 - `src/payment-service/main.ts`
 
-Module and handlers:
+Module/controller/service:
 
 - `src/payment-service/payments.module.ts`
 - `src/payment-service/payments.grpc.controller.ts`
 - `src/payment-service/payments.service.ts`
 
-Behavior:
+Implemented behavior:
 
-- `Authorize` stores/reuses payment and returns `paymentId + status`
-- `GetPaymentStatus` reads status from DB by `paymentId`
-- payment status mapping is implemented in `src/payment-service/status.mapper.ts`
+- `Authorize`: creates or reuses payment by `(orderId, idempotencyKey)`
+- `GetPaymentStatus`: reads real status from DB
+- `Capture`: updates status to captured (`PAID` in DB mapping) and sets `paidAt`
+- `Refund`: basic status transition logic
 
-Storage:
+Status mapping:
 
-- PostgreSQL (`payments` table)
-- idempotency is supported via `idempotency_key`
-- unique constraint: `(order_id, idempotency_key)`
+- `src/payment-service/status.mapper.ts`
+
+Persistence:
+
+- PostgreSQL table `payments`
+- uniqueness: `UQ_payments_order_id_idempotency_key`
 
 Migration:
 
 - `src/database/migrations/1773075005406-update-payments-idempotency-key.ts`
 
-## Orders Service (gRPC Client)
+## 3) orders-service (gRPC client)
 
-Client registration:
+Client setup:
 
-- `src/orders/orders.module.ts` via `ClientsModule.registerAsync(...)`
-- token constant: `PAYMENTS_GRPC_CLIENT`
+- `src/orders/orders.module.ts` (`ClientsModule.registerAsync`)
+- token: `PAYMENTS_GRPC_CLIENT`
+- contract connection via `proto/payments/v1/payments.proto`
 
-Client usage:
+Usage in flow:
 
 - `src/orders/orders.service.ts`
-- `ClientGrpc` -> `PaymentsClient`
-- `Payments.Authorize(...)` is called in `create(...)` flow after order commit
+- in `create(...)`: call `Payments.Authorize`
+- timeout applied with `lastValueFrom(...pipe(timeout(paymentsTimeoutMs)))`
 
-No direct imports from `src/payment-service/*` are used in Orders; communication is through proto-generated contract/client.
+Important boundary:
 
-## Timeout / Resilience
+- Orders does not import implementation code from `src/payment-service/*`
+- integration is done only through proto-generated contract/client
 
-Timeout env/config:
+## 4) Timeout / resilience
 
-- env key: `PAYMENTS_RPC_TIMEOUT_MS`
-- config key: `paymentsServiceConfig.paymentsGrpcTimeoutMs`
+Config:
 
-Applied on client call:
+- env: `PAYMENTS_RPC_TIMEOUT_MS`
+- typed config: `paymentsServiceConfig.paymentsGrpcTimeoutMs`
 
-- `authorize(...).pipe(timeout(paymentsTimeoutMs))`
-- `lastValueFrom(...)`
+Error mapping in Orders:
 
-HTTP mapping:
+- timeout -> `504 Gateway Timeout` (`Payments service timeout`)
+- gRPC transport/unavailable -> `503 Service Unavailable`
 
-- timeout -> `504 Gateway Timeout`
-- transport/grpc availability issues -> `503 Service Unavailable`
+## 5) Extra payment flow in API (`POST /api/v1/orders/:orderId/pay`)
 
-## Run (Docker)
+Files:
+
+- `src/payments/payments.controller.ts`
+- `src/payments/payments.service.ts`
+
+Behavior:
+
+- finds authorized payment for order (or authorizes if missing)
+- captures payment through gRPC
+- repeat call is idempotent for already paid order
+
+## 6) How to run locally
 
 ```bash
-docker compose --env-file .env.development -f compose.yml -f compose.dev.yml down -v --remove-orphans
-docker compose --env-file .env.development -f compose.yml -f compose.dev.yml up -d --build
+npm run docker:dev
 docker compose --env-file .env.development -f compose.yml -f compose.dev.yml exec api npm run migration:run
 ```
 
@@ -104,20 +124,23 @@ Useful logs:
 docker compose --env-file .env.development -f compose.yml -f compose.dev.yml logs -f api payments-service
 ```
 
-## Happy Path Check
+## 7) Happy path verification
 
-1. Call Orders endpoint (`POST /api/v1/orders`).
-2. Orders creates order and calls `Payments.Authorize`.
-3. Response includes:
-   - `order`
-   - `payment.paymentId`
-   - `payment.status`
+Postman collection:
 
-## Timeout Check
+- `postman/rest_payments_grpc_collection.custom.json`
 
-1. Set very small timeout in `.env.development`, for example:
-   - `PAYMENTS_RPC_TIMEOUT_MS=1`
-2. Recreate `api` container.
-3. Call `POST /api/v1/orders`.
-4. Expected result: `504 Gateway Timeout` with message like `Payments service timeout`.
+Collection checks:
 
+1. login (`/api/v1/auth/login`)
+2. resolve current user (`/api/v1/auth/me`)
+3. create order (`POST /api/v1/orders`) -> includes payment authorization result
+4. pay order (`POST /api/v1/orders/:orderId/pay`) -> capture success (`status=PAID`, `paidAt != null`)
+5. repeat pay call -> idempotent behavior
+
+## 8) Timeout verification
+
+1. Set in `.env.development`: `PAYMENTS_RPC_TIMEOUT_MS=1`
+2. Recreate `api` container
+3. Call `POST /api/v1/orders`
+4. Expected: `504` response (`Payments service timeout`)

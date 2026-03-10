@@ -265,8 +265,8 @@ Or use npm scripts:
 
 ```bash
 npm run docker:dev
-npm run docker:status
-npm run docker:logs
+npm run docker:dev:status
+npm run docker:dev:logs
 ```
 
 Hot reload check:
@@ -290,12 +290,12 @@ The project includes helper scripts in `package.json` for the dev compose stack:
 
 ```bash
 npm run docker:dev      # up -d --build (compose.yml + compose.dev.yml)
-npm run docker:status   # show containers status
-npm run docker:logs     # follow api logs
-npm run docker:stop     # stop containers (keep containers and data)
-npm run docker:start    # start previously stopped containers
-npm run docker:down     # stop and remove containers/networks
-npm run docker:restart  # full restart (down + up -d --build)
+npm run docker:dev:status   # show containers status
+npm run docker:dev:logs     # follow api logs
+npm run docker:dev:stop     # stop containers (keep containers and data)
+npm run docker:dev:start    # start previously stopped containers
+npm run docker:dev:down     # stop and remove containers/networks
+npm run docker:dev:restart  # full restart (down + up -d --build)
 ```
 
 ### Docker Image Builds / Optimization Proof
@@ -324,7 +324,7 @@ Quick run for this homework:
 
 ```bash
 npm run docker:dev
-npm run docker:status
+npm run docker:dev:status
 ```
 
 RabbitMQ management UI:
@@ -358,6 +358,40 @@ Implemented in this homework:
 - `orders-service` gRPC client call to `Payments.Authorize`
 - timeout on Orders -> Payments call from env/config (`PAYMENTS_RPC_TIMEOUT_MS`)
 - happy path response includes payment authorization result (`paymentId`, `status`)
+
+### Homework 13 quick check
+
+Run stack:
+
+```bash
+npm run docker:dev
+npm run docker:dev:status
+```
+
+Run migrations inside API container:
+
+```bash
+docker compose --env-file .env.development -f compose.yml -f compose.dev.yml exec api npm run migration:run
+```
+
+Postman collection for E2E check:
+
+- `postman/rest_payments_grpc_collection.custom.json`
+
+What this collection verifies:
+
+- login + auth context (`/api/v1/auth/login`, `/api/v1/auth/me`)
+- order creation (`POST /api/v1/orders`) with gRPC `Payments.Authorize`
+- order payment (`POST /api/v1/orders/:orderId/pay`) with gRPC `Payments.Capture`
+- repeat payment call idempotency (same paid payment is returned)
+- `paidAt` is set after capture
+
+Timeout check:
+
+1. Set `PAYMENTS_RPC_TIMEOUT_MS=1` in `.env.development`.
+2. Recreate `api` container.
+3. Call `POST /api/v1/orders`.
+4. Expected HTTP result: `504` (`Payments service timeout`).
 
 ## Kafka Event Streams
 
