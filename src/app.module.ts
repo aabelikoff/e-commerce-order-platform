@@ -41,11 +41,12 @@ import { RabbitmqModule } from './rabbitmq/rabbitmq.module';
 import { OutboxModule } from './outbox/outbox.module';
 import { kafkaConfig } from './config/kafka';
 import { KafkaModule } from './kafka/kafka.module';
+import { paymentsServiceConfig } from './config/payments-service/payments-service.config';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
-      load: [appConfig, databaseConfig, authConfig, s3Config, rabbitMQConfig, kafkaConfig],
+      load: [appConfig, databaseConfig, authConfig, s3Config, rabbitMQConfig, kafkaConfig, paymentsServiceConfig],
       envFilePath: getEnvFilePath(),
       isGlobal: true,
     }),
