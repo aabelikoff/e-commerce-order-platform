@@ -15,7 +15,8 @@ The main goal of the project is to demonstrate a clean, well-structured, and sca
 - [Run Tests](#run-tests)
 - [Deployment](#deployment)
 - [Docker / Containers](#docker--containers)
-- [Homework 12 (RabbitMQ + Outbox)](#homework-12-rabbitmq--outbox)
+- [(RabbitMQ + Outbox)](#rabbitmq--outbox)
+- [gRPC Payments Service](#grpc-payments-service)
 - [Kafka Event Streams](#kafka-event-streams)
 - [Stay in Touch](#stay-in-touch)
 - [License](#license)
@@ -23,6 +24,7 @@ The main goal of the project is to demonstrate a clean, well-structured, and sca
 ## Architectural Vision
 
 The architecture is designed with a focus on:
+
 - modularity
 - clear separation of responsibilities
 - centralized and typed configuration
@@ -35,6 +37,7 @@ The architecture is designed with a focus on:
 The application follows a modular architecture.
 
 Each major business domain is implemented as an isolated module:
+
 - `users`
 - `products`
 - `orders`
@@ -56,6 +59,7 @@ src/
  |- users/
  |- orders/
  |- payments/
+ |- payment-service/
  |- products/
  |- profiles/
  |- notifications/
@@ -63,6 +67,9 @@ src/
  |- config/
  |- app.module.ts
  `- main.ts
+
+proto/
+ `- payments/v1/payments.proto
 
 test/
  `- app.e2e-spec.ts
@@ -80,6 +87,8 @@ This follows the Single Responsibility Principle and improves readability and ma
 Core domain modules: `users`, `products`, `orders`, `payments`
 
 Isolated modules: `auth`, `profiles`, `notifications`, `reportings`
+
+Dedicated gRPC microservice module: `payment-service` (separate entrypoint for Payments gRPC server)
 
 Configuration layer: the `config` directory contains centralized and strongly typed application configuration.
 
@@ -104,10 +113,12 @@ npm install
 ## Environment Variables
 
 Use `.env.example` as a template for local environment files:
+
 - `.env.production` for prod-like Docker compose run
 - `.env.development` for dev Docker compose run
 
 Important:
+
 - inside Docker containers DB host must be `postgres` (service name), not `localhost`
 - in dev with MinIO, S3 endpoint should be `http://minio:9000`
 
@@ -184,16 +195,21 @@ This project includes a Docker-based workflow for both prod-like local runs and 
 - `compose.yml` (prod-like local stack)
 - `compose.dev.yml` (dev override with hot reload + bind mount)
 - `.dockerignore`
+- `payments-service` runs as a separate container/process in both prod-like and dev compose
 
 ### Prod-like Run (`compose.yml`)
 
 Services:
+
 - `api` (NestJS backend, `prod-distroless`)
+- `payments-service` (NestJS gRPC server, `prod-distroless`)
 - `postgres` (official `postgres:16`)
 - `migrate` (one-off migrations job)
 - `seed` (one-off seed job)
+- `kafka` + `kafka-init` (topic bootstrap for `orders.events`, `payments.events`)
 
 Notes:
+
 - `postgres` is only on private `internal` network and is not exposed
 - `api` is published as `127.0.0.1:8080 -> 3001`
 
@@ -220,14 +236,24 @@ curl http://127.0.0.1:8080/api/docs
 curl http://127.0.0.1:8080/graphql
 ```
 
+Check Payments gRPC port:
+
+```bash
+nc -z 127.0.0.1 5021
+```
+
 ### Dev Run (`compose.dev.yml`)
 
 `compose.dev.yml` overrides `compose.yml` and:
+
 - switches `api` to Docker target `dev`
+- switches `payments-service` to Docker target `dev`
 - runs `npm run start:dev`
+- runs `npm run start:payments:dev`
 - uses bind mount for source code
 - keeps `/app/node_modules` in a container volume (so bind mount does not break dependencies)
 - adds MinIO + `minio-init` for local file-flow development
+- adds `kafka-init` to auto-create required topics
 
 Run dev stack:
 
@@ -244,6 +270,7 @@ npm run docker:logs
 ```
 
 Hot reload check:
+
 1. Start the dev stack
 2. Edit any file in `src/` (for example `src/payments/payments.service.ts`)
 3. Verify `api` logs show recompilation / restart
@@ -282,12 +309,10 @@ docker build --target prod -t ecommerse-api:prod .
 docker build --target prod-distroless -t ecommerse-api:distroless .
 ```
 
-
 ### Compose Notes
 
 - Use `--env-file .env.production` / `--env-file .env.development` in compose commands so `${...}` values are substituted correctly.
 - `postgres` is intentionally not published to host (`no ports:` in `compose.yml`).
-
 
 ## RabbitMQ + Outbox
 
@@ -319,6 +344,20 @@ Implemented in this homework:
 - Retry with limit and DLQ
 - Idempotent processing via `processed_messages`
 - Outbox Pattern (`outbox_events` + relay)
+
+## gRPC Payments Service
+
+Implementation details are documented in:
+
+- `homework13.md`
+
+Implemented in this homework:
+
+- dedicated `payments-service` with separate NestJS entrypoint (`src/payment-service/main.ts`)
+- `.proto` contract at `proto/payments/v1/payments.proto`
+- `orders-service` gRPC client call to `Payments.Authorize`
+- timeout on Orders -> Payments call from env/config (`PAYMENTS_RPC_TIMEOUT_MS`)
+- happy path response includes payment authorization result (`paymentId`, `status`)
 
 ## Kafka Event Streams
 
@@ -353,4 +392,3 @@ This setup keeps operational processing in RabbitMQ and uses Kafka for domain ev
 ## License
 
 MIT licensed.
-

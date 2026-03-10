@@ -13,6 +13,7 @@ services:
       NODE_ENV: development
       DB_HOST: postgres
       DB_PORT: 5432
+      PAYMENTS_GRPC_URL: payments-service:5021
       AWS_S3_ENDPOINT: http://minio:9000
       CHOKIDAR_USEPOLLING: 'true'
       CHOKIDAR_INTERVAL: '1000'
@@ -26,6 +27,38 @@ services:
       - /app/node_modules
     ports:
       - '127.0.0.1:8080:3001'
+    networks:
+      - internal
+      - public
+
+  payments-service:
+    depends_on:
+      postgres:
+        condition: service_healthy
+    build:
+      context: .
+      target: dev
+    restart: unless-stopped
+    env_file:
+      - .env.development
+    environment:
+      NODE_ENV: development
+      DB_HOST: postgres
+      DB_PORT: 5432
+      PAYMENTS_GRPC_URL: payments-service:5021
+      PAYMENTS_GRPC_BIND_URL: 0.0.0.0:5021
+      CHOKIDAR_USEPOLLING: 'true'
+      CHOKIDAR_INTERVAL: '1000'
+      WATCHPACK_POLLING: 'true'
+      TSC_WATCHFILE: FixedPollingInterval
+      TSC_WATCHDIRECTORY: FixedPollingInterval
+      TSC_NONPOLLING_WATCHER: 'false'
+    command: ['npm', 'run', 'start:payments:dev']
+    volumes:
+      - .:/app
+      - /app/node_modules
+    ports:
+      - '127.0.0.1:5021:5021'
     networks:
       - internal
       - public
@@ -114,6 +147,25 @@ services:
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
     networks:
       - public
+
+  kafka-init:
+    image: apache/kafka:3.9.0
+    container_name: ecommerce-kafka-init
+    depends_on:
+      - kafka
+    restart: 'no'
+    networks:
+      - public
+    entrypoint: >
+      /bin/sh -c "
+      until /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 --list >/dev/null 2>&1; do
+        echo 'waiting for kafka...';
+        sleep 2;
+      done;
+      /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 --create --if-not-exists --topic orders.events --partitions 3 --replication-factor 1;
+      /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 --create --if-not-exists --topic payments.events --partitions 3 --replication-factor 1;
+      echo 'kafka topics are ready';
+      "
 
 volumes:
   minio_ecommerce:
