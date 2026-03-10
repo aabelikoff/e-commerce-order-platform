@@ -19,7 +19,7 @@ import {
   User,
 } from '../database/entities';
 import { KafkaModule } from '../kafka/kafka.module';
-import { RabbitmqModule } from 'src/rabbitmq/rabbitmq.module';
+import { RabbitmqModule } from '../rabbitmq/rabbitmq.module';
 
 @Module({
   imports: [

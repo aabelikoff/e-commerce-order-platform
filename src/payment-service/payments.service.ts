@@ -149,6 +149,7 @@ export class PaymentsService {
         { id: request.paymentId },
         {
           status: toDbStatus(PaymentStatus.PAYMENT_STATUS_CAPTURED),
+          paidAt: new Date(),
         },
       );
       await qr.commitTransaction();
