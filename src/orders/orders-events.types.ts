@@ -1,4 +1,4 @@
-import type { EOrderStatus } from "src/database/entities";
+import type { EOrderStatus } from "../database/entities";
 
 export type OrderStatusChangedEvent = {
     type: 'order.status_changed',

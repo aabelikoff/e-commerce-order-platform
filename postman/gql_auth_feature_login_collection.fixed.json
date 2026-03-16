@@ -1,10 +1,10 @@
-﻿{
+{
   "info": {
     "name": "E-Commerce GraphQL Checklist (graphql-auth-dataloader) [fixed]",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
-    { "key": "baseUrl", "value": "http://localhost:3001" },
+    { "key": "baseUrl", "value": "http://localhost:8080" },
     { "key": "emailAlice", "value": "alice@example.com" },
     { "key": "emailBob", "value": "bob@example.com" },
     { "key": "emailAdmin", "value": "admin@example.com" },
@@ -184,3 +184,4 @@
     }
   ]
 }
+

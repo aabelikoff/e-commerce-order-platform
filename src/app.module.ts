@@ -36,11 +36,17 @@ import { s3Config } from './config/s3';
 import { FilesModule } from './files/files.module';
 import { S3Service } from './files/s3.service';
 import { RealtimeModule } from './realtime/realtime.module';
+import { rabbitMQConfig } from './config/rabbitmq/index';
+import { RabbitmqModule } from './rabbitmq/rabbitmq.module';
+import { OutboxModule } from './outbox/outbox.module';
+import { kafkaConfig } from './config/kafka';
+import { KafkaModule } from './kafka/kafka.module';
+import { paymentsServiceConfig } from './config/payments-service/payments-service.config';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
-      load: [appConfig, databaseConfig, authConfig, s3Config],
+      load: [appConfig, databaseConfig, authConfig, s3Config, rabbitMQConfig, kafkaConfig, paymentsServiceConfig],
       envFilePath: getEnvFilePath(),
       isGlobal: true,
     }),
@@ -61,7 +67,8 @@ import { RealtimeModule } from './realtime/realtime.module';
           autoLoadEntities: true,
           synchronize: false,
           entities: [User, Order, OrderItem, Product],
-          logging: ['query'],
+          // logging: ['query'],
+          logging: false
         };
       },
     }),
@@ -75,6 +82,9 @@ import { RealtimeModule } from './realtime/realtime.module';
     AppGraphqlModule,
     FilesModule,
     RealtimeModule,
+    RabbitmqModule,
+    OutboxModule,
+    KafkaModule,
   ],
   controllers: [],
   providers: [S3Service],

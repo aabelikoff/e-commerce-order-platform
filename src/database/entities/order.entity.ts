@@ -18,6 +18,7 @@ export enum EOrderStatus {
   PAID = 'paid',
   SHIPPED = 'shipped',
   CANCELLED = 'cancelled',
+  PROCESSED = 'processed',
 }
 
 @Entity({ name: 'orders' })
@@ -110,7 +111,7 @@ export class Order {
   @OneToMany(() => Payment, (p) => p.order)
   payments: Payment[];
 
-  @Column({name: 'status_version', type: 'integer'})
+  @Column({ name: 'status_version', type: 'integer' })
   statusVersion: number;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
@@ -118,4 +119,7 @@ export class Order {
 
   @UpdateDateColumn({ name: 'updated_at', type: 'timestamptz' })
   updatedAt: Date;
+
+  @Column({ name: 'processed_at', type: 'timestamptz', nullable: true })
+  processedAt: Date | null;
 }

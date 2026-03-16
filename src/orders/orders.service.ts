@@ -4,7 +4,12 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
+  OnModuleInit,
+  Inject,
+  GatewayTimeoutException,
+  ServiceUnavailableException,
 } from '@nestjs/common';
+import { randomUUID } from 'crypto';
 import { InjectRepository } from '@nestjs/typeorm';
 import {
   EOrderStatus,
@@ -12,26 +17,48 @@ import {
   OrderItem,
   Product,
   User,
-} from 'src/database/entities';
+} from '../database/entities';
 import { DataSource, Repository } from 'typeorm';
 import { CreateOrderDto } from './v1/dto/create-order.dto';
 import { AuthUser } from 'src/auth/types';
 import { ERoles } from 'src/auth/access/roles';
 import { OrdersEventsService } from './orders-events.service';
+import { OrdersProcessMessage } from './orders-queue.types';
+import { OutboxService } from 'src/outbox/outbox.service';
+import { OrderEventEnvelopeV1 } from './orders-kafka-events.types';
+import { type ClientGrpc } from '@nestjs/microservices';
+import { PAYMENTS_GRPC_CLIENT, PAYMENTS_SERVICE_NAME } from '../common/grpc/grpc.constants';
+import {
+  AuthorizeResponse,
+  PaymentsClient,
+} from '../generated/payments/v1/payments';
+import { ConfigService } from '@nestjs/config';
+import { IPaymentsServiceConfig } from 'src/config/payments-service';
+import { lastValueFrom, TimeoutError, timeout } from 'rxjs';
 
 @Injectable()
-export class OrdersService {
+export class OrdersService implements OnModuleInit {
+  private paymentsClient: PaymentsClient;
+
   constructor(
     private readonly dataSource: DataSource,
     @InjectRepository(Order)
     private readonly ordersRepository: Repository<Order>,
     private readonly ordersEventsService: OrdersEventsService,
-  ) {}
+    private readonly outboxService: OutboxService,
+    private readonly configService: ConfigService,
+    @Inject(PAYMENTS_GRPC_CLIENT)
+    private readonly paymentsGrpcClient: ClientGrpc
+  ) { }
+  
+  onModuleInit() {
+    this.paymentsClient = this.paymentsGrpcClient.getService<PaymentsClient>(PAYMENTS_SERVICE_NAME)
+  }
 
   async create(
     dto: CreateOrderDto,
     idempotencyKey: string,
-  ): Promise<{ created: boolean; order: Order }> {
+  ): Promise<{ created: boolean; order: Order; payment?: AuthorizeResponse }> {
     if (!dto.items?.length) {
       throw new BadRequestException('Order items are required');
     }
@@ -184,21 +211,89 @@ export class OrdersService {
         },
       );
 
+      // 8) Insert OutboxEvent
+
+      const message: OrdersProcessMessage = {
+        messageId: randomUUID(),
+        orderId: order.id,
+        createdAt: order.createdAt.toISOString(),
+        attempt: 1,
+        // simulate: 'alwaysFail'
+      };
+
+      await this.outboxService.add(
+        'order',
+        order.id,
+        'order.process_requested',
+        message as unknown as Record<string, unknown>,
+        manager
+      );
+
+      const event: OrderEventEnvelopeV1 = {
+        eventId: randomUUID(),
+        eventName: 'OrderPlaced',
+        occurredAt: order.createdAt.toISOString(),
+        schemaVersion: 1,
+        order: {
+          orderId: order.id,
+          userId: dto.userId,
+          totalAmount: calc.total_amount,
+          currency: 'USD' //TODO: implement different currency options
+        }
+      }
+
+      await this.outboxService.add(
+        'order',
+        order.id,
+        'order.placed',
+        event as unknown as Record<string, unknown>,
+        manager
+      )
+
       await qr.commitTransaction();
 
       const createdOrder = await this.ordersRepository.findOneOrFail({
         where: { id: order.id },
         relations: { items: true },
       });
+
+      const paymentsTimeoutMs =
+        this.configService.get<IPaymentsServiceConfig['paymentsGrpcTimeoutMs']>(
+          'paymentsServiceConfig.paymentsGrpcTimeoutMs',
+        ) ?? 2500;
+
+      const payment = await lastValueFrom(
+        this.paymentsClient
+          .authorize({
+            orderId: order.id,
+            userId: dto.userId,
+            total: {
+              amount: calc.total_amount,
+              currency: 'USD',
+            },
+            idempotencyKey,
+          })
+          .pipe(timeout(paymentsTimeoutMs)),
+      );
+
       return {
         order: createdOrder,
         created: true,
+        payment,
       };
-    } catch (e: any) {
-      await qr.rollbackTransaction();
+    } catch (e: unknown) {
+      if (e instanceof TimeoutError) {
+        throw new GatewayTimeoutException('Payments service timeout');
+      }
+      if ((e as { code?: number })?.code !== undefined) {
+        throw new ServiceUnavailableException('Payments service unavailable');
+      }
+      if (qr.isTransactionActive) {
+        await qr.rollbackTransaction();
+      }
       // 235050 - PSQL Error code for unique violation
       // It is used for case when 2 tx are in race condition
-      if (e?.code === '23505') {
+      if ((e as { code?: string })?.code === '23505') {
         const existing = await this.ordersRepository.findOne({
           where: { idempotencyKey, user: { id: dto.userId } },
           relations: { items: true },
@@ -301,7 +396,9 @@ export class OrdersService {
   }
 
   async canSubscribeToOrder(orderId: string, user: AuthUser): Promise<void> {
-    const order = await this.ordersRepository.findOne({ where: { id: orderId } });
+    const order = await this.ordersRepository.findOne({
+      where: { id: orderId },
+    });
     if (!order) {
       throw new NotFoundException('Order not found');
     }

@@ -1,0 +1,244 @@
+{
+  "info": {
+    "name": "Ecommerce Orders/Payments gRPC E2E",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "E2E flow: login -> create order (Authorize) -> pay order (Capture) -> repeat pay (idempotency)."
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080" },
+    { "key": "email", "value": "alice@example.com" },
+    { "key": "password", "value": "password" },
+    { "key": "hw13AccessToken", "value": "" },
+    { "key": "hw13UserId", "value": "" },
+    { "key": "hw13ProductId", "value": "" },
+    { "key": "hw13OrderId", "value": "" },
+    { "key": "hw13PaymentId", "value": "" },
+    { "key": "hw13IdempotencyKey", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "1) POST /api/v1/auth/login",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{baseUrl}}/api/v1/auth/login",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}",
+          "options": { "raw": { "language": "json" } }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('login success', function () {",
+              "  pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+              "});",
+              "const json = pm.response.json();",
+              "const token = json?.data?.accessToken || json?.accessToken;",
+              "pm.expect(token, 'accessToken missing').to.be.a('string').and.not.empty;",
+              "pm.collectionVariables.set('hw13AccessToken', token);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "2) GET /api/v1/auth/me (set userId)",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{hw13AccessToken}}" }],
+        "url": "{{baseUrl}}/api/v1/auth/me"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('me success', function () {",
+              "  pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+              "});",
+              "const json = pm.response.json();",
+              "const me = json?.data || json;",
+              "const userId = me?.sub || me?.id;",
+              "pm.expect(userId, 'userId missing in /auth/me').to.be.a('string').and.not.empty;",
+              "pm.collectionVariables.set('hw13UserId', userId);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "3) GET /api/v1/products (pick first productId)",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/v1/products?limit=1&offset=0"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('products fetched', function () {",
+              "  pm.expect(pm.response.code).to.eql(200);",
+              "});",
+              "const json = pm.response.json();",
+              "const items = json?.data?.items || [];",
+              "pm.expect(items.length, 'No products found').to.be.greaterThan(0);",
+              "const withStock = items.find((p) => Number(p?.stock ?? 0) > 0) || items[0];",
+              "pm.expect(withStock?.id, 'productId missing').to.be.a('string').and.not.empty;",
+              "pm.collectionVariables.set('hw13ProductId', withStock.id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "4) POST /api/v1/orders (creates order + Authorize via gRPC)",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const key = pm.variables.replaceIn('{{$guid}}');",
+              "const uuidV4 = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {",
+              "  const r = Math.random() * 16 | 0;",
+              "  const v = c === 'x' ? r : (r & 0x3 | 0x8);",
+              "  return v.toString(16);",
+              "});",
+              "pm.collectionVariables.set('hw13IdempotencyKey', uuidV4);"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('order created', function () {",
+              "  pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+              "});",
+              "const json = pm.response.json();",
+              "const data = json?.data || json;",
+              "const order = data?.order || data;",
+              "pm.expect(order?.id, 'order id missing').to.be.a('string').and.not.empty;",
+              "pm.collectionVariables.set('hw13OrderId', order.id);",
+              "",
+              "if (data?.payment?.paymentId) {",
+              "  pm.collectionVariables.set('hw13PaymentId', data.payment.paymentId);",
+              "}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{hw13AccessToken}}" },
+          { "key": "Idempotency-Key", "value": "{{hw13IdempotencyKey}}" }
+        ],
+        "url": "{{baseUrl}}/api/v1/orders",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"userId\": \"{{hw13UserId}}\",\n  \"items\": [\n    {\n      \"productId\": \"{{hw13ProductId}}\",\n      \"quantity\": 1\n    }\n  ]\n}",
+          "options": { "raw": { "language": "json" } }
+        }
+      }
+    },
+    {
+      "name": "5) POST /api/v1/orders/:orderId/pay (Capture)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{hw13AccessToken}}" }
+        ],
+        "url": "{{baseUrl}}/api/v1/orders/{{hw13OrderId}}/pay"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('pay success', function () {",
+              "  pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+              "});",
+              "const json = pm.response.json();",
+              "const payment = json?.data || json;",
+              "pm.expect(payment?.id, 'payment id missing').to.be.a('string').and.not.empty;",
+              "pm.expect(payment?.status).to.eql('PAID');",
+              "pm.expect(payment?.paidAt, 'paidAt must be set after capture').to.be.ok;",
+              "pm.collectionVariables.set('hw13PaymentId', payment.id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "6) POST /api/v1/orders/:orderId/pay again (idempotent)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{hw13AccessToken}}" }
+        ],
+        "url": "{{baseUrl}}/api/v1/orders/{{hw13OrderId}}/pay"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('repeat pay returns same paid payment', function () {",
+              "  pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+              "});",
+              "const json = pm.response.json();",
+              "const payment = json?.data || json;",
+              "pm.expect(payment?.status).to.eql('PAID');",
+              "pm.expect(payment?.paidAt).to.be.ok;",
+              "const firstPaymentId = pm.collectionVariables.get('hw13PaymentId');",
+              "if (firstPaymentId) {",
+              "  pm.expect(payment?.id).to.eql(firstPaymentId);",
+              "}"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "7) GET /api/v1/orders/:id",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{hw13AccessToken}}" }
+        ],
+        "url": "{{baseUrl}}/api/v1/orders/{{hw13OrderId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('order readable', function () {",
+              "  pm.expect(pm.response.code).to.eql(200);",
+              "});",
+              "const json = pm.response.json();",
+              "const order = json?.data || json;",
+              "pm.expect(order?.id).to.eql(pm.collectionVariables.get('hw13OrderId'));"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
+
+

@@ -18,6 +18,12 @@ export class OrderResponseInterceptor implements NestInterceptor {
         
         if (data && typeof data.created === 'boolean') {
           response.status(data.created ? HttpStatus.CREATED : HttpStatus.OK);
+          if ('payment' in data) {
+            return {
+              order: data.order,
+              payment: data.payment,
+            };
+          }
           return data.order;
         }
         
