@@ -5,7 +5,7 @@ import {
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
-  RelationId,
+  Unique,
   UpdateDateColumn,
 } from 'typeorm';
 import { Order } from './order.entity';
@@ -19,6 +19,7 @@ export enum EPaymentStatus {
 }
 
 @Entity({ name: 'payments' })
+@Unique('UQ_payments_order_id_idempotency_key', ['orderId', 'idempotencyKey'])
 export class Payment {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -61,4 +62,7 @@ export class Payment {
     type: 'timestamptz',
   })
   updatedAt: Date;
+
+  @Column({ name: 'idempotency_key', type: 'uuid' })
+  idempotencyKey: string;
 }
