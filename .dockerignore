@@ -1,0 +1,31 @@
+# node modules and execution files
+node_modules
+dist
+
+# docker
+compose*.yml
+docker-compose*.yml
+
+# VS Code
+.vscode
+.idea
+.DS_Store
+
+#git
+.git
+
+# env
+.env*
+!.env.example
+
+# tests
+test
+coverage
+postman
+
+# other text files
+README.md
+npm-debug.log*
+homework*.md
+explanations
+*.log

@@ -9,7 +9,6 @@ import { ResponseInterceptor } from './common/interceptors/response.interceptor'
 import { logger } from './common/middleware/logger.middleware';
 import { CatchErrorInterceptor } from './common/interceptors/catch-error.interceptor';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { GqlAllExceptionsFilter } from './common/filters/gql-exception.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { cors: true });

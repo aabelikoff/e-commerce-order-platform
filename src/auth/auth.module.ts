@@ -30,5 +30,6 @@ import { type StringValue } from 'ms';
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy],
+  exports: [JwtModule],
 })
 export class AuthModule {}
