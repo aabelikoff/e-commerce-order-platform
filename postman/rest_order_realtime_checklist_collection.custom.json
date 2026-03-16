@@ -1,0 +1,277 @@
+{
+  "info": {
+    "name": "ECommerce - Order Realtime Checklist (REST)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "REST checklist for Orders access and status update with manual Socket.IO validation for OrdersGateway (/realtime). Case: Alice customer + Admin staff, running via docker compose dev."
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080/api/v1" },
+    { "key": "socketIoUrl", "value": "http://localhost:8080" },
+    { "key": "socketNamespace", "value": "/realtime" },
+    { "key": "emailAlice", "value": "alice@example.com" },
+    { "key": "emailAdmin", "value": "admin@example.com" },
+    { "key": "password", "value": "password" },
+    { "key": "tokenAlice", "value": "" },
+    { "key": "tokenAdmin", "value": "" },
+    { "key": "orderIdAlice", "value": "" },
+    { "key": "orderIdBob", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "1) Login (Alice) -> set tokenAlice",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "content-type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"email\":\"{{emailAlice}}\",\"password\":\"{{password}}\"}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": "{{baseUrl}}/auth/login"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('login returns accessToken', () => {",
+              "  pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+              "  const json = pm.response.json();",
+              "  pm.expect(json).to.have.property('data');",
+              "  pm.expect(json.data).to.have.property('accessToken');",
+              "  pm.collectionVariables.set('tokenAlice', json.data.accessToken);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "2) Login (Admin) -> set tokenAdmin",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "content-type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"email\":\"{{emailAdmin}}\",\"password\":\"{{password}}\"}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": "{{baseUrl}}/auth/login"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('login returns accessToken', () => {",
+              "  pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+              "  const json = pm.response.json();",
+              "  pm.expect(json).to.have.property('data');",
+              "  pm.expect(json.data).to.have.property('accessToken');",
+              "  pm.collectionVariables.set('tokenAdmin', json.data.accessToken);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "3) GET /orders (no token) -> 401",
+      "request": { "method": "GET", "url": "{{baseUrl}}/orders" },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('unauthorized', () => {",
+              "  pm.expect(pm.response.code).to.eql(401);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "4) GET /orders (Alice) -> 200 + set orderIdAlice",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{tokenAlice}}" }
+        ],
+        "url": "{{baseUrl}}/orders"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('orders list returns array', () => {",
+              "  pm.expect(pm.response.code).to.eql(200);",
+              "  const json = pm.response.json();",
+              "  pm.expect(json).to.have.property('data');",
+              "  pm.expect(json.data).to.be.an('array');",
+              "  pm.expect(json.data.length).to.be.greaterThan(0);",
+              "  pm.collectionVariables.set('aliceOrderIds', JSON.stringify(json.data.map((o) => o.id)));",
+              "  pm.collectionVariables.set('orderIdAlice', json.data[0].id);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "4.1) GET /orders (Admin) -> set orderIdBob",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{tokenAdmin}}" }
+        ],
+        "url": "{{baseUrl}}/orders"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('admin can select non-owner order', () => {",
+              "  pm.expect(pm.response.code).to.eql(200);",
+              "  const json = pm.response.json();",
+              "  pm.expect(json).to.have.property('data');",
+              "  pm.expect(json.data).to.be.an('array');",
+              "  const aliceOrderIdsRaw = pm.collectionVariables.get('aliceOrderIds') || '[]';",
+              "  const aliceOrderIds = JSON.parse(aliceOrderIdsRaw);",
+              "  const aliceOrderIdSet = new Set(aliceOrderIds);",
+              "  const candidate = json.data.find((o) => o.id && !aliceOrderIdSet.has(o.id));",
+              "  pm.expect(candidate, 'No non-owner order found for step 6').to.exist;",
+              "  pm.collectionVariables.set('orderIdBob', candidate.id);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "5) GET /orders/:id (Alice own) -> 200",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{tokenAlice}}" }
+        ],
+        "url": "{{baseUrl}}/orders/{{orderIdAlice}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('order returned', () => {",
+              "  pm.expect(pm.response.code).to.eql(200);",
+              "  const json = pm.response.json();",
+              "  pm.expect(json).to.have.property('data');",
+              "  const order = json.data;",
+              "  pm.expect(order).to.have.property('id');",
+              "  pm.expect(order.id).to.eql(pm.collectionVariables.get('orderIdAlice'));",
+              "  pm.expect(order).to.have.property('status');",
+              "  pm.expect(order).to.have.property('statusVersion');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "6) GET /orders/:id (Alice non-owner) -> 404",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{tokenAlice}}" }
+        ],
+        "url": "{{baseUrl}}/orders/{{orderIdBob}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('not found for non-owner', () => {",
+              "  pm.expect(pm.response.code).to.eql(404);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "7) PATCH /orders/:id/status (Admin) -> 200",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          { "key": "content-type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{tokenAdmin}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"status\":\"paid\"}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": "{{baseUrl}}/orders/{{orderIdAlice}}/status"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status updated', () => {",
+              "  pm.expect(pm.response.code).to.eql(200);",
+              "  const json = pm.response.json();",
+              "  pm.expect(json).to.have.property('data');",
+              "  pm.expect(json.data).to.have.property('status');",
+              "  pm.expect(json.data).to.have.property('statusVersion');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "8) Manual: Socket.IO note",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/auth/me",
+        "description": "For docker compose dev use Socket.IO endpoint {{socketIoUrl}} with namespace {{socketNamespace}}. compose.dev.yml maps 127.0.0.1:8080 to container port 3001. Postman raw WebSocket request is not enough for Socket.IO protocol."
+      }
+    },
+    {
+      "name": "9) WS Manual: connect to /realtime",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/auth/me",
+        "description": "Manual check. In a Socket.IO client connect to {{socketIoUrl}} with namespace {{socketNamespace}} using Alice token (auth.token or Bearer). Connection must be accepted."
+      }
+    },
+    {
+      "name": "10) WS Manual: emit subscribeOrder",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/auth/me",
+        "description": "Manual check. Emit subscribeOrder with payload {\"orderId\":\"{{orderIdAlice}}\"}. Expected ack/response: {\"ok\":true}. Emit with {{orderIdBob}} as Alice must fail with Subscription denied/403-equivalent error."
+      }
+    },
+    {
+      "name": "11) WS Manual: verify order.status after PATCH",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/auth/me",
+        "description": "Manual check. Keep socket subscribed from step 10, then run step 7 (PATCH status). Expected inbound Socket.IO event: order.status with orderId={{orderIdAlice}} and incremented statusVersion."
+      }
+    }
+  ]
+}
