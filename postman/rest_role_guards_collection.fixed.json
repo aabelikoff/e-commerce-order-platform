@@ -1,10 +1,10 @@
-﻿{
+{
   "info": {
     "name": "E-Commerce REST Checklist (role-guards) [fixed]",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
-    { "key": "baseUrl", "value": "http://localhost:3001" },
+    { "key": "baseUrl", "value": "http://localhost:8080" },
     { "key": "emailUser", "value": "alice@example.com" },
     { "key": "emailAdmin", "value": "admin@example.com" },
     { "key": "password", "value": "password" },
@@ -164,3 +164,4 @@
     }
   ]
 }
+
