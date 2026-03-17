@@ -115,7 +115,7 @@ jobs:
           path: deploy
 
       - name: Show deployment metadata
-        shell: pwsh
+        shell: powershell
         run: |
           echo "Environment: stage"
           echo "Commit SHA: $GITHUB_SHA"
@@ -124,7 +124,7 @@ jobs:
           cat "${{ needs.build-image.outputs.release_manifest_name }}"
 
       - name: Write stage environment file
-        shell: pwsh
+        shell: powershell
         run: |
           @'
           ${{ secrets.STAGE_ENV_FILE }}
@@ -138,11 +138,11 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Pull immutable image
-        shell: pwsh
+        shell: powershell
         run: docker pull "${{ needs.build-image.outputs.image_repository }}@${{ needs.build-image.outputs.image_digest }}"
 
       - name: Deploy stage stack
-        shell: pwsh
+        shell: powershell
         env:
           APP_IMAGE: ${{ needs.build-image.outputs.image_repository }}@${{ needs.build-image.outputs.image_digest }}
           COMPOSE_PROJECT_NAME: ecommerce-stage
@@ -150,6 +150,6 @@ jobs:
           docker compose --env-file .env.stage -f deploy/compose.stage.yml up -d --remove-orphans
 
       - name: Stage smoke check
-        shell: pwsh
+        shell: powershell
         run: |
           curl.exe --fail --retry 12 --retry-delay 5 http://127.0.0.1:8080/api/docs
