@@ -1,0 +1,38 @@
+name: PR Checks
+
+on:
+  pull_request:
+    branches:
+      - main
+      - develop
+
+permissions:
+  contents: read
+
+jobs:
+  quality-checks:
+    name: Lint, Tests, Docker Validation
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run lint
+        run: npm run lint:ci
+
+      - name: Run unit tests
+        run: npm test -- --runInBand
+
+      - name: Validate production Docker build
+        run: docker build --target prod-distroless -t e-commerce-order-platform:pr-check .
+
