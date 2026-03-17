@@ -7,6 +7,6 @@ export const authConfig = registerAs(
     jwtAccessSecret: process.env.JWT_ACCESS_SECRET ?? '',
     jwtRefreshSecret: process.env.JWT_REFRESH_SECRET ?? '',
     jwtAccessTtl: process.env.JWT_ACCESS_TTL ?? '15m',
-    jwtRefreshTtl: process.env.JWT_REFRESH_TTl ?? '30d',
+    jwtRefreshTtl: process.env.JWT_REFRESH_TTL ?? '30d',
   }),
 );
