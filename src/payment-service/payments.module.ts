@@ -59,7 +59,7 @@ import { RabbitmqModule } from '../rabbitmq/rabbitmq.module';
             ProductImage,
             ProcessedMessage,
             OutboxEvent,
-            FileRecord
+            FileRecord,
           ],
           logging: false,
         };

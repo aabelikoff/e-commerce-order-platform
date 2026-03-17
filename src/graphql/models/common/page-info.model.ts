@@ -5,7 +5,8 @@ import { ObjectType, Field } from '@nestjs/graphql';
 })
 export class PageInfo {
   @Field({
-    description: 'Indicates whether more records are available after the current page',
+    description:
+      'Indicates whether more records are available after the current page',
   })
   hasNextPage: boolean;
 

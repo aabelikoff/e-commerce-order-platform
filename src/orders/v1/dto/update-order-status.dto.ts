@@ -5,4 +5,3 @@ export class UpdateOrderStatusDto {
   @IsEnum(EOrderStatus)
   status: EOrderStatus;
 }
-

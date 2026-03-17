@@ -15,7 +15,7 @@ export class FilesTable1771774693056 implements MigrationInterface {
     );
 
     await queryRunner.query(
-        `
+      `
         CREATE TABLE "files"
             ("id" uuid NOT NULL DEFAULT uuid_generate_v4(),
             "owner_type" "public"."files_owner_type_enum" NOT NULL,

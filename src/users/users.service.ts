@@ -62,7 +62,7 @@ export class UsersService {
       email: resultUser.email,
       createdAt: resultUser.createdAt,
       updatedAt: resultUser.updatedAt,
-    }
+    };
   }
 
   // async getAll(

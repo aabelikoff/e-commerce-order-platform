@@ -36,7 +36,10 @@ describe('OrdersGateway (e2e)', () => {
 
   const waitForSocketConnect = (socket: Socket): Promise<void> =>
     new Promise((resolve, reject) => {
-      const timer = setTimeout(() => reject(new Error('socket connect timeout')), 3000);
+      const timer = setTimeout(
+        () => reject(new Error('socket connect timeout')),
+        3000,
+      );
       socket.once('connect', () => {
         clearTimeout(timer);
         resolve();
@@ -107,7 +110,8 @@ describe('OrdersGateway (e2e)', () => {
 
     await new Promise<void>((resolve, reject) => {
       const timer = setTimeout(
-        () => reject(new Error('expected disconnect for unauthenticated client')),
+        () =>
+          reject(new Error('expected disconnect for unauthenticated client')),
         3000,
       );
 
@@ -144,14 +148,18 @@ describe('OrdersGateway (e2e)', () => {
   });
 
   it('emits exception when subscription is denied', async () => {
-    mockOrdersService.canSubscribeToOrder.mockRejectedValueOnce(new Error('Subscription denied'));
+    mockOrdersService.canSubscribeToOrder.mockRejectedValueOnce(
+      new Error('Subscription denied'),
+    );
     const socket = connectSocket('valid-token');
     await waitForSocketConnect(socket);
 
-    const exception = await new Promise<{ message: string | string[] }>((resolve) => {
-      socket.once('exception', resolve);
-      socket.emit('subscribeOrder', { orderId: 'order-denied' });
-    });
+    const exception = await new Promise<{ message: string | string[] }>(
+      (resolve) => {
+        socket.once('exception', resolve);
+        socket.emit('subscribeOrder', { orderId: 'order-denied' });
+      },
+    );
 
     expect(String(exception.message)).toContain('Subscription denied');
     socket.close();
@@ -161,20 +169,35 @@ describe('OrdersGateway (e2e)', () => {
     const socketOrder1 = connectSocket('valid-token');
     const socketOrder2 = connectSocket('valid-token');
 
-    await Promise.all([waitForSocketConnect(socketOrder1), waitForSocketConnect(socketOrder2)]);
-
     await Promise.all([
-      new Promise((resolve) => socketOrder1.emit('subscribeOrder', { orderId: 'order-1' }, resolve)),
-      new Promise((resolve) => socketOrder2.emit('subscribeOrder', { orderId: 'order-2' }, resolve)),
+      waitForSocketConnect(socketOrder1),
+      waitForSocketConnect(socketOrder2),
     ]);
 
-    const eventPromise = new Promise<OrderStatusChangedEvent>((resolve, reject) => {
-      const timer = setTimeout(() => reject(new Error('did not receive order.status')), 3000);
-      socketOrder1.once('order.status', (payload: OrderStatusChangedEvent) => {
-        clearTimeout(timer);
-        resolve(payload);
-      });
-    });
+    await Promise.all([
+      new Promise((resolve) =>
+        socketOrder1.emit('subscribeOrder', { orderId: 'order-1' }, resolve),
+      ),
+      new Promise((resolve) =>
+        socketOrder2.emit('subscribeOrder', { orderId: 'order-2' }, resolve),
+      ),
+    ]);
+
+    const eventPromise = new Promise<OrderStatusChangedEvent>(
+      (resolve, reject) => {
+        const timer = setTimeout(
+          () => reject(new Error('did not receive order.status')),
+          3000,
+        );
+        socketOrder1.once(
+          'order.status',
+          (payload: OrderStatusChangedEvent) => {
+            clearTimeout(timer);
+            resolve(payload);
+          },
+        );
+      },
+    );
 
     const nonTargetPromise = new Promise<boolean>((resolve) => {
       const timer = setTimeout(() => resolve(false), 500);
@@ -193,7 +216,10 @@ describe('OrdersGateway (e2e)', () => {
       changedAt: new Date().toISOString(),
     });
 
-    const [event, receivedByWrongSocket] = await Promise.all([eventPromise, nonTargetPromise]);
+    const [event, receivedByWrongSocket] = await Promise.all([
+      eventPromise,
+      nonTargetPromise,
+    ]);
 
     expect(event.orderId).toBe('order-1');
     expect(receivedByWrongSocket).toBe(false);
@@ -202,4 +228,3 @@ describe('OrdersGateway (e2e)', () => {
     socketOrder2.close();
   });
 });
-

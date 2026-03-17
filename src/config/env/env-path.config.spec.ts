@@ -1,10 +1,10 @@
 import { getEnvFilePath } from './env-path.config';
 
 describe('getEnvFilePath', () => {
-  const originalNodeEnv = process.env.NODE_ENV;
+  const originalEnv = process.env.NODE_ENV;
 
   afterEach(() => {
-    process.env.NODE_ENV = originalNodeEnv;
+    process.env.NODE_ENV = originalEnv;
   });
 
   it('returns development env file by default', () => {

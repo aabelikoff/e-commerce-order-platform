@@ -51,8 +51,9 @@ export class OutboxService {
       ) ??
       50;
     const maxAttempts =
-      this.configService.get<IRabbitMq['maxAttempts']>('rabbitMq.maxAttempts') ??
-      3;
+      this.configService.get<IRabbitMq['maxAttempts']>(
+        'rabbitMq.maxAttempts',
+      ) ?? 3;
 
     return repo
       .createQueryBuilder('e')

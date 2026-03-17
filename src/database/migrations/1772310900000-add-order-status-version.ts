@@ -17,4 +17,3 @@ export class AddOrderStatusVersion1772310900000 implements MigrationInterface {
     `);
   }
 }
-

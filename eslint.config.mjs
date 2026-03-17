@@ -38,9 +38,7 @@ export default tseslint.config(
       '@typescript-eslint/no-base-to-string': 'off',
       '@typescript-eslint/no-non-null-asserted-optional-chain': 'off',
       '@typescript-eslint/no-unsafe-enum-comparison': 'off',
-      '@typescript-eslint/no-unnecessary-type-assertion': 'off',
-      'prefer-const': 'off',
-      'prettier/prettier': 'off',
+      "prettier/prettier": ["error", { endOfLine: "auto" }],
     },
   },
 );

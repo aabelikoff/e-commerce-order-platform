@@ -15,7 +15,9 @@ export const IdempotencyKey = createParamDecorator(
     }
 
     if (!uuidValidate(value) || uuidVersion(value) !== 4) {
-      throw new BadRequestException('Invalid Idempotency-Key (uuid v4 expected)');
+      throw new BadRequestException(
+        'Invalid Idempotency-Key (uuid v4 expected)',
+      );
     }
 
     return value;

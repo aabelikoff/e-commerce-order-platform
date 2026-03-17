@@ -41,7 +41,10 @@ export class FindProductsQueryDto {
       return value;
     }
     if (typeof value === 'string') {
-      return value.split(',').map((v) => v.trim()).filter(Boolean);
+      return value
+        .split(',')
+        .map((v) => v.trim())
+        .filter(Boolean);
     }
     return [];
   })

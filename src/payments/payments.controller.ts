@@ -26,8 +26,13 @@ export class PaymentsController {
     @Param('orderId', ParseUUIDPipe) id: string,
     @Req() req: Request & { user: AuthUser },
   ): Promise<Payment> {
-      const user = req.user;
-      console.log('PaymentsController.pay called with orderId:', id, 'and user:', user);
+    const user = req.user;
+    console.log(
+      'PaymentsController.pay called with orderId:',
+      id,
+      'and user:',
+      user,
+    );
     return this.paymentsService.payOrder(id, user);
   }
 }

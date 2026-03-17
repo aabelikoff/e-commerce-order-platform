@@ -22,7 +22,8 @@ export class PaginationCursorInput {
 
   @Field(() => String, {
     nullable: true,
-    description: 'Opaque cursor returned from previous query for fetching next page',
+    description:
+      'Opaque cursor returned from previous query for fetching next page',
   })
   @IsOptional()
   @IsString()

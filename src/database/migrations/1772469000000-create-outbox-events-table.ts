@@ -1,8 +1,6 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class CreateOutboxEventsTable1772469000000
-  implements MigrationInterface
-{
+export class CreateOutboxEventsTable1772469000000 implements MigrationInterface {
   name = 'CreateOutboxEventsTable1772469000000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
@@ -37,7 +35,9 @@ export class CreateOutboxEventsTable1772469000000
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(`DROP INDEX "public"."IDX_outbox_events_aggregate"`);
+    await queryRunner.query(
+      `DROP INDEX "public"."IDX_outbox_events_aggregate"`,
+    );
     await queryRunner.query(
       `DROP INDEX "public"."IDX_outbox_events_status_next_retry_at"`,
     );
