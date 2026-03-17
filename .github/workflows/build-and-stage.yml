@@ -1,0 +1,145 @@
+name: Build and Stage
+
+on:
+  push:
+    branches:
+      - develop
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_REPOSITORY: ${{ github.repository }}
+  IMAGE_TAG: sha-${{ github.sha }}
+
+jobs:
+  build-image:
+    name: Build and Push Image
+    runs-on: ubuntu-latest
+    outputs:
+      image_repository: ${{ steps.image-meta.outputs.image_repository }}
+      image_tag: ${{ steps.image-meta.outputs.image_tag }}
+      image_digest: ${{ steps.build.outputs.digest }}
+      image_ref: ${{ steps.image-meta.outputs.image_ref }}
+      release_manifest_name: ${{ steps.manifest.outputs.release_manifest_name }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set image metadata
+        id: image-meta
+        run: |
+          echo "image_repository=${{ env.REGISTRY }}/${{ env.IMAGE_REPOSITORY }}" >> "$GITHUB_OUTPUT"
+          echo "image_tag=${{ env.IMAGE_TAG }}" >> "$GITHUB_OUTPUT"
+          echo "image_ref=${{ env.REGISTRY }}/${{ env.IMAGE_REPOSITORY }}:${{ env.IMAGE_TAG }}" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push runtime image
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          target: prod-distroless
+          push: true
+          tags: ${{ steps.image-meta.outputs.image_ref }}
+
+      - name: Create release manifest
+        id: manifest
+        shell: bash
+        run: |
+          manifest_name="release-manifest-${GITHUB_SHA}.json"
+          cat <<EOF > "$manifest_name"
+          {
+            "commit": "${GITHUB_SHA}",
+            "services": {
+              "orders-api": {
+                "image": "${{ steps.image-meta.outputs.image_ref }}",
+                "digest": "${{ steps.build.outputs.digest }}"
+              },
+              "payments-service": {
+                "image": "${{ steps.image-meta.outputs.image_ref }}",
+                "digest": "${{ steps.build.outputs.digest }}"
+              }
+            }
+          }
+          EOF
+          echo "release_manifest_name=$manifest_name" >> "$GITHUB_OUTPUT"
+
+      - name: Upload release manifest
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.manifest.outputs.release_manifest_name }}
+          path: ${{ steps.manifest.outputs.release_manifest_name }}
+          if-no-files-found: error
+
+  deploy-stage:
+    name: Deploy to Stage
+    needs: build-image
+    runs-on: self-hosted
+    environment:
+      name: stage
+    concurrency:
+      group: stage-deploy
+      cancel-in-progress: true
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download release manifest
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ needs.build-image.outputs.release_manifest_name }}
+
+      - name: Show deployment metadata
+        shell: bash
+        run: |
+          echo "Environment: stage"
+          echo "Commit SHA: $GITHUB_SHA"
+          echo "Image tag: ${{ needs.build-image.outputs.image_tag }}"
+          echo "Image digest: ${{ needs.build-image.outputs.image_digest }}"
+          cat "${{ needs.build-image.outputs.release_manifest_name }}"
+
+      - name: Write stage environment file
+        shell: bash
+        run: |
+          cat <<'EOF' > .env.stage
+          ${{ secrets.STAGE_ENV_FILE }}
+          EOF
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Pull immutable image
+        shell: bash
+        run: docker pull "${{ needs.build-image.outputs.image_repository }}@${{ needs.build-image.outputs.image_digest }}"
+
+      - name: Deploy stage stack
+        shell: bash
+        env:
+          APP_IMAGE: ${{ needs.build-image.outputs.image_repository }}@${{ needs.build-image.outputs.image_digest }}
+          COMPOSE_PROJECT_NAME: ecommerce-stage
+        run: |
+          docker compose --env-file .env.stage -f deploy/compose.stage.yml up -d --remove-orphans
+
+      - name: Stage smoke check
+        shell: bash
+        run: |
+          curl --fail --retry 12 --retry-delay 5 http://127.0.0.1:8080/api/docs
