@@ -51,8 +51,8 @@ export class LoadersFactory {
           if (orderIds.length === 0) return [];
 
           const orderItems = await this.orderItemsRepository.find({
-              where: { order: { id: In(orderIds) } },
-              relations: {order: true}
+            where: { order: { id: In(orderIds) } },
+            relations: { order: true },
           });
 
           const orderItemsByOrderId = new Map(
@@ -86,8 +86,8 @@ export class LoadersFactory {
           }
 
           return orderIds.map((oid) => paymentsByOrderId.get(oid) ?? []);
-        }
-      )
+        },
+      ),
     };
   }
 }

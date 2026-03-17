@@ -1,14 +1,15 @@
 export const PAYMENT_EVENT_NAMES = {
   AUTHORIZED: 'PaymentAuthorized',
   CAPTURED: 'PaymentCaptured',
-  FAILED: 'PaymentFailed'
+  FAILED: 'PaymentFailed',
 } as const;
 
-export type PaymentEventName = (typeof PAYMENT_EVENT_NAMES)[keyof typeof PAYMENT_EVENT_NAMES];
+export type PaymentEventName =
+  (typeof PAYMENT_EVENT_NAMES)[keyof typeof PAYMENT_EVENT_NAMES];
 
 export const PAYMENT_EVENT_SCHEMA = {
   V1: 1,
-  V2: 2
+  V2: 2,
 } as const;
 
 export type PaymentEventSchemaVersion =
@@ -46,7 +47,9 @@ export type PaymentEventEnvelopeV2 = {
   payment: PaymentEventPayloadV2;
 };
 
-export type PaymentEventEnvelope = PaymentEventEnvelopeV1 | PaymentEventEnvelopeV2;
+export type PaymentEventEnvelope =
+  | PaymentEventEnvelopeV1
+  | PaymentEventEnvelopeV2;
 
 export type PaymentEventBaseData = {
   paymentId: string;
@@ -55,4 +58,3 @@ export type PaymentEventBaseData = {
   currency: string;
   provider: string;
 };
-

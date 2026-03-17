@@ -47,4 +47,3 @@ export class PresignFileDto {
   @IsEnum(EFileVisibility)
   visibility?: EFileVisibility;
 }
-

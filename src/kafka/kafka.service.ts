@@ -5,13 +5,7 @@ import {
   OnModuleInit,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import {
-  Admin,
-  Consumer,
-  EachMessagePayload,
-  Kafka,
-  Producer,
-} from 'kafkajs';
+import { Admin, Consumer, EachMessagePayload, Kafka, Producer } from 'kafkajs';
 import { IKafkaConfig } from 'src/config/kafka';
 
 type KafkaMessageHandler = (payload: EachMessagePayload) => Promise<void>;

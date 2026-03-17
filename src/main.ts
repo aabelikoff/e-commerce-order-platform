@@ -16,7 +16,7 @@ async function bootstrap() {
   app.setGlobalPrefix('api', {
     exclude: [{ path: 'graphql', method: RequestMethod.ALL }],
   });
-  
+
   app.enableVersioning({
     type: VersioningType.URI,
     defaultVersion: '1',

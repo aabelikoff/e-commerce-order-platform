@@ -8,7 +8,7 @@ import {
   SubscribeMessage,
   WebSocketGateway,
   WebSocketServer,
-  WsException
+  WsException,
 } from '@nestjs/websockets';
 import { Subscription } from 'rxjs';
 import { Server, Socket } from 'socket.io';
@@ -28,7 +28,11 @@ type RealtimeClientData = {
 
 @WebSocketGateway({ namespace: '/realtime', cors: { origin: true } })
 export class OrdersGateway
-  implements OnGatewayConnection, OnGatewayDisconnect, OnModuleInit, OnModuleDestroy
+  implements
+    OnGatewayConnection,
+    OnGatewayDisconnect,
+    OnModuleInit,
+    OnModuleDestroy
 {
   @WebSocketServer() server: Server;
 
@@ -38,15 +42,18 @@ export class OrdersGateway
   constructor(
     private readonly jwtService: JwtService,
     private readonly ordersService: OrdersService,
-    private readonly ordersEvents: OrdersEventsService
+    private readonly ordersEvents: OrdersEventsService,
   ) {}
 
   onModuleInit(): void {
     this.eventsSub = this.ordersEvents.events$.subscribe({
       next: (event) => this.emitOrderStatus(event),
       error: (err) => {
-        this.logger.error('orders events subscription failed', err?.stack ?? String(err));
-      }
+        this.logger.error(
+          'orders events subscription failed',
+          err?.stack ?? String(err),
+        );
+      },
     });
   }
 
@@ -62,7 +69,8 @@ export class OrdersGateway
     }
 
     try {
-      const payload = await this.jwtService.verifyAsync<JwtAccessPayload>(token);
+      const payload =
+        await this.jwtService.verifyAsync<JwtAccessPayload>(token);
       (client.data as RealtimeClientData).user = payload;
       (client.data as RealtimeClientData).subscribeCalls = [];
     } catch (err: any) {
@@ -80,8 +88,8 @@ export class OrdersGateway
 
   @SubscribeMessage('subscribeOrder')
   async subscribeOrder(
-    @ConnectedSocket() client: Socket,// ios, web, ... 
-    @MessageBody() payload: SubscribeOrderPayload
+    @ConnectedSocket() client: Socket, // ios, web, ...
+    @MessageBody() payload: SubscribeOrderPayload,
   ): Promise<{ ok: true }> {
     this.assertRateLimit(client);
 
@@ -99,10 +107,12 @@ export class OrdersGateway
       await this.ordersService.canSubscribeToOrder(orderId, user);
     } catch (err: any) {
       const message = err?.message ?? 'Subscription denied';
-      this.logger.warn(`subscribeOrder denied userId=${user.sub} orderId=${orderId} reason=${message}`);
+      this.logger.warn(
+        `subscribeOrder denied userId=${user.sub} orderId=${orderId} reason=${message}`,
+      );
       throw new WsException(message);
     }
-  
+
     await client.join(this.orderRoom(orderId));
 
     this.logger.log(`subscribeOrder userId=${user.sub} orderId=${orderId}`);
@@ -113,7 +123,7 @@ export class OrdersGateway
   @SubscribeMessage('unsubscribeOrder')
   async unsubscribeOrder(
     @ConnectedSocket() client: Socket,
-    @MessageBody() payload: SubscribeOrderPayload
+    @MessageBody() payload: SubscribeOrderPayload,
   ): Promise<{ ok: true }> {
     const orderId = payload?.orderId;
     if (!orderId || typeof orderId !== 'string') {
@@ -139,7 +149,10 @@ export class OrdersGateway
     }
 
     const header = client.handshake.headers?.authorization;
-    if (typeof header === 'string' && header.toLowerCase().startsWith('bearer ')) {
+    if (
+      typeof header === 'string' &&
+      header.toLowerCase().startsWith('bearer ')
+    ) {
       return header.slice('bearer '.length).trim();
     }
 
@@ -169,4 +182,3 @@ export class OrdersGateway
     data.subscribeCalls.push(now);
   }
 }
-

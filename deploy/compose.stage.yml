@@ -1,0 +1,166 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: ecommerce-stage-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    ports:
+      - "5445:5432"
+    volumes:
+      - pgdata_ecommerce_stage:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - internal
+      - public
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: ecommerce-stage-rabbitmq
+    restart: unless-stopped
+    ports:
+      - "5673:5672"
+      - "15673:15672"
+    networks:
+      - public
+
+  minio:
+    image: minio/minio:latest
+    container_name: ecommerce-stage-minio
+    restart: unless-stopped
+    environment:
+      MINIO_ROOT_USER: ${AWS_ACCESS_KEY_ID}
+      MINIO_ROOT_PASSWORD: ${AWS_SECRET_ACCESS_KEY}
+    command: server /data --console-address ":9001"
+    ports:
+      - "${MINIO_API_PORT:-9000}:9000"
+      - "${MINIO_CONSOLE_PORT:-9001}:9001"
+    volumes:
+      - minio_ecommerce_stage:/data
+    networks:
+      - public
+
+  minio-init:
+    image: minio/mc:latest
+    container_name: ecommerce-stage-minio-init
+    depends_on:
+      - minio
+    restart: "no"
+    networks:
+      - public
+    entrypoint: >
+      /bin/sh -c "
+      until mc alias set local http://minio:9000 ${AWS_ACCESS_KEY_ID} ${AWS_SECRET_ACCESS_KEY}; do
+        echo 'waiting for minio...';
+        sleep 2;
+      done;
+      mc mb --ignore-existing local/${AWS_S3_BUCKET};
+      mc anonymous set none local/${AWS_S3_BUCKET};
+      echo 'minio bucket is ready';
+      "
+
+  kafka:
+    image: apache/kafka:3.9.0
+    container_name: ecommerce-stage-kafka
+    restart: unless-stopped
+    ports:
+      - "9094:9094"
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093,EXTERNAL://:9094
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,EXTERNAL://localhost:9094
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+    networks:
+      - public
+
+  kafka-init:
+    image: apache/kafka:3.9.0
+    container_name: ecommerce-stage-kafka-init
+    depends_on:
+      - kafka
+    restart: "no"
+    entrypoint: >
+      /bin/sh -c "
+      until /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 --list >/dev/null 2>&1; do
+        echo 'waiting for kafka...';
+        sleep 2;
+      done;
+      /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 --create --if-not-exists --topic orders.events --partitions 3 --replication-factor 1;
+      /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 --create --if-not-exists --topic payments.events --partitions 3 --replication-factor 1;
+      echo 'kafka topics are ready';
+      "
+    networks:
+      - public
+
+  payments-service:
+    image: ${APP_IMAGE}
+    container_name: ecommerce-stage-payments-service
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: stage
+      DB_HOST: postgres
+      DB_PORT: 5432
+      PAYMENTS_GRPC_URL: payments-service:5021
+      PAYMENTS_GRPC_BIND_URL: 0.0.0.0:5021
+    env_file:
+      - ../.env.stage
+    command: ["dist/payment-service/main.js"]
+    ports:
+      - "127.0.0.1:5021:5021"
+    networks:
+      - internal
+      - public
+
+  api:
+    image: ${APP_IMAGE}
+    container_name: ecommerce-stage-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      payments-service:
+        condition: service_started
+      kafka-init:
+        condition: service_completed_successfully
+      minio-init:
+        condition: service_completed_successfully
+    environment:
+      NODE_ENV: stage
+      DB_HOST: postgres
+      DB_PORT: 5432
+      PAYMENTS_GRPC_URL: payments-service:5021
+      AWS_S3_ENDPOINT: http://minio:9000
+    env_file:
+      - ../.env.stage
+    ports:
+      - "127.0.0.1:8080:3001"
+    networks:
+      - internal
+      - public
+
+volumes:
+  pgdata_ecommerce_stage:
+  minio_ecommerce_stage:
+
+networks:
+  internal:
+    internal: true
+  public: {}

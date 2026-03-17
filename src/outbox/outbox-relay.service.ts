@@ -70,9 +70,7 @@ export class OutboxRelayService
         if (!topic) {
           throw new Error('Not specified topic');
         }
-        const key = (e.payload as OrderEventEnvelopeV1)['order'][
-          'orderId'
-        ];
+        const key = (e.payload as OrderEventEnvelopeV1)['order']['orderId'];
         if (!key) {
           throw new Error('Not specified orderId');
         }
@@ -91,7 +89,6 @@ export class OutboxRelayService
 
       for (const e of events) {
         try {
-          
           await this.publish(e);
 
           await this.outboxService.markSent(e.id, manager);

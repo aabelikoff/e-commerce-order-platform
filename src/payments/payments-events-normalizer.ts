@@ -1,4 +1,7 @@
-import { PaymentEventEnvelope, PaymentEventSchemaVersion } from './payments-kafka-event.types';
+import {
+  PaymentEventEnvelope,
+  PaymentEventSchemaVersion,
+} from './payments-kafka-event.types';
 
 export type NormalizedPaymentEvent = {
   eventName: string;
@@ -69,7 +72,8 @@ export function parsePaymentEvent(raw: string): NormalizedPaymentEvent {
     typeof payment.providerTransactionId === 'string'
       ? payment.providerTransactionId
       : null;
-  const failureReason = typeof payment.failureReason === 'string' ? payment.failureReason : null;
+  const failureReason =
+    typeof payment.failureReason === 'string' ? payment.failureReason : null;
 
   return {
     eventName: envelope.eventName,
@@ -84,8 +88,7 @@ export function parsePaymentEvent(raw: string): NormalizedPaymentEvent {
       provider,
       status,
       providerTransactionId,
-      failureReason
-    }
+      failureReason,
+    },
   };
 }
-

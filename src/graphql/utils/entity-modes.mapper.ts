@@ -53,7 +53,7 @@ export class EntityModelMapper {
         createdAt: order.createdAt,
         items: order.items?.map((o) => orderItemMapper(o)),
         userId: order.userId,
-        payments: order.payments?.map((p) => paymentMapper(p))
+        payments: order.payments?.map((p) => paymentMapper(p)),
       };
     };
 

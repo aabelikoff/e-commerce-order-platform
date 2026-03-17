@@ -1,14 +1,14 @@
-import type { EOrderStatus } from "../database/entities";
+import type { EOrderStatus } from '../database/entities';
 
 export type OrderStatusChangedEvent = {
-    type: 'order.status_changed',
-    version: number;
-    orderId: string;
-    userId?: string;
-    fromStatus: EOrderStatus | null;
-    toStatus: EOrderStatus;
-    changedAt: string;
-}
+  type: 'order.status_changed';
+  version: number;
+  orderId: string;
+  userId?: string;
+  fromStatus: EOrderStatus | null;
+  toStatus: EOrderStatus;
+  changedAt: string;
+};
 
 export type OrderEventsMetrics = {
   received: number;

@@ -7,7 +7,7 @@ import {
   PAYMENT_EVENT_SCHEMA,
   PaymentEventBaseData,
   PaymentEventEnvelope,
-  PaymentEventName
+  PaymentEventName,
 } from './payments-kafka-event.types';
 import { IKafkaConfig } from 'src/config/kafka';
 
@@ -17,39 +17,46 @@ export class PaymentsEventsPublisher {
 
   constructor(
     private readonly configService: ConfigService,
-    private readonly kafkaService: KafkaService
+    private readonly kafkaService: KafkaService,
   ) {}
 
   async publishAuthorized(base: PaymentEventBaseData): Promise<void> {
-    await this.publish(PAYMENT_EVENT_NAMES.AUTHORIZED, PAYMENT_EVENT_SCHEMA.V1, {
-      ...base,
-      status: 'AUTHORIZED'
-    });
+    await this.publish(
+      PAYMENT_EVENT_NAMES.AUTHORIZED,
+      PAYMENT_EVENT_SCHEMA.V1,
+      {
+        ...base,
+        status: 'AUTHORIZED',
+      },
+    );
   }
 
   async publishCaptured(
     base: PaymentEventBaseData,
-    providerTransactionId?: string
+    providerTransactionId?: string,
   ): Promise<void> {
     await this.publish(PAYMENT_EVENT_NAMES.CAPTURED, PAYMENT_EVENT_SCHEMA.V2, {
       ...base,
       status: 'CAPTURED',
-      providerTransactionId
+      providerTransactionId,
     });
   }
 
-  async publishFailed(base: PaymentEventBaseData, failureReason?: string): Promise<void> {
+  async publishFailed(
+    base: PaymentEventBaseData,
+    failureReason?: string,
+  ): Promise<void> {
     await this.publish(PAYMENT_EVENT_NAMES.FAILED, PAYMENT_EVENT_SCHEMA.V2, {
       ...base,
       status: 'FAILED',
-      failureReason
+      failureReason,
     });
   }
 
   private async publish(
     eventName: PaymentEventName,
     schemaVersion: 1 | 2,
-    payment: PaymentEventEnvelope['payment']
+    payment: PaymentEventEnvelope['payment'],
   ): Promise<void> {
     if (!this.kafkaService.isEnabled()) {
       return;
@@ -69,13 +76,13 @@ export class PaymentsEventsPublisher {
       schemaVersion,
       eventId,
       occurredAt: new Date().toISOString(),
-      payment
+      payment,
     };
 
     await this.kafkaService.publish(topic, orderId, envelope);
 
     this.logger.log(
-      `Kafka published topic=${topic} key=${orderId} event=${eventName} eventId=${eventId} schemaVersion=${schemaVersion}`
+      `Kafka published topic=${topic} key=${orderId} event=${eventName} eventId=${eventId} schemaVersion=${schemaVersion}`,
     );
   }
 }

@@ -11,7 +11,8 @@ export class GqlAllExceptionsFilter implements GqlExceptionFilter {
   catch(exception: any, host: any) {
     const gqlHost = GqlArgumentsHost.create(host);
     const ctx = gqlHost.getContext<{ req?: any }>();
-    const requestId = ctx?.req?.requestId ?? ctx?.req?.headers?.['x-request-id'];
+    const requestId =
+      ctx?.req?.requestId ?? ctx?.req?.headers?.['x-request-id'];
 
     this.logger.error(
       `GraphQL error${requestId ? ` (requestId=${requestId})` : ''}`,
@@ -19,7 +20,7 @@ export class GqlAllExceptionsFilter implements GqlExceptionFilter {
     );
 
     if (exception instanceof HttpException) {
-      return exception; 
+      return exception;
     }
 
     return new GraphQLError('Internal error while processing request', {

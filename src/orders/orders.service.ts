@@ -27,7 +27,10 @@ import { OrdersProcessMessage } from './orders-queue.types';
 import { OutboxService } from 'src/outbox/outbox.service';
 import { OrderEventEnvelopeV1 } from './orders-kafka-events.types';
 import { type ClientGrpc } from '@nestjs/microservices';
-import { PAYMENTS_GRPC_CLIENT, PAYMENTS_SERVICE_NAME } from '../common/grpc/grpc.constants';
+import {
+  PAYMENTS_GRPC_CLIENT,
+  PAYMENTS_SERVICE_NAME,
+} from '../common/grpc/grpc.constants';
 import {
   AuthorizeResponse,
   PaymentsClient,
@@ -48,11 +51,13 @@ export class OrdersService implements OnModuleInit {
     private readonly outboxService: OutboxService,
     private readonly configService: ConfigService,
     @Inject(PAYMENTS_GRPC_CLIENT)
-    private readonly paymentsGrpcClient: ClientGrpc
-  ) { }
-  
+    private readonly paymentsGrpcClient: ClientGrpc,
+  ) {}
+
   onModuleInit() {
-    this.paymentsClient = this.paymentsGrpcClient.getService<PaymentsClient>(PAYMENTS_SERVICE_NAME)
+    this.paymentsClient = this.paymentsGrpcClient.getService<PaymentsClient>(
+      PAYMENTS_SERVICE_NAME,
+    );
   }
 
   async create(
@@ -226,7 +231,7 @@ export class OrdersService implements OnModuleInit {
         order.id,
         'order.process_requested',
         message as unknown as Record<string, unknown>,
-        manager
+        manager,
       );
 
       const event: OrderEventEnvelopeV1 = {
@@ -238,17 +243,17 @@ export class OrdersService implements OnModuleInit {
           orderId: order.id,
           userId: dto.userId,
           totalAmount: calc.total_amount,
-          currency: 'USD' //TODO: implement different currency options
-        }
-      }
+          currency: 'USD', //TODO: implement different currency options
+        },
+      };
 
       await this.outboxService.add(
         'order',
         order.id,
         'order.placed',
         event as unknown as Record<string, unknown>,
-        manager
-      )
+        manager,
+      );
 
       await qr.commitTransaction();
 

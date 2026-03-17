@@ -142,7 +142,7 @@ DB_NAME=db-name
 JWT_ACCESS_SECRET=jwt_access_secret
 JWT_REFRESH_SECRET=jwt_refresh_secret
 JWT_ACCESS_TTL=15m
-JWT_REFRESH_TTl=30d
+JWT_REFRESH_TTL=30d
 
 # Bucket Configuration
 AWS_REGION=eu-central-1

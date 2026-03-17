@@ -1,6 +1,8 @@
 import { ObjectType, Field, ID, Float } from '@nestjs/graphql';
 
-@ObjectType({ description: 'Represents a registered user(customer) in the system' })
+@ObjectType({
+  description: 'Represents a registered user(customer) in the system',
+})
 export class UserModel {
   @Field(() => ID, {
     description: 'Unique identifier of the user (UUID)',

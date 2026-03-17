@@ -22,4 +22,9 @@ export enum ERefundScopes {
   REFUND_WRITE = 'refund:write',
 }
 
-export type EUnitedScopes = EOrderScopes | EProductScopes | EUserScopes | EPaymentScopes | ERefundScopes;
+export type EUnitedScopes =
+  | EOrderScopes
+  | EProductScopes
+  | EUserScopes
+  | EPaymentScopes
+  | ERefundScopes;

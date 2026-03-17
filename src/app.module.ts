@@ -46,7 +46,15 @@ import { paymentsServiceConfig } from './config/payments-service/payments-servic
 @Module({
   imports: [
     ConfigModule.forRoot({
-      load: [appConfig, databaseConfig, authConfig, s3Config, rabbitMQConfig, kafkaConfig, paymentsServiceConfig],
+      load: [
+        appConfig,
+        databaseConfig,
+        authConfig,
+        s3Config,
+        rabbitMQConfig,
+        kafkaConfig,
+        paymentsServiceConfig,
+      ],
       envFilePath: getEnvFilePath(),
       isGlobal: true,
     }),
@@ -67,8 +75,6 @@ import { paymentsServiceConfig } from './config/payments-service/payments-servic
           autoLoadEntities: true,
           synchronize: false,
           entities: [User, Order, OrderItem, Product],
-          // logging: ['query'],
-          logging: false
           logging: false,
         };
       },

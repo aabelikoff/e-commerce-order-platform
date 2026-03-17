@@ -138,7 +138,8 @@ export class PaymentsService {
       }
 
       if (
-        toProtoStatus(payment.status) !== PaymentStatus.PAYMENT_STATUS_AUTHORIZED
+        toProtoStatus(payment.status) !==
+        PaymentStatus.PAYMENT_STATUS_AUTHORIZED
       ) {
         throw new Error(
           `Payment ${payment.id} is not in AUTHORIZED status and cannot be captured`,

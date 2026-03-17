@@ -7,8 +7,12 @@ import { RabbitmqModule } from '../rabbitmq/rabbitmq.module';
 import { KafkaModule } from '../kafka/kafka.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([OutboxEvent]), RabbitmqModule, KafkaModule],
-  providers: [OutboxService,OutboxRelayService],
+  imports: [
+    TypeOrmModule.forFeature([OutboxEvent]),
+    RabbitmqModule,
+    KafkaModule,
+  ],
+  providers: [OutboxService, OutboxRelayService],
   exports: [OutboxService, OutboxRelayService],
 })
 export class OutboxModule {}
