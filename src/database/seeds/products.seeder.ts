@@ -6,7 +6,7 @@ export default class ProductsSeed implements Seeder {
   public async run(dataSource: DataSource) {
     const repo = dataSource.getRepository(Product);
     console.log('ProductsSeed started...');
-    for (let product of seedProducts) {
+    for (const product of seedProducts) {
       if (await repo.findOne({ where: { name: product.name } })) continue;
       await repo.insert(product);
     }

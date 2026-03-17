@@ -71,7 +71,11 @@ export class RabbitmqService implements OnModuleInit, OnModuleDestroy {
       ORDERS_EXCHANGE,
       ORDERS_RETRY_ROUTING_KEY,
     );
-    await channel.bindQueue(ORDERS_DLQ_QUEUE, ORDERS_EXCHANGE, ORDERS_DLQ_ROUTING_KEY);
+    await channel.bindQueue(
+      ORDERS_DLQ_QUEUE,
+      ORDERS_EXCHANGE,
+      ORDERS_DLQ_ROUTING_KEY,
+    );
   }
 
   async publish(

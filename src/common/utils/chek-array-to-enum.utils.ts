@@ -1,10 +1,8 @@
-export const checkArrayToEnum = <
-  T extends Record<string, string>
->(
+export const checkArrayToEnum = <T extends Record<string, string>>(
   arr: string[],
-  enumObj: T
+  enumObj: T,
 ): arr is T[keyof T][] => {
-  const enumValues = Object.values(enumObj) as string[];
+  const enumValues = Object.values(enumObj);
 
-  return arr.every(item => enumValues.includes(item));
+  return arr.every((item) => enumValues.includes(item));
 };

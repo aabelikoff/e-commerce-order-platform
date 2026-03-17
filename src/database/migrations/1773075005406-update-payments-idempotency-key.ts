@@ -1,8 +1,6 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class UpdatePaymentsIdempotencyKey1773075005406
-  implements MigrationInterface
-{
+export class UpdatePaymentsIdempotencyKey1773075005406 implements MigrationInterface {
   name = 'UpdatePaymentsIdempotencyKey1773075005406';
 
   public async up(queryRunner: QueryRunner): Promise<void> {

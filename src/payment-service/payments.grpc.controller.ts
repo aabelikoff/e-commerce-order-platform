@@ -1,7 +1,4 @@
-import {
-  Controller,
-  Logger
-} from '@nestjs/common';
+import { Controller, Logger } from '@nestjs/common';
 import { RpcException, GrpcMethod } from '@nestjs/microservices';
 import { status as GrpcStatus } from '@grpc/grpc-js';
 import { PaymentsService } from './payments.service';
@@ -16,12 +13,11 @@ import {
   RefundRequest,
 } from '../generated/payments/v1/payments';
 
-
 @Controller()
 export class PaymentsGrpcController {
   private readonly logger = new Logger(PaymentsGrpcController.name);
 
-  constructor(private readonly paymentsService: PaymentsService) { }
+  constructor(private readonly paymentsService: PaymentsService) {}
 
   private mapError(error: unknown): RpcException {
     const message = error instanceof Error ? error.message : 'Internal error';
@@ -40,7 +36,7 @@ export class PaymentsGrpcController {
 
     if (
       normalized.includes('not found') ||
-      normalized.includes("doesn`t exist")
+      normalized.includes('doesn`t exist')
     ) {
       return new RpcException({
         code: GrpcStatus.NOT_FOUND,
@@ -53,7 +49,7 @@ export class PaymentsGrpcController {
       message,
     });
   }
-  
+
   @GrpcMethod(PAYMENTS_SERVICE_NAME, 'Authorize')
   async authorize(request: AuthorizeRequest): Promise<AuthorizeResponse> {
     try {
@@ -66,7 +62,9 @@ export class PaymentsGrpcController {
   }
 
   @GrpcMethod(PAYMENTS_SERVICE_NAME, 'GetPaymentStatus')
-  async getPaymentStatus(request: GetPaymentStatusRequest): Promise<GetPaymentStatusResponse>{
+  async getPaymentStatus(
+    request: GetPaymentStatusRequest,
+  ): Promise<GetPaymentStatusResponse> {
     try {
       return await this.paymentsService.getPaymentStatus(request);
     } catch (error) {

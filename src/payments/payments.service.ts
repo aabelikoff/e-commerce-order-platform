@@ -14,7 +14,10 @@ import { EPaymentStatus } from '../database/entities';
 import { AuthUser } from '../auth/types';
 import { ERoles } from '../auth/access/roles';
 import { PaymentsEventsPublisher } from './payments-events.publisher';
-import { PAYMENTS_GRPC_CLIENT, PAYMENTS_SERVICE_NAME } from '../common/grpc/grpc.constants';
+import {
+  PAYMENTS_GRPC_CLIENT,
+  PAYMENTS_SERVICE_NAME,
+} from '../common/grpc/grpc.constants';
 import { type ClientGrpc } from '@nestjs/microservices';
 import { PaymentsClient } from '../generated/payments/v1/payments';
 import { ConfigService } from '@nestjs/config';
@@ -22,7 +25,7 @@ import { IPaymentsServiceConfig } from 'src/config/payments-service';
 import { lastValueFrom, TimeoutError, timeout } from 'rxjs';
 
 @Injectable()
-export class PaymentsService implements OnModuleInit{
+export class PaymentsService implements OnModuleInit {
   private readonly logger = new Logger(PaymentsService.name);
   private paymentsClient: PaymentsClient;
 
@@ -32,12 +35,14 @@ export class PaymentsService implements OnModuleInit{
     private readonly paymentsEventsPublisher: PaymentsEventsPublisher,
     private readonly configService: ConfigService,
     @Inject(PAYMENTS_GRPC_CLIENT)
-    private readonly paymentsGrpcClient: ClientGrpc
-  ) { }
-  
+    private readonly paymentsGrpcClient: ClientGrpc,
+  ) {}
+
   onModuleInit() {
-      this.paymentsClient = this.paymentsGrpcClient.getService<PaymentsClient>(PAYMENTS_SERVICE_NAME)
-    }
+    this.paymentsClient = this.paymentsGrpcClient.getService<PaymentsClient>(
+      PAYMENTS_SERVICE_NAME,
+    );
+  }
 
   async payOrder(orderId: string, user: AuthUser): Promise<Payment> {
     const isStaff = user.roles?.some(
@@ -131,7 +136,10 @@ export class PaymentsService implements OnModuleInit{
     }
   }
 
-  private async publishCapturedEvent(payment: Payment, order: Order): Promise<void> {
+  private async publishCapturedEvent(
+    payment: Payment,
+    order: Order,
+  ): Promise<void> {
     try {
       await this.paymentsEventsPublisher.publishCaptured({
         paymentId: payment.id,

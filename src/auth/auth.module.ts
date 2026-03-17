@@ -17,15 +17,16 @@ import { type StringValue } from 'ms';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => {
-        const expiresIn = configService.get<StringValue>('auth.jwtAccessTtl') ?? '15m';
+        const expiresIn =
+          configService.get<StringValue>('auth.jwtAccessTtl') ?? '15m';
 
         return {
           secret: configService.get<string>('auth.jwtAccessSecret'),
           signOptions: {
-            expiresIn
-          }
-        }
-      }
+            expiresIn,
+          },
+        };
+      },
     }),
   ],
   controllers: [AuthController],

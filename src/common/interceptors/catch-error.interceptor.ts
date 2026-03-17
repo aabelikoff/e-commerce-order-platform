@@ -16,7 +16,7 @@ export class CatchErrorInterceptor implements NestInterceptor {
         console.error('An error occurred:', err);
 
         // Re-throw the error to be handled by NestJS exception filters
-          return throwError(() => err);
+        return throwError(() => err);
         //   return of({ ok: 'err' });
       }),
     );

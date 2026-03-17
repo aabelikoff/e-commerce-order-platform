@@ -1,5 +1,5 @@
-import { ERoles } from "./access/roles";
-import { EUnitedScopes } from "./access/scopes";
+import { ERoles } from './access/roles';
+import { EUnitedScopes } from './access/scopes';
 
 export type JwtAccessPayload = {
   sub: string;
@@ -14,4 +14,3 @@ export type AuthUser = {
   roles: ERoles[];
   scopes: EUnitedScopes[];
 };
-

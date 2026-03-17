@@ -6,9 +6,6 @@ import { LoadersFactory } from './loaders.factory';
 @Module({
   imports: [TypeOrmModule.forFeature([User, Product, OrderItem, Payment])],
   providers: [LoadersFactory],
-  exports: [LoadersFactory]
+  exports: [LoadersFactory],
 })
 export class LoadersModule {}
-
-
-

@@ -10,7 +10,9 @@ export class CursorPaginationQueryDto {
   @Transform(({ value }) => (value ? Number(value) : 10))
   limit: number = 10;
 
-  @ApiPropertyOptional({ example: 'eyJpZCI6ICJzb20gdXVpZCIsICJjcmVhdGVkQXQiOiAic29tIGRhdGUifQ==' })
+  @ApiPropertyOptional({
+    example: 'eyJpZCI6ICJzb20gdXVpZCIsICJjcmVhdGVkQXQiOiAic29tIGRhdGUifQ==',
+  })
   @IsOptional()
   @IsString()
   cursor?: string;

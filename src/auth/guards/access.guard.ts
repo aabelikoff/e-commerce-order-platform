@@ -14,14 +14,14 @@ export class AccessGuard implements CanActivate {
   constructor(private reflector: Reflector) {}
 
   canActivate(context: ExecutionContext): boolean {
-    const requiredRoles = this.reflector.getAllAndOverride<string[]>(ROLES_KEY, [
-      context.getHandler(),
-      context.getClass(),
-    ]);
-    const requiredScopes = this.reflector.getAllAndOverride<string[]>(SCOPES_KEY, [
-      context.getHandler(),
-      context.getClass(),
-    ]);
+    const requiredRoles = this.reflector.getAllAndOverride<string[]>(
+      ROLES_KEY,
+      [context.getHandler(), context.getClass()],
+    );
+    const requiredScopes = this.reflector.getAllAndOverride<string[]>(
+      SCOPES_KEY,
+      [context.getHandler(), context.getClass()],
+    );
 
     if (
       (!requiredRoles || requiredRoles.length === 0) &&
@@ -33,9 +33,7 @@ export class AccessGuard implements CanActivate {
     const user = getUser(context);
 
     if (!user) {
-      throw new UnauthorizedException(
-        'Authentication required',
-      );
+      throw new UnauthorizedException('Authentication required');
     }
 
     const hasRole = requiredRoles

@@ -5,6 +5,8 @@ on:
     branches:
       - main
       - develop
+      - 'release/**'
+      - 'hotfix/**'
 
 permissions:
   contents: read
@@ -31,7 +33,7 @@ jobs:
         run: npm run lint:ci
 
       - name: Run unit tests
-        run: npm test -- --runInBand
+        run: npm run test:ci
 
       - name: Validate production Docker build
         run: docker build --target prod-distroless -t e-commerce-order-platform:pr-check .

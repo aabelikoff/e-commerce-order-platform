@@ -3,4 +3,3 @@ export interface IPaymentsServiceConfig {
   paymentsGrpcBindUrl: string;
   paymentsGrpcTimeoutMs: number;
 }
-

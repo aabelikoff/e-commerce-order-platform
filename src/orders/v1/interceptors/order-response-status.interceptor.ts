@@ -14,8 +14,7 @@ export class OrderResponseInterceptor implements NestInterceptor {
     return next.handle().pipe(
       map((data) => {
         const response = context.switchToHttp().getResponse();
-        
-        
+
         if (data && typeof data.created === 'boolean') {
           response.status(data.created ? HttpStatus.CREATED : HttpStatus.OK);
           if ('payment' in data) {
@@ -26,7 +25,7 @@ export class OrderResponseInterceptor implements NestInterceptor {
           }
           return data.order;
         }
-        
+
         return data;
       }),
     );

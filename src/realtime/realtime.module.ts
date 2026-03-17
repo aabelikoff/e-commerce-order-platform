@@ -4,7 +4,7 @@ import { OrdersModule } from 'src/orders/orders.module';
 import { OrdersGateway } from './orders.gateway';
 
 @Module({
-    imports: [AuthModule, OrdersModule],
-    providers: [OrdersGateway],
+  imports: [AuthModule, OrdersModule],
+  providers: [OrdersGateway],
 })
 export class RealtimeModule {}
