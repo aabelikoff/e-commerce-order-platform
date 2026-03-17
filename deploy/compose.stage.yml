@@ -31,6 +31,41 @@ services:
     networks:
       - public
 
+  minio:
+    image: minio/minio:latest
+    container_name: ecommerce-stage-minio
+    restart: unless-stopped
+    environment:
+      MINIO_ROOT_USER: ${AWS_ACCESS_KEY_ID}
+      MINIO_ROOT_PASSWORD: ${AWS_SECRET_ACCESS_KEY}
+    command: server /data --console-address ":9001"
+    ports:
+      - "${MINIO_API_PORT:-9000}:9000"
+      - "${MINIO_CONSOLE_PORT:-9001}:9001"
+    volumes:
+      - minio_ecommerce_stage:/data
+    networks:
+      - public
+
+  minio-init:
+    image: minio/mc:latest
+    container_name: ecommerce-stage-minio-init
+    depends_on:
+      - minio
+    restart: "no"
+    networks:
+      - public
+    entrypoint: >
+      /bin/sh -c "
+      until mc alias set local http://minio:9000 ${AWS_ACCESS_KEY_ID} ${AWS_SECRET_ACCESS_KEY}; do
+        echo 'waiting for minio...';
+        sleep 2;
+      done;
+      mc mb --ignore-existing local/${AWS_S3_BUCKET};
+      mc anonymous set none local/${AWS_S3_BUCKET};
+      echo 'minio bucket is ready';
+      "
+
   kafka:
     image: apache/kafka:3.9.0
     container_name: ecommerce-stage-kafka
@@ -105,11 +140,14 @@ services:
         condition: service_started
       kafka-init:
         condition: service_completed_successfully
+      minio-init:
+        condition: service_completed_successfully
     environment:
       NODE_ENV: stage
       DB_HOST: postgres
       DB_PORT: 5432
       PAYMENTS_GRPC_URL: payments-service:5021
+      AWS_S3_ENDPOINT: http://minio:9000
     env_file:
       - ../.env.stage
     ports:
@@ -120,9 +158,9 @@ services:
 
 volumes:
   pgdata_ecommerce_stage:
+  minio_ecommerce_stage:
 
 networks:
   internal:
     internal: true
   public: {}
-
