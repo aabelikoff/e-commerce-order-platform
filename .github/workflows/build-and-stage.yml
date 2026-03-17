@@ -150,6 +150,28 @@ jobs:
           docker compose --env-file .env.stage -f deploy/compose.stage.yml up -d --remove-orphans
 
       - name: Stage smoke check
-        shell: powershell
-        run: |
-          curl.exe --fail --retry 12 --retry-delay 5 http://127.0.0.1:8080/api/docs
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const url = 'http://127.0.0.1:8080/api/docs';
+            const maxAttempts = 24;
+            const delayMs = 5000;
+
+            for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+              try {
+                const response = await fetch(url);
+
+                if (response.ok) {
+                  core.info(`Stage smoke check passed on attempt ${attempt}`);
+                  return;
+                }
+
+                core.info(`Attempt ${attempt} returned HTTP ${response.status}`);
+              } catch (error) {
+                core.info(`Attempt ${attempt} failed: ${error.message}`);
+              }
+
+              await new Promise((resolve) => setTimeout(resolve, delayMs));
+            }
+
+            core.setFailed(`Stage smoke check failed: ${url} did not return HTTP 200 in time.`);
