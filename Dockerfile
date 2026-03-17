@@ -33,6 +33,7 @@ ENV NODE_ENV=production
 
 COPY --from=prod-deps --chown=node:node /app/node_modules ./node_modules
 COPY --from=build --chown=node:node /app/dist ./dist
+COPY --from=build --chown=node:node /app/proto ./proto
 COPY --from=prod-deps --chown=node:node /app/package.json ./package.json
 
 USER node
@@ -46,11 +47,11 @@ ENV NODE_ENV=production
 
 COPY --from=prod-deps --chown=nonroot:nonroot /app/node_modules ./node_modules
 COPY --from=build --chown=nonroot:nonroot /app/dist ./dist
+COPY --from=build --chown=nonroot:nonroot /app/proto ./proto
 COPY --from=prod-deps --chown=nonroot:nonroot /app/package.json ./package.json
 
 
 EXPOSE 3001
 CMD ["dist/main.js"]
-
 
 
