@@ -1,0 +1,172 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: ecommerce-order-postgres
+    restart: unless-stopped
+    env_file:
+      - .env.production
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    networks:
+      - internal
+      - public
+    volumes:
+      - pgdata_ecommerce_order:/var/lib/postgresql/data
+    ports:
+      - "5445:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+  
+  migrate:
+    container_name: ecommerce-order-migrate
+    depends_on:
+      postgres:
+          condition: service_healthy
+    build:
+      context: .
+      target: build
+    restart: "no"
+    env_file:
+      - .env.production
+    environment:
+      NODE_ENV: production
+      DB_HOST: postgres
+      DB_PORT: 5432
+    networks:
+      - internal
+    command: npm run migration:run
+
+  seed:
+    container_name: ecommerce-order-seed
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    build:
+      context: .
+      target: build
+    restart: "no"
+    env_file:
+      - .env.production
+    environment:
+      NODE_ENV: production
+      DB_HOST: postgres
+      DB_PORT: 5432
+    networks:
+      - internal
+    command: npm run db:seed
+
+  api:
+    container_name: ecommerce-order-api
+    depends_on:
+      postgres:
+        condition: service_healthy
+      payments-service:
+        condition: service_started
+      kafka-init:
+        condition: service_completed_successfully
+    build:
+      context: .
+      target: prod-distroless
+    restart: unless-stopped
+    env_file:
+      - .env.production
+    environment:
+      NODE_ENV: production
+      DB_HOST: postgres
+      DB_PORT: 5432
+      PAYMENTS_GRPC_URL: payments-service:5021
+    ports:
+      - "127.0.0.1:8080:3001"
+    networks:
+      - internal
+      - public
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: ecommerce-rabbitmq
+    restart: unless-stopped
+    ports:
+      - "5673:5672"
+      - "15673:15672"
+    networks:
+      - public
+
+  kafka:
+    image: apache/kafka:3.9.0
+    container_name: ecommerce-kafka
+    restart: unless-stopped
+    ports:
+      - "9094:9094"
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093,EXTERNAL://:9094
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,EXTERNAL://localhost:9094
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+    networks:
+      - public
+
+  kafka-init:
+    image: apache/kafka:3.9.0
+    container_name: ecommerce-kafka-init
+    depends_on:
+      - kafka
+    restart: "no"
+    networks:
+      - public
+    entrypoint: >
+      /bin/sh -c "
+      until /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 --list >/dev/null 2>&1; do
+        echo 'waiting for kafka...';
+        sleep 2;
+      done;
+      /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 --create --if-not-exists --topic orders.events --partitions 3 --replication-factor 1;
+      /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 --create --if-not-exists --topic payments.events --partitions 3 --replication-factor 1;
+      echo 'kafka topics are ready';
+      "
+
+  payments-service:
+    container_name: ecommerce-payments-service
+    depends_on:
+      postgres:
+        condition: service_healthy
+    build:
+      context: .
+      target: prod-distroless
+    restart: unless-stopped
+    env_file:
+      - .env.production
+    environment:
+      NODE_ENV: production
+      DB_HOST: postgres
+      DB_PORT: 5432
+      PAYMENTS_GRPC_URL: payments-service:5021
+      PAYMENTS_GRPC_BIND_URL: 0.0.0.0:5021
+    command: ["dist/payment-service/main.js"]
+    ports:
+      - "127.0.0.1:5021:5021"
+    networks:
+      - internal
+      - public
+
+volumes:
+  pgdata_ecommerce_order:
+
+networks:
+  internal:
+    internal: true
+  public: {}

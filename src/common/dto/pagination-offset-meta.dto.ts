@@ -8,6 +8,5 @@ export class PaginationOffsetMetaDto {
   offset: number;
 
   @ApiProperty({ description: 'Total items', example: 1000 })
-  total: number;
+  total?: number;
 }
-

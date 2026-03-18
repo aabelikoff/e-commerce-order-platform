@@ -2,15 +2,16 @@ import {
   CallHandler,
   ExecutionContext,
   Injectable,
-    NestInterceptor,
+  NestInterceptor,
 } from '@nestjs/common';
 import { map } from 'rxjs/operators';
 
 @Injectable()
 export class ResponseInterceptor<T> implements NestInterceptor {
-  
-    intercept(context: ExecutionContext, next: CallHandler) {
+  intercept(context: ExecutionContext, next: CallHandler) {
     const req = context.switchToHttp().getRequest();
+
+    if (!req) return next.handle();
 
     return next.handle().pipe(
       map((data) => ({

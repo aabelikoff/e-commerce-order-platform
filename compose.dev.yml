@@ -1,0 +1,171 @@
+services:
+  api:
+    depends_on:
+      postgres:
+        condition: service_healthy
+    build:
+      context: .
+      target: dev
+    restart: unless-stopped
+    env_file:
+      - .env.development
+    environment:
+      NODE_ENV: development
+      DB_HOST: postgres
+      DB_PORT: 5432
+      PAYMENTS_GRPC_URL: payments-service:5021
+      AWS_S3_ENDPOINT: http://minio:9000
+      CHOKIDAR_USEPOLLING: 'true'
+      CHOKIDAR_INTERVAL: '1000'
+      WATCHPACK_POLLING: 'true'
+      TSC_WATCHFILE: FixedPollingInterval
+      TSC_WATCHDIRECTORY: FixedPollingInterval
+      TSC_NONPOLLING_WATCHER: 'false'
+    command: ['npm', 'run', 'start:dev']
+    volumes:
+      - .:/app
+      - /app/node_modules
+    ports:
+      - '127.0.0.1:8080:3001'
+    networks:
+      - internal
+      - public
+
+  payments-service:
+    depends_on:
+      postgres:
+        condition: service_healthy
+    build:
+      context: .
+      target: dev
+    restart: unless-stopped
+    env_file:
+      - .env.development
+    environment:
+      NODE_ENV: development
+      DB_HOST: postgres
+      DB_PORT: 5432
+      PAYMENTS_GRPC_URL: payments-service:5021
+      PAYMENTS_GRPC_BIND_URL: 0.0.0.0:5021
+      CHOKIDAR_USEPOLLING: 'true'
+      CHOKIDAR_INTERVAL: '1000'
+      WATCHPACK_POLLING: 'true'
+      TSC_WATCHFILE: FixedPollingInterval
+      TSC_WATCHDIRECTORY: FixedPollingInterval
+      TSC_NONPOLLING_WATCHER: 'false'
+    command: ['npm', 'run', 'start:payments:dev']
+    volumes:
+      - .:/app
+      - /app/node_modules
+    ports:
+      - '127.0.0.1:5021:5021'
+    networks:
+      - internal
+      - public
+
+  minio:
+    image: minio/minio:latest
+    container_name: ecommerce-orders-minio
+    restart: unless-stopped
+    env_file:
+      - .env.development
+    environment:
+      MINIO_ROOT_USER: ${AWS_ACCESS_KEY_ID}
+      MINIO_ROOT_PASSWORD: ${AWS_SECRET_ACCESS_KEY}
+    command: server /data --console-address ":9001"
+    ports:
+      - '${MINIO_API_PORT:-9000}:9000'
+      - '${MINIO_CONSOLE_PORT:-9001}:9001'
+    volumes:
+      - minio_ecommerce:/data
+    networks:
+      - public
+
+  minio-init:
+    image: minio/mc:latest
+    container_name: ecommerce-minio-init
+    depends_on:
+      - minio
+    restart: 'no'
+    env_file:
+      - .env.development
+    networks:
+      - public
+    entrypoint: >
+      /bin/sh -c "
+      until mc alias set local http://minio:9000 ${AWS_ACCESS_KEY_ID} ${AWS_SECRET_ACCESS_KEY}; do
+        echo 'waiting for minio...';
+        sleep 2;
+      done;
+      mc mb --ignore-existing local/${AWS_S3_BUCKET};
+      mc anonymous set none local/${AWS_S3_BUCKET};
+      echo 'minio bucket is ready';
+      "
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: ecommerce-rabbitmq
+    restart: unless-stopped
+    ports:
+      - '5673:5672'
+      - '15673:15672'
+    networks:
+      - public
+
+  kafka:
+    image: apache/kafka:3.9.0
+    container_name: ecommerce-kafka
+    restart: unless-stopped
+    ports:
+      - '9094:9094'
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093,EXTERNAL://:9094
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,EXTERNAL://localhost:9094
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+    networks:
+      - public
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: ecommerce-kafka-ui
+    restart: unless-stopped
+    depends_on:
+      - kafka
+    ports:
+      - '18080:8080'
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+    networks:
+      - public
+
+  kafka-init:
+    image: apache/kafka:3.9.0
+    container_name: ecommerce-kafka-init
+    depends_on:
+      - kafka
+    restart: 'no'
+    networks:
+      - public
+    entrypoint: >
+      /bin/sh -c "
+      until /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 --list >/dev/null 2>&1; do
+        echo 'waiting for kafka...';
+        sleep 2;
+      done;
+      /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 --create --if-not-exists --topic orders.events --partitions 3 --replication-factor 1;
+      /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 --create --if-not-exists --topic payments.events --partitions 3 --replication-factor 1;
+      echo 'kafka topics are ready';
+      "
+
+volumes:
+  minio_ecommerce:

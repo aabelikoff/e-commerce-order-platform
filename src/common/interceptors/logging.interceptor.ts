@@ -1,6 +1,13 @@
-import { Injectable, NestInterceptor, ExecutionContext, CallHandler, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  NestInterceptor,
+  ExecutionContext,
+  CallHandler,
+  Logger,
+} from '@nestjs/common';
 import { finalize } from 'rxjs/operators';
 import { randomUUID } from 'crypto';
+import { GqlExecutionContext } from '@nestjs/graphql';
 
 @Injectable()
 export class LoggingInterceptor implements NestInterceptor {
@@ -11,7 +18,10 @@ export class LoggingInterceptor implements NestInterceptor {
     const req = http.getRequest<any>();
     const res = http.getResponse<any>();
 
-    const requestId = req.headers['x-request-id'] ?? req.requestId ?? randomUUID();
+    if (!req) return next.handle();
+
+    const requestId =
+      req.headers['x-request-id'] ?? req.requestId ?? randomUUID();
     req.requestId = requestId;
 
     const startedAt = Date.now();
