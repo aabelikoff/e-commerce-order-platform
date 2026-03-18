@@ -65,42 +65,61 @@ jobs:
 
       - name: Resolve release metadata
         id: release-meta
-        shell: powershell
-        run: |
-          $manifestPath = (Get-ChildItem -Filter 'release-manifest-*.json' | Select-Object -First 1).FullName
-          if (-not $manifestPath) {
-            throw 'Release manifest file was not downloaded.'
-          }
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
 
-          $manifest = Get-Content $manifestPath -Raw | ConvertFrom-Json
-          $service = $manifest.services.'orders-api'
-          $imageRef = $service.image
-          $digest = $service.digest
-          $repository = $imageRef -replace ':[^:]+$',''
-          $digestRef = "$repository@$digest"
+            const manifestName = fs.readdirSync(process.cwd()).find((file) =>
+              /^release-manifest-.*\.json$/.test(file)
+            );
 
-          "manifest_path=$manifestPath" >> $env:GITHUB_OUTPUT
-          "commit_sha=$($manifest.commit)" >> $env:GITHUB_OUTPUT
-          "image_ref=$imageRef" >> $env:GITHUB_OUTPUT
-          "image_digest=$digest" >> $env:GITHUB_OUTPUT
-          "image_repository=$repository" >> $env:GITHUB_OUTPUT
-          "digest_ref=$digestRef" >> $env:GITHUB_OUTPUT
+            if (!manifestName) {
+              core.setFailed('Release manifest file was not downloaded.');
+              return;
+            }
+
+            const manifestPath = path.join(process.cwd(), manifestName);
+            const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+            const service = manifest.services['orders-api'];
+            const imageRef = service.image;
+            const digest = service.digest;
+            const repository = imageRef.replace(/:[^:]+$/, '');
+            const digestRef = `${repository}@${digest}`;
+
+            core.setOutput('manifest_path', manifestPath);
+            core.setOutput('commit_sha', manifest.commit);
+            core.setOutput('image_ref', imageRef);
+            core.setOutput('image_digest', digest);
+            core.setOutput('image_repository', repository);
+            core.setOutput('digest_ref', digestRef);
 
       - name: Show deployment metadata
-        shell: powershell
-        run: |
-          echo "Environment: production"
-          echo "Commit SHA: ${{ steps.release-meta.outputs.commit_sha }}"
-          echo "Image ref: ${{ steps.release-meta.outputs.image_ref }}"
-          echo "Image digest: ${{ steps.release-meta.outputs.image_digest }}"
-          cat "${{ steps.release-meta.outputs.manifest_path }}"
+        uses: actions/github-script@v7
+        env:
+          MANIFEST_PATH: ${{ steps.release-meta.outputs.manifest_path }}
+          COMMIT_SHA: ${{ steps.release-meta.outputs.commit_sha }}
+          IMAGE_REF: ${{ steps.release-meta.outputs.image_ref }}
+          IMAGE_DIGEST: ${{ steps.release-meta.outputs.image_digest }}
+        with:
+          script: |
+            const fs = require('fs');
+            const manifest = fs.readFileSync(process.env.MANIFEST_PATH, 'utf8');
+            core.info('Environment: production');
+            core.info(`Commit SHA: ${process.env.COMMIT_SHA}`);
+            core.info(`Image ref: ${process.env.IMAGE_REF}`);
+            core.info(`Image digest: ${process.env.IMAGE_DIGEST}`);
+            core.info(manifest);
 
       - name: Write production environment file
-        shell: powershell
-        run: |
-          @'
-          ${{ secrets.PRODUCTION_ENV_FILE }}
-          '@ | Set-Content .env.production
+        uses: actions/github-script@v7
+        env:
+          PRODUCTION_ENV_FILE: ${{ secrets.PRODUCTION_ENV_FILE }}
+        with:
+          script: |
+            const fs = require('fs');
+            fs.writeFileSync('.env.production', process.env.PRODUCTION_ENV_FILE, 'utf8');
 
       - name: Login to GHCR
         uses: docker/login-action@v3
@@ -109,12 +128,28 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Pull immutable image
+      - name: Pull immutable image on Windows
+        if: runner.os == 'Windows'
         shell: powershell
         run: docker pull "${{ steps.release-meta.outputs.digest_ref }}"
 
-      - name: Deploy production stack
+      - name: Pull immutable image on Linux/macOS
+        if: runner.os != 'Windows'
+        shell: bash
+        run: docker pull "${{ steps.release-meta.outputs.digest_ref }}"
+
+      - name: Deploy production stack on Windows
+        if: runner.os == 'Windows'
         shell: powershell
+        env:
+          APP_IMAGE: ${{ steps.release-meta.outputs.digest_ref }}
+          COMPOSE_PROJECT_NAME: ecommerce-prod
+        run: |
+          docker compose --env-file .env.production -f deploy/compose.prod.yml up -d --remove-orphans
+
+      - name: Deploy production stack on Linux/macOS
+        if: runner.os != 'Windows'
+        shell: bash
         env:
           APP_IMAGE: ${{ steps.release-meta.outputs.digest_ref }}
           COMPOSE_PROJECT_NAME: ecommerce-prod

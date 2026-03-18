@@ -122,20 +122,29 @@ jobs:
           path: deploy
 
       - name: Show deployment metadata
-        shell: powershell
-        run: |
-          echo "Environment: stage"
-          echo "Commit SHA: $GITHUB_SHA"
-          echo "Image tag: ${{ needs.build-image.outputs.image_tag }}"
-          echo "Image digest: ${{ needs.build-image.outputs.image_digest }}"
-          cat "${{ needs.build-image.outputs.release_manifest_name }}"
+        uses: actions/github-script@v7
+        env:
+          MANIFEST_NAME: ${{ needs.build-image.outputs.release_manifest_name }}
+          IMAGE_TAG: ${{ needs.build-image.outputs.image_tag }}
+          IMAGE_DIGEST: ${{ needs.build-image.outputs.image_digest }}
+        with:
+          script: |
+            const fs = require('fs');
+            const manifest = fs.readFileSync(process.env.MANIFEST_NAME, 'utf8');
+            core.info('Environment: stage');
+            core.info(`Commit SHA: ${context.sha}`);
+            core.info(`Image tag: ${process.env.IMAGE_TAG}`);
+            core.info(`Image digest: ${process.env.IMAGE_DIGEST}`);
+            core.info(manifest);
 
       - name: Write stage environment file
-        shell: powershell
-        run: |
-          @'
-          ${{ secrets.STAGE_ENV_FILE }}
-          '@ | Set-Content .env.stage
+        uses: actions/github-script@v7
+        env:
+          STAGE_ENV_FILE: ${{ secrets.STAGE_ENV_FILE }}
+        with:
+          script: |
+            const fs = require('fs');
+            fs.writeFileSync('.env.stage', process.env.STAGE_ENV_FILE, 'utf8');
 
       - name: Login to GHCR
         uses: docker/login-action@v3
@@ -144,12 +153,28 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Pull immutable image
+      - name: Pull immutable image on Windows
+        if: runner.os == 'Windows'
         shell: powershell
         run: docker pull "${{ needs.build-image.outputs.image_repository }}@${{ needs.build-image.outputs.image_digest }}"
 
-      - name: Deploy stage stack
+      - name: Pull immutable image on Linux/macOS
+        if: runner.os != 'Windows'
+        shell: bash
+        run: docker pull "${{ needs.build-image.outputs.image_repository }}@${{ needs.build-image.outputs.image_digest }}"
+
+      - name: Deploy stage stack on Windows
+        if: runner.os == 'Windows'
         shell: powershell
+        env:
+          APP_IMAGE: ${{ needs.build-image.outputs.image_repository }}@${{ needs.build-image.outputs.image_digest }}
+          COMPOSE_PROJECT_NAME: ecommerce-stage
+        run: |
+          docker compose --env-file .env.stage -f deploy/compose.stage.yml up -d --remove-orphans
+
+      - name: Deploy stage stack on Linux/macOS
+        if: runner.os != 'Windows'
+        shell: bash
         env:
           APP_IMAGE: ${{ needs.build-image.outputs.image_repository }}@${{ needs.build-image.outputs.image_digest }}
           COMPOSE_PROJECT_NAME: ecommerce-stage
