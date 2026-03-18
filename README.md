@@ -13,6 +13,7 @@ The main goal of the project is to demonstrate a clean, well-structured, and sca
 - [Environment Variables](#environment-variables)
 - [Compile and Run the Project](#compile-and-run-the-project)
 - [Run Tests](#run-tests)
+- [CI/CD](#cicd)
 - [Deployment](#deployment)
 - [Docker / Containers](#docker--containers)
 - [(RabbitMQ + Outbox)](#rabbitmq--outbox)
@@ -180,6 +181,104 @@ npm run test:e2e
 # test coverage
 npm run test:cov
 ```
+
+## CI/CD
+
+This project includes a GitHub Actions based CI/CD pipeline with separate flows for pull requests, stage deployment, and production deployment.
+
+### PR validation
+
+Workflow:
+
+- [`.github/workflows/pr-checks.yml`](./.github/workflows/pr-checks.yml)
+
+Purpose:
+
+- run lint checks
+- run CI-focused automated tests
+- validate Docker build on every pull request
+
+This workflow helps prevent broken code from being merged into long-lived branches.
+
+### Build and Stage flow
+
+Workflow:
+
+- [`.github/workflows/build-and-stage.yml`](./.github/workflows/build-and-stage.yml)
+
+Trigger:
+
+- push to `develop`
+
+What it does:
+
+1. checks out the repository
+2. builds a production Docker image from [`Dockerfile`](./Dockerfile)
+3. pushes the image to GitHub Container Registry (`ghcr.io`)
+4. creates a release manifest with commit, image, and digest
+5. uploads deploy artifacts for downstream jobs
+6. deploys the exact same built image to the `stage` environment
+7. runs a smoke check against `http://127.0.0.1:8080/api/docs`
+
+Important properties:
+
+- the image is built once and reused later
+- stage deploy uses an immutable image reference with digest
+- deploy is executed on a `self-hosted` runner
+- stage configuration is injected from `STAGE_ENV_FILE`
+
+Stage compose file:
+
+- [`deploy/compose.stage.yml`](./deploy/compose.stage.yml)
+
+### Production flow
+
+Workflow:
+
+- [`.github/workflows/deploy-prod.yml`](./.github/workflows/deploy-prod.yml)
+
+Trigger:
+
+- push to `main`
+
+What it does:
+
+1. finds the latest successful `Build and Stage` run from `develop`
+2. downloads the release manifest and production deploy files from that successful staged release
+3. resolves image metadata from the manifest
+4. waits for manual approval in GitHub `production` environment
+5. pulls the exact same immutable image by digest
+6. deploys the production stack
+7. runs a smoke check against `http://127.0.0.1:8081/api/docs`
+
+Important properties:
+
+- production does not rebuild the image
+- production promotes the same artifact that already passed stage
+- approval is enforced through GitHub Environment protection rules
+- production configuration is injected from `PRODUCTION_ENV_FILE`
+
+Production compose file:
+
+- [`deploy/compose.prod.yml`](./deploy/compose.prod.yml)
+
+### Environments and secrets
+
+Configured GitHub Environments:
+
+- `stage`
+- `production`
+
+Expected secrets:
+
+- `STAGE_ENV_FILE`
+- `PRODUCTION_ENV_FILE`
+
+### Deployment target
+
+Both deploy workflows run on a `self-hosted` GitHub Actions runner.
+
+This is required because the deployment target must keep running after the workflow job finishes. GitHub-hosted runners are ephemeral, so they are suitable for build/test jobs but not for a persistent stage or production runtime.
 
 ## Deployment
 
