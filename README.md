@@ -13,6 +13,7 @@ The main goal of the project is to demonstrate a clean, well-structured, and sca
 - [Environment Variables](#environment-variables)
 - [Compile and Run the Project](#compile-and-run-the-project)
 - [Health and Metrics](#health-and-metrics)
+- [Monitoring](#monitoring)
 - [Run Tests](#run-tests)
 - [CI/CD](#cicd)
 - [Deployment](#deployment)
