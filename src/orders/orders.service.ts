@@ -38,6 +38,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { IPaymentsServiceConfig } from 'src/config/payments-service';
 import { lastValueFrom, TimeoutError, timeout } from 'rxjs';
+import { MetricsService } from 'src/metrics/metrics.service';
 
 @Injectable()
 export class OrdersService implements OnModuleInit {
@@ -50,6 +51,7 @@ export class OrdersService implements OnModuleInit {
     private readonly ordersEventsService: OrdersEventsService,
     private readonly outboxService: OutboxService,
     private readonly configService: ConfigService,
+    private readonly metricsService: MetricsService,
     @Inject(PAYMENTS_GRPC_CLIENT)
     private readonly paymentsGrpcClient: ClientGrpc,
   ) {}
@@ -281,12 +283,15 @@ export class OrdersService implements OnModuleInit {
           .pipe(timeout(paymentsTimeoutMs)),
       );
 
+      this.metricsService.incrementOrdersCreated();
+
       return {
         order: createdOrder,
         created: true,
         payment,
       };
     } catch (e: unknown) {
+      this.metricsService.incrementOrdersFailed();
       if (e instanceof TimeoutError) {
         throw new GatewayTimeoutException('Payments service timeout');
       }

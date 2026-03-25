@@ -18,6 +18,7 @@ import {
 } from 'src/common/grpc/grpc.constants';
 import { join } from 'path';
 import { IPaymentsServiceConfig } from 'src/config/payments-service';
+import { MetricsModule } from 'src/metrics/metrics.module';
 
 @Module({
   imports: [
@@ -49,6 +50,7 @@ import { IPaymentsServiceConfig } from 'src/config/payments-service';
     RabbitmqModule,
     OutboxModule,
     KafkaModule,
+    MetricsModule,
   ],
   controllers: [OrdersV1Controller],
   providers: [

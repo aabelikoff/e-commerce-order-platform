@@ -42,6 +42,8 @@ import { OutboxModule } from './outbox/outbox.module';
 import { kafkaConfig } from './config/kafka';
 import { KafkaModule } from './kafka/kafka.module';
 import { paymentsServiceConfig } from './config/payments-service/payments-service.config';
+import { HealthModule } from './health/health.module';
+import { MetricsModule } from './metrics/metrics.module';
 
 @Module({
   imports: [
@@ -92,6 +94,8 @@ import { paymentsServiceConfig } from './config/payments-service/payments-servic
     RabbitmqModule,
     OutboxModule,
     KafkaModule,
+    HealthModule,
+    MetricsModule,
   ],
   controllers: [],
   providers: [S3Service],
