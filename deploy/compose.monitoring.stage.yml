@@ -1,0 +1,41 @@
+services:
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    container_name: ecommerce-stage-prometheus
+    restart: unless-stopped
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    volumes:
+      - ../monitoring/prometheus/prometheus.stage.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_stage_data:/prometheus
+    ports:
+      - '9091:9090'
+    networks:
+      - public
+      - internal
+    depends_on:
+      api:
+        condition: service_started
+
+  grafana:
+    image: grafana/grafana:11.2.0
+    container_name: ecommerce-stage-grafana
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+    volumes:
+      - grafana_stage_data:/var/lib/grafana
+      - ../monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ../monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    ports:
+      - '3002:3000'
+    networks:
+      - public
+    depends_on:
+      - prometheus
+
+volumes:
+  prometheus_stage_data:
+  grafana_stage_data:

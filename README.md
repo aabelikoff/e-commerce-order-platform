@@ -12,6 +12,8 @@ The main goal of the project is to demonstrate a clean, well-structured, and sca
 - [Project Setup](#project-setup)
 - [Environment Variables](#environment-variables)
 - [Compile and Run the Project](#compile-and-run-the-project)
+- [Health and Metrics](#health-and-metrics)
+- [Monitoring](#monitoring)
 - [Run Tests](#run-tests)
 - [CI/CD](#cicd)
 - [Deployment](#deployment)
@@ -168,6 +170,38 @@ npm run start:dev
 # production mode
 npm run start:prod
 ```
+
+## Health and Metrics
+
+Service endpoints:
+
+- `GET /health`
+- `GET /ready`
+- `GET /metrics`
+
+Notes:
+
+- `/health` returns a simple liveness response
+- `/ready` returns a simple readiness response
+- `/metrics` returns Prometheus text format with HTTP and business metrics
+
+## Monitoring
+
+Prometheus and Grafana can be used on top of `/metrics` to visualize request rate, latency, business counters, and default Node.js process metrics.
+
+Local monitoring:
+
+- `npm run monitoring:up`
+- `Prometheus`: `http://localhost:9090`
+- `Grafana`: `http://localhost:3000`
+- Grafana default credentials: `admin / admin`
+
+Stage and production monitoring:
+
+- `npm run monitoring:stage:up`
+- `npm run monitoring:prod:up`
+- stage Prometheus scrapes internal target `api:3001`
+- prod Prometheus scrapes internal target `api:3001`
 
 ## Run Tests
 
@@ -525,3 +559,4 @@ This setup keeps operational processing in RabbitMQ and uses Kafka for domain ev
 ## License
 
 MIT licensed.
+
