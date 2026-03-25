@@ -36,7 +36,14 @@
     "docker:dev:start": "docker compose --env-file .env.development -f compose.yml -f compose.dev.yml start",
     "docker:dev:restart": "docker compose --env-file .env.development -f compose.yml -f compose.dev.yml down && docker compose --env-file .env.development -f compose.yml -f compose.dev.yml up -d --build",
     "docker:dev:logs": "docker compose --env-file .env.development -f compose.yml -f compose.dev.yml logs -f api",
-    "proto:generate:payments": "mkdir src\\generated 2>nul & grpc_tools_node_protoc --plugin=protoc-gen-ts_proto=\"%cd%\\node_modules\\.bin\\protoc-gen-ts_proto.cmd\" --ts_proto_out=./src/generated --ts_proto_opt=nestJs=true,outputServices=grpc-js,esModuleInterop=true,snakeToCamel=true,useOptionals=none -I ./proto ./proto/payments/v1/payments.proto"
+    "monitoring:up": "docker compose -f monitoring/docker-compose.monitoring.yml up -d",
+    "monitoring:down": "docker compose -f monitoring/docker-compose.monitoring.yml down -v",
+    "monitoring:logs": "docker compose -f monitoring/docker-compose.monitoring.yml logs -f",
+    "proto:generate:payments": "mkdir src\\generated 2>nul & grpc_tools_node_protoc --plugin=protoc-gen-ts_proto=\"%cd%\\node_modules\\.bin\\protoc-gen-ts_proto.cmd\" --ts_proto_out=./src/generated --ts_proto_opt=nestJs=true,outputServices=grpc-js,esModuleInterop=true,snakeToCamel=true,useOptionals=none -I ./proto ./proto/payments/v1/payments.proto",
+    "monitoring:stage:up": "docker compose --env-file .env.stage -f deploy/compose.stage.yml -f deploy/compose.monitoring.stage.yml up -d",
+    "monitoring:stage:down": "docker compose --env-file .env.stage -f deploy/compose.stage.yml -f deploy/compose.monitoring.stage.yml down -v",
+    "monitoring:prod:up": "docker compose --env-file .env.production -f deploy/compose.prod.yml -f deploy/compose.monitoring.prod.yml up -d",
+    "monitoring:prod:down": "docker compose --env-file .env.production -f deploy/compose.prod.yml -f deploy/compose.monitoring.prod.yml down -v"
   },
   "dependencies": {
     "@apollo/server": "^5.4.0",

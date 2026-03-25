@@ -184,6 +184,24 @@ Notes:
 - `/ready` returns a simple readiness response
 - `/metrics` returns Prometheus text format with HTTP and business metrics
 
+## Monitoring
+
+Prometheus and Grafana can be used on top of `/metrics` to visualize request rate, latency, business counters, and default Node.js process metrics.
+
+Local monitoring:
+
+- `npm run monitoring:up`
+- `Prometheus`: `http://localhost:9090`
+- `Grafana`: `http://localhost:3000`
+- Grafana default credentials: `admin / admin`
+
+Stage and production monitoring:
+
+- `npm run monitoring:stage:up`
+- `npm run monitoring:prod:up`
+- stage Prometheus scrapes internal target `api:3001`
+- prod Prometheus scrapes internal target `api:3001`
+
 ## Run Tests
 
 ```bash
@@ -540,3 +558,4 @@ This setup keeps operational processing in RabbitMQ and uses Kafka for domain ev
 ## License
 
 MIT licensed.
+
