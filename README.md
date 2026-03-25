@@ -12,6 +12,7 @@ The main goal of the project is to demonstrate a clean, well-structured, and sca
 - [Project Setup](#project-setup)
 - [Environment Variables](#environment-variables)
 - [Compile and Run the Project](#compile-and-run-the-project)
+- [Health and Metrics](#health-and-metrics)
 - [Run Tests](#run-tests)
 - [CI/CD](#cicd)
 - [Deployment](#deployment)
@@ -168,6 +169,20 @@ npm run start:dev
 # production mode
 npm run start:prod
 ```
+
+## Health and Metrics
+
+Service endpoints:
+
+- `GET /health`
+- `GET /ready`
+- `GET /metrics`
+
+Notes:
+
+- `/health` returns a simple liveness response
+- `/ready` returns a simple readiness response
+- `/metrics` returns Prometheus text format with HTTP and business metrics
 
 ## Run Tests
 
