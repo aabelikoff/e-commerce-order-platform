@@ -14,6 +14,7 @@ The main goal of the project is to demonstrate a clean, well-structured, and sca
 - [Compile and Run the Project](#compile-and-run-the-project)
 - [Health and Metrics](#health-and-metrics)
 - [Monitoring](#monitoring)
+- [Tracing](#tracing)
 - [Run Tests](#run-tests)
 - [CI/CD](#cicd)
 - [Deployment](#deployment)
@@ -202,6 +203,21 @@ Stage and production monitoring:
 - `npm run monitoring:prod:up`
 - stage Prometheus scrapes internal target `api:3001`
 - prod Prometheus scrapes internal target `api:3001`
+
+## Tracing
+
+Jaeger can be used to inspect distributed traces for the API and payments service.
+
+Local tracing:
+
+- `npm run tracing:up`
+- `Jaeger`: `http://localhost:16686`
+- `npm run tracing:logs`
+
+In development Docker compose, traces are exported over OTLP HTTP to Jaeger for:
+
+- `ecommerce-order-api`
+- `ecommerce-payments-service`
 
 ## Run Tests
 
@@ -559,4 +575,3 @@ This setup keeps operational processing in RabbitMQ and uses Kafka for domain ev
 ## License
 
 MIT licensed.
-

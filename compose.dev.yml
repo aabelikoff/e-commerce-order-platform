@@ -15,6 +15,9 @@ services:
       DB_PORT: 5432
       PAYMENTS_GRPC_URL: payments-service:5021
       AWS_S3_ENDPOINT: http://minio:9000
+      OTEL_ENABLED: 'true'
+      OTEL_SERVICE_NAME: ecommerce-order-api
+      OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: http://host.docker.internal:4318/v1/traces
       CHOKIDAR_USEPOLLING: 'true'
       CHOKIDAR_INTERVAL: '1000'
       WATCHPACK_POLLING: 'true'
@@ -47,6 +50,9 @@ services:
       DB_PORT: 5432
       PAYMENTS_GRPC_URL: payments-service:5021
       PAYMENTS_GRPC_BIND_URL: 0.0.0.0:5021
+      OTEL_ENABLED: 'true'
+      OTEL_SERVICE_NAME: ecommerce-payments-service
+      OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: http://host.docker.internal:4318/v1/traces
       CHOKIDAR_USEPOLLING: 'true'
       CHOKIDAR_INTERVAL: '1000'
       WATCHPACK_POLLING: 'true'
