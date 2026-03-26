@@ -1,7 +1,4 @@
-import {
-  Logger,
-  Module,
-} from '@nestjs/common';
+import { Logger, Module } from '@nestjs/common';
 
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { UsersModule } from './users/users.module';
