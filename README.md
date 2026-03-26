@@ -219,6 +219,14 @@ In development Docker compose, traces are exported over OTLP HTTP to Jaeger for:
 - `ecommerce-order-api`
 - `ecommerce-payments-service`
 
+Stage and production tracing can also be enabled through environment variables without code changes:
+
+- `OTEL_ENABLED=true`
+- `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=<collector-or-jaeger-otlp-http-endpoint>`
+- `OTEL_DIAGNOSTICS_ENABLED=false`
+
+In `stage` and `production`, tracing is disabled by default and can be turned on when a collector endpoint is available.
+
 ## Run Tests
 
 ```bash
