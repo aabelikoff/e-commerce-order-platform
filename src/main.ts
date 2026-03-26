@@ -6,7 +6,6 @@ import { RequestMethod, ValidationPipe, VersioningType } from '@nestjs/common';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
-import { logger } from './common/middleware/logger.middleware';
 import { CatchErrorInterceptor } from './common/interceptors/catch-error.interceptor';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { MetricsService } from './metrics/metrics.service';
@@ -48,8 +47,6 @@ async function bootstrap() {
     new CatchErrorInterceptor(),
     new HttpMetricsInterceptor(metricsService),
   );
-
-  app.use(logger);
 
   const config = new DocumentBuilder()
     .setTitle('API Documentation')

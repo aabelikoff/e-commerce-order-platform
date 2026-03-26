@@ -25,7 +25,6 @@ export class UsersService {
   findAll(query: OffsetPaginationQueryDto): Promise<User[]> {
     const { limit, page } = query;
     const offset = (page - 1) * limit;
-    console.log('Find all in service');
     return this.usersRepository.find({
       take: limit,
       skip: offset,

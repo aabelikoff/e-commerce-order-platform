@@ -1,23 +1,41 @@
 import {
+  CallHandler,
+  ExecutionContext,
   Injectable,
   NestInterceptor,
-  ExecutionContext,
-  CallHandler,
+  Logger,
+  HttpException,
 } from '@nestjs/common';
-import { catchError, throwError, of } from 'rxjs';
+import { catchError, throwError } from 'rxjs';
 
 @Injectable()
 export class CatchErrorInterceptor implements NestInterceptor {
+  private readonly logger = new Logger(CatchErrorInterceptor.name);
+
   intercept(context: ExecutionContext, next: CallHandler) {
+    const http = context.switchToHttp();
+    const req = http.getRequest<any>();
+
     return next.handle().pipe(
       catchError((err) => {
-        // Here you can log the error or transform it before re-throwing
-        // For example, logging the error:
-        console.error('An error occurred:', err);
+        const status =
+          err instanceof HttpException ? err.getStatus() : 500;
 
-        // Re-throw the error to be handled by NestJS exception filters
+        this.logger.error(
+          JSON.stringify({
+            msg: 'http_error',
+            requestId: req?.requestId,
+            method: req?.method,
+            path: req?.originalUrl ?? req?.url,
+            statusCode: status,
+            errorName: err?.name ?? 'Error',
+            errorMessage:
+              err instanceof Error ? err.message : String(err),
+          }),
+          err instanceof Error ? err.stack : undefined,
+        );
+
         return throwError(() => err);
-        //   return of({ ok: 'err' });
       }),
     );
   }

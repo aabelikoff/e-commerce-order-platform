@@ -15,10 +15,6 @@ export class ProductsService {
   async findProducts(
     query: FindProductsQueryDto,
   ): Promise<ResponseListDto<Product>> {
-    console.log('Received query:', query);
-    console.log('Fields type:', typeof query.fields);
-    console.log('Fields value:', query.fields);
-
     const q = query.q?.trim();
     const sort = query.sort ?? 'createdAt';
     const order = (query.order ?? 'desc').toUpperCase() as 'ASC' | 'DESC';
@@ -86,9 +82,6 @@ export class ProductsService {
     };
 
     qb.orderBy(sortMap[sort], order).take(limit).skip(offset);
-
-    console.log(qb.getSql());
-    console.log(qb.getParameters());
 
     const [items, total] = await qb.getManyAndCount();
 
