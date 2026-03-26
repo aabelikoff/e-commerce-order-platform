@@ -18,8 +18,7 @@ export class CatchErrorInterceptor implements NestInterceptor {
 
     return next.handle().pipe(
       catchError((err) => {
-        const status =
-          err instanceof HttpException ? err.getStatus() : 500;
+        const status = err instanceof HttpException ? err.getStatus() : 500;
 
         this.logger.error(
           JSON.stringify({
@@ -29,8 +28,7 @@ export class CatchErrorInterceptor implements NestInterceptor {
             path: req?.originalUrl ?? req?.url,
             statusCode: status,
             errorName: err?.name ?? 'Error',
-            errorMessage:
-              err instanceof Error ? err.message : String(err),
+            errorMessage: err instanceof Error ? err.message : String(err),
           }),
           err instanceof Error ? err.stack : undefined,
         );
