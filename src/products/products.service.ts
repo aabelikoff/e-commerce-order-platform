@@ -4,6 +4,7 @@ import { Product } from 'src/database/entities';
 import { Repository } from 'typeorm';
 import { FindProductsQueryDto } from './v1/dto/find-products.query.dto';
 import { ResponseListDto } from 'src/common/dto/response-list.dto';
+import { paginateQueryBuilderByCursor } from 'src/common/pagination/cursor/paginate-query-builder';
 
 @Injectable()
 export class ProductsService {
@@ -16,19 +17,9 @@ export class ProductsService {
     query: FindProductsQueryDto,
   ): Promise<ResponseListDto<Product>> {
     const q = query.q?.trim();
-    const sort = query.sort ?? 'createdAt';
-    const order = (query.order ?? 'desc').toUpperCase() as 'ASC' | 'DESC';
-    const limit = query.limit ?? 20;
-    const offset = query.offset ?? 0;
     const fields = query.fields;
 
     const qb = this.productsRepositoriy.createQueryBuilder('p');
-
-    const sortFieldMap: Record<string, string> = {
-      price: 'price',
-      createdAt: 'createdAt',
-      name: 'name',
-    };
 
     const allowedDirectFields = new Set([
       'id',
@@ -42,7 +33,7 @@ export class ProductsService {
 
     qb.select('p.id');
     if (fields && fields.length > 0) {
-      const selectedFields = new Set<string>(['p.id', `p.${sort}`]);
+      const selectedFields = new Set<string>(['p.id', 'p.createdAt']);
 
       for (const field of fields) {
         if (field === 'items') {
@@ -75,23 +66,8 @@ export class ProductsService {
       qb.andWhere('p.name ILIKE :q', { q: `%${q}%` });
     }
 
-    const sortMap: Record<string, string> = {
-      price: 'p.price',
-      createdAt: 'p.createdAt',
-      name: 'p.name',
-    };
+    qb.orderBy('p.createdAt', 'DESC').addOrderBy('p.id', 'DESC');
 
-    qb.orderBy(sortMap[sort], order).take(limit).skip(offset);
-
-    const [items, total] = await qb.getManyAndCount();
-
-    return {
-      items,
-      pagination: {
-        total,
-        limit,
-        offset,
-      },
-    };
+    return paginateQueryBuilderByCursor(qb, query, 'p');
   }
 }

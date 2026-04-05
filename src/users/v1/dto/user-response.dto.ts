@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { PaginationOffsetMetaDto } from 'src/common/dto/pagination-offset-meta.dto';
+import { PaginationCursorMetaDto } from 'src/common/dto/pagination-cursor-meta.dto';
 
 export class UserResponseDto {
   @ApiProperty({
@@ -37,6 +37,6 @@ export class UsersListResponseDto {
   @ApiProperty({ description: 'List of users', type: [UserResponseDto] })
   items: UserResponseDto[];
 
-  @ApiProperty({ description: 'Pagination', type: PaginationOffsetMetaDto })
-  pagination: PaginationOffsetMetaDto;
+  @ApiProperty({ description: 'Pagination', type: PaginationCursorMetaDto })
+  pagination: PaginationCursorMetaDto;
 }

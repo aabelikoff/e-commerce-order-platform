@@ -2,38 +2,15 @@ import { Transform } from 'class-transformer';
 import {
   IsOptional,
   IsString,
-  IsIn,
-  IsInt,
-  Min,
-  Max,
   IsArray,
+  IsIn,
 } from 'class-validator';
+import { CursorPaginationQueryDto } from 'src/common/dto/cursor-pagination-query.dto';
 
-export class FindProductsQueryDto {
+export class FindProductsQueryDto extends CursorPaginationQueryDto {
   @IsOptional()
   @IsString()
   q?: string; // name
-
-  @IsOptional()
-  @IsIn(['price', 'createdAt', 'name'])
-  sort?: 'price' | 'createdAt' | 'name';
-
-  @IsOptional()
-  @IsIn(['asc', 'desc'])
-  order?: 'asc' | 'desc' = 'desc';
-
-  @IsOptional()
-  @Transform(({ value }) => Number(value))
-  @IsInt()
-  @Min(1)
-  @Max(100)
-  limit?: number = 20;
-
-  @IsOptional()
-  @Transform(({ value }) => Number(value))
-  @IsInt()
-  @Min(0)
-  offset?: number = 0;
 
   @IsOptional()
   @Transform(({ value }) => {
