@@ -23,7 +23,8 @@ export async function paginateQueryBuilderByCursor<
     throw new Error('Cursor pagination requires a query builder with metadata');
   }
 
-  const createdAtColumn = mainAlias.metadata.findColumnWithPropertyName('createdAt');
+  const createdAtColumn =
+    mainAlias.metadata.findColumnWithPropertyName('createdAt');
   const idColumn = mainAlias.metadata.findColumnWithPropertyName('id');
 
   if (!createdAtColumn || !idColumn) {
@@ -31,7 +32,9 @@ export async function paginateQueryBuilderByCursor<
   }
 
   const escapedAlias = queryBuilder.escape(alias);
-  const escapedCreatedAtColumn = queryBuilder.escape(createdAtColumn.databaseName);
+  const escapedCreatedAtColumn = queryBuilder.escape(
+    createdAtColumn.databaseName,
+  );
   const escapedIdColumn = queryBuilder.escape(idColumn.databaseName);
   const createdAtExpr = `${escapedAlias}.${escapedCreatedAtColumn}`;
   const idExpr = `${escapedAlias}.${escapedIdColumn}`;
@@ -54,7 +57,9 @@ export async function paginateQueryBuilderByCursor<
     );
   }
 
-  const { entities, raw } = await queryBuilder.take(limit + 1).getRawAndEntities();
+  const { entities, raw } = await queryBuilder
+    .take(limit + 1)
+    .getRawAndEntities();
   const hasNext = entities.length > limit;
   const pageItems = hasNext ? entities.slice(0, limit) : entities;
   const pageRaw = hasNext ? raw.slice(0, limit) : raw;
@@ -62,7 +67,7 @@ export async function paginateQueryBuilderByCursor<
   const lastRaw = pageRaw.at(-1) as Record<string, unknown> | undefined;
   const exactCreatedAt =
     typeof lastRaw?.[cursorCreatedAtSelectAlias] === 'string'
-      ? (lastRaw[cursorCreatedAtSelectAlias] as string)
+      ? lastRaw[cursorCreatedAtSelectAlias]
       : lastItem?.createdAt.toISOString();
 
   return {
@@ -70,7 +75,10 @@ export async function paginateQueryBuilderByCursor<
     pagination: {
       hasNext,
       nextCursor: lastItem
-        ? encodeCursor(lastItem.id, exactCreatedAt ?? lastItem.createdAt.toISOString())
+        ? encodeCursor(
+            lastItem.id,
+            exactCreatedAt ?? lastItem.createdAt.toISOString(),
+          )
         : null,
     },
   };

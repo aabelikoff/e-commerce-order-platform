@@ -1,8 +1,6 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class AddUsersProductsCursorPaginationIndexes1774946400000
-  implements MigrationInterface
-{
+export class AddUsersProductsCursorPaginationIndexes1774946400000 implements MigrationInterface {
   name = 'AddUsersProductsCursorPaginationIndexes1774946400000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {

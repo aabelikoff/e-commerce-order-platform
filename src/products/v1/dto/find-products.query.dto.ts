@@ -1,10 +1,5 @@
 import { Transform } from 'class-transformer';
-import {
-  IsOptional,
-  IsString,
-  IsArray,
-  IsIn,
-} from 'class-validator';
+import { IsOptional, IsString, IsArray, IsIn } from 'class-validator';
 import { CursorPaginationQueryDto } from 'src/common/dto/cursor-pagination-query.dto';
 
 export class FindProductsQueryDto extends CursorPaginationQueryDto {
