@@ -8,22 +8,24 @@ import {
   Param,
   ParseUUIDPipe,
   Post,
+  Query,
   Req,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
 import { CreateOrderDto } from './dto/create-order.dto';
-import { IdempotencyKey } from 'src/common/decorators/idempotancy-key.decorator';
+import { IdempotencyKey } from '../../common/decorators/idempotancy-key.decorator';
 import { OrdersService } from './../orders.service';
 import { OrderResponseInterceptor } from './interceptors/order-response-status.interceptor';
-import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
-import { AccessGuard } from 'src/auth/guards/access.guard';
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { AccessGuard } from '../../auth/guards/access.guard';
 import { Scopes, Roles } from '../../auth/decorators';
-import { AuthUser } from 'src/auth/types';
-import { EOrderScopes } from 'src/auth/access/scopes';
+import { AuthUser } from '../../auth/types';
+import { EOrderScopes } from '../../auth/access/scopes';
 import { Request } from 'express';
-import { ERoles } from 'src/auth/access/roles';
+import { ERoles } from '../../auth/access/roles';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
+import { CursorPaginationQueryDto } from '../../common/dto/cursor-pagination-query.dto';
 
 @UseGuards(JwtAuthGuard, AccessGuard)
 @Controller('orders')
@@ -43,9 +45,12 @@ export class OrdersV1Controller {
   @Scopes(EOrderScopes.ORDER_READ)
   @Get()
   @UseInterceptors(OrderResponseInterceptor)
-  async getAll(@Req() req: Request & { user: AuthUser }) {
+  async getAll(
+    @Req() req: Request & { user: AuthUser },
+    @Query() query: CursorPaginationQueryDto,
+  ) {
     const user = req.user;
-    return await this.orderService.findAll(user);
+    return await this.orderService.findAll(user, query);
   }
 
   @Scopes(EOrderScopes.ORDER_READ)

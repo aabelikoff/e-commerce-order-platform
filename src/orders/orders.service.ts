@@ -36,9 +36,12 @@ import {
   PaymentsClient,
 } from '../generated/payments/v1/payments';
 import { ConfigService } from '@nestjs/config';
-import { IPaymentsServiceConfig } from 'src/config/payments-service';
+import { IPaymentsServiceConfig } from '../config/payments-service';
 import { lastValueFrom, TimeoutError, timeout } from 'rxjs';
 import { MetricsService } from 'src/metrics/metrics.service';
+import { CursorPaginationQueryDto } from '../common/dto/cursor-pagination-query.dto';
+import { ResponseListDto } from '../common/dto/response-list.dto';
+import { paginateQueryBuilderByCursor } from '../common/pagination/cursor/paginate-query-builder';
 
 @Injectable()
 export class OrdersService implements OnModuleInit {
@@ -318,23 +321,23 @@ export class OrdersService implements OnModuleInit {
   }
 
   // TODO: add pagination, filters, sorting, etc. For now it just returns all orders for user or all orders if user is staff
-  async findAll(user: AuthUser): Promise<Order[]> {
+  async findAll(
+    user: AuthUser,
+    query: CursorPaginationQueryDto,
+  ): Promise<ResponseListDto<Order>> {
     const isStaff = this.isStaff(user.roles);
 
-    const query = this.ordersRepository
+    const ordersQuery = this.ordersRepository
       .createQueryBuilder('order')
       .leftJoin('order.user', 'user')
-      // .leftJoinAndSelect('order.items', 'items')
-      // .leftJoinAndSelect('order.payments', 'payments')
-      // .leftJoinAndSelect('order.user', 'user')
       .orderBy('order.createdAt', 'DESC')
       .addOrderBy('order.id', 'DESC');
 
     if (!isStaff) {
-      query.where('user.id = :userId', { userId: user.sub });
+      ordersQuery.where('user.id = :userId', { userId: user.sub });
     }
 
-    return await query.getMany();
+    return paginateQueryBuilderByCursor(ordersQuery, query, 'order');
   }
 
   async findOne(user: AuthUser, id: string): Promise<Order> {
