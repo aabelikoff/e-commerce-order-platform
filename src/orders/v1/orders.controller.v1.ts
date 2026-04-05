@@ -26,6 +26,7 @@ import { Request } from 'express';
 import { ERoles } from '../../auth/access/roles';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
 import { CursorPaginationQueryDto } from '../../common/dto/cursor-pagination-query.dto';
+import { AdminWritesThrottle } from '../../common/decorators';
 
 @UseGuards(JwtAuthGuard, AccessGuard)
 @Controller('orders')
@@ -66,6 +67,7 @@ export class OrdersV1Controller {
 
   @Roles(ERoles.ADMIN)
   @Patch(':id/status')
+  @AdminWritesThrottle()
   async updateStatus(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateOrderStatusDto,

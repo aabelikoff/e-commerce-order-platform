@@ -3,12 +3,14 @@ import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { type AuthUser } from './types';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { AuthThrottle } from '../common/decorators';
 
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('login')
+  @AuthThrottle()
   async login(@Body() loginDto: LoginDto): Promise<{ accessToken: string }> {
     return this.authService.login(loginDto);
   }

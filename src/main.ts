@@ -11,9 +11,20 @@ import { CatchErrorInterceptor } from './common/interceptors/catch-error.interce
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { MetricsService } from './metrics/metrics.service';
 import { HttpMetricsInterceptor } from './metrics/metrics.interceptor';
+import helmet from 'helmet';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { cors: true });
+
+  const expressApp = app.getHttpAdapter().getInstance();
+  expressApp.set('trust proxy', 1);
+
+  app.use(
+    helmet({
+      contentSecurityPolicy: false,
+      crossOriginEmbedderPolicy: false,
+    }),
+  );
 
   app.setGlobalPrefix('api', {
     exclude: [
