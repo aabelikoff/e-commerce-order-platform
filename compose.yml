@@ -68,6 +68,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
       payments-service:
         condition: service_started
       kafka-init:
@@ -145,6 +147,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     build:
       context: .
       target: prod-distroless

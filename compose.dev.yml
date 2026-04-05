@@ -1,8 +1,26 @@
 services:
+  migrate:
+    env_file:
+      - .env.development
+    environment:
+      NODE_ENV: development
+      DB_HOST: postgres
+      DB_PORT: 5432
+
+  seed:
+    env_file:
+      - .env.development
+    environment:
+      NODE_ENV: development
+      DB_HOST: postgres
+      DB_PORT: 5432
+
   api:
     depends_on:
       postgres:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     build:
       context: .
       target: dev
@@ -38,6 +56,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     build:
       context: .
       target: dev

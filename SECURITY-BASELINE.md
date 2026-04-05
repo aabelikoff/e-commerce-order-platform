@@ -30,10 +30,10 @@ The goal of this baseline is to document the current security posture, identify 
 
 | Surface area | Main risk | Existing control | Gap before hardening | Planned / required control |
 | --- | --- | --- | --- | --- |
-| `POST /api/v1/auth/login` | brute force, credential stuffing, auth probing | JWT auth exists after successful login | no dedicated throttling, no audit trail for failed login attempts | strict rate limit, audit event for login failures, generic auth failure response |
+| `POST /api/v1/auth/login` | brute force, credential stuffing, auth probing | JWT auth exists after successful login, auth throttling, failed-login audit event | successful login is not audited by default | strict rate limit, audit event for login failures, generic auth failure response |
 | `GET /api/v1/users` | unauthorized data access | JWT + roles/access guard | no abuse protection baseline, no explicit audit trail for sensitive reads | global throttling, security headers, optional audit for privileged access |
-| `PATCH /api/v1/orders/:id/status` | privilege escalation, manual override abuse | admin role required | no dedicated throttling, no structured audit event | stricter throttling, audit log for manual status override |
-| `POST /api/v1/orders/:orderId/pay` | payment abuse, replay, burst attempts | JWT + custom pay guard | no dedicated throttling, no explicit audit trail | stricter throttling, audit event for payment action |
+| `PATCH /api/v1/orders/:id/status` | privilege escalation, manual override abuse | admin role required, admin-write throttling, audit logging | Loki label extraction is less convenient than raw JSON search | stricter throttling, audit log for manual status override |
+| `POST /api/v1/orders/:orderId/pay` | payment abuse, replay, burst attempts | JWT + custom pay guard, payments throttling, audit logging | audit review currently relies on raw JSON log search in Loki | stricter throttling, audit event for payment action |
 | `/graphql` | schema abuse, over-querying, authenticated data exposure | JWT guard on order resolvers | no GraphQL-specific abuse controls documented | baseline throttling / edge controls, schema hardening backlog |
 | `/api/docs` | reconnaissance | available documentation surface | no explicit production exposure policy documented | document environment exposure policy, optionally restrict in prod |
 | WebSocket auth | token misuse, subscription abuse | JWT verification in gateway | no explicit abuse/rate-limit baseline documented | backlog: connection/message throttling and audit for suspicious events |
@@ -56,7 +56,7 @@ The goal of this baseline is to document the current security posture, identify 
 ### Risk that remained
 
 - login endpoint is a high-risk brute-force surface.
-- there is no documented login failure audit trail.
+- successful login is not part of the current audit baseline.
 - refresh/session lifecycle strategy is not documented as a security control.
 - there is no explicit secret rotation playbook for JWT signing material.
 
@@ -69,7 +69,6 @@ The goal of this baseline is to document the current security posture, identify 
 ### Backlog / TODO
 
 - add strict rate limiting for `POST /api/v1/auth/login`
-- add structured audit events for `auth.login_failed`
 - document or implement refresh-token / revoke strategy
 - move toward secret rotation-friendly JWT key management for production
 
@@ -88,8 +87,8 @@ The goal of this baseline is to document the current security posture, identify 
 
 ### Risk that remained
 
-- access control exists, but privileged actions are not yet backed by audit logs.
-- abuse of legitimate privileged access is harder to investigate without audit trail.
+- access control exists and key privileged writes are now backed by audit logs.
+- abuse of legitimate privileged access is more traceable, but log review ergonomics in Loki still need improvement.
 - some sensitive reads and writes rely on code-level guards only, without explicit security documentation.
 
 ### What is added in this homework
@@ -99,7 +98,6 @@ The goal of this baseline is to document the current security posture, identify 
 
 ### Backlog / TODO
 
-- add audit logging for manual admin actions
 - add evidence for deny paths and abuse protection
 - review GraphQL mutations/queries for equivalent scope enforcement
 
@@ -231,14 +229,14 @@ Implementation note:
 ### Risk that remained
 
 - request logs are not the same as audit logs.
-- there is no dedicated audit event schema for critical security-sensitive actions.
-- privileged writes and suspicious auth/payment events are not yet captured as security audit trail.
+- audit coverage is intentionally narrow and currently focused on a few high-risk events.
+- Loki label extraction for audit fields is not yet as ergonomic as raw JSON search in Grafana Explore.
 - legacy `console.log` usage still exists in some places and should be reviewed for sensitive data exposure.
 
 ### What is added in this homework
 
-- audit logging is now defined as a distinct baseline requirement.
-- minimum audit event schema is identified:
+- audit logging is implemented as a distinct baseline capability.
+- minimum audit event schema is now present in emitted log lines:
   - `action`
   - `actorId`
   - `actorRole` / scopes
@@ -248,13 +246,16 @@ Implementation note:
   - `timestamp`
   - `correlationId` / `requestId`
 
+Current implemented audit events:
+
+- `auth.login_failed`
+- `order.status_override`
+- `payment.capture_requested`
+
 ### Backlog / TODO
 
-- implement audit logging service / sink
-- add audit events at minimum for:
-  - `auth.login_failed`
-  - `order.status_override`
-  - `payment action`
+- decide whether successful login should also be audited
+- improve Loki/Promtail label extraction so `logType`, `action`, and `outcome` are first-class query labels
 - ensure audit logs do not contain:
   - raw JWT
   - passwords
@@ -340,3 +341,4 @@ Current implementation status:
 - throttling is enabled globally through `@nestjs/throttler`
 - throttling limits are configured through typed env-driven config rather than hardcoded values in the module
 - risk routes opt into named throttling policies through custom decorators instead of duplicating limits in controllers
+- structured audit logging is implemented for `auth.login_failed`, `payment.capture_requested`, and `order.status_override`

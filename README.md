@@ -246,6 +246,7 @@ Implemented hardening in code:
 - risk endpoints use stricter throttling than ordinary API traffic
 - throttling settings are configured via typed env-driven config, not hardcoded directly in module bootstrap
 - named throttling policies are selected through custom decorators instead of repeating numeric limits in controllers
+- structured audit logging is implemented for selected security-sensitive events
 
 Current throttling environment variables:
 
@@ -265,6 +266,12 @@ Current route coverage:
 - stricter policy for `POST /api/v1/orders/:orderId/pay` via `@PaymentsThrottle()`
 - stricter policy for `PATCH /api/v1/orders/:id/status` via `@AdminWritesThrottle()`
 
+Current audit event coverage:
+
+- `auth.login_failed`
+- `payment.capture_requested`
+- `order.status_override`
+
 Implementation details:
 
 - policy values live in `throttling` config and are resolved from environment variables
@@ -277,6 +284,7 @@ Implementation details:
 Documentation:
 
 - [SECURITY-BASELINE.md](./SECURITY-BASELINE.md)
+- [security-evidence/audit-log-example.txt](./security-evidence/audit-log-example.txt)
 - [security-evidence/secret-flow-note.md](./security-evidence/secret-flow-note.md)
 - [security-evidence/tls-note.md](./security-evidence/tls-note.md)
 
@@ -298,12 +306,25 @@ Notes:
 
 Prometheus and Grafana can be used on top of `/metrics` to visualize request rate, latency, business counters, and default Node.js process metrics.
 
+The local monitoring stack also includes Loki + Promtail for container log collection.
+
 Local monitoring:
 
 - `npm run monitoring:up`
 - `Prometheus`: `http://localhost:9090`
+- `Loki`: `http://localhost:3100`
 - `Grafana`: `http://localhost:3000`
 - Grafana default credentials: `admin / admin`
+
+Local log collection notes:
+
+- Promtail tails Docker container logs for `api` and `payments-service`
+- Grafana Explore can query Loki logs for request logs and audit logs
+- current reliable audit search pattern is raw JSON search, for example:
+  - `{compose_service="api"} |= "\"logType\":\"audit\""`
+  - `{compose_service="api"} |= "\"action\":\"auth.login_failed\""`
+  - `{compose_service="api"} |= "\"action\":\"payment.capture_requested\""`
+  - `{compose_service="api"} |= "\"action\":\"order.status_override\""`
 
 Stage and production monitoring:
 
@@ -511,6 +532,7 @@ nc -z 127.0.0.1 5021
 
 `compose.dev.yml` overrides `compose.yml` and:
 
+- keeps `migrate` and `seed` aligned with `.env.development`
 - switches `api` to Docker target `dev`
 - switches `payments-service` to Docker target `dev`
 - runs `npm run start:dev`
@@ -519,6 +541,7 @@ nc -z 127.0.0.1 5021
 - keeps `/app/node_modules` in a container volume (so bind mount does not break dependencies)
 - adds MinIO + `minio-init` for local file-flow development
 - adds `kafka-init` to auto-create required topics
+- makes `api` and `payments-service` wait for the one-off `migrate` job to complete successfully before startup
 
 Run dev stack:
 
@@ -532,6 +555,13 @@ Or use npm scripts:
 npm run docker:dev
 npm run docker:dev:status
 npm run docker:dev:logs
+```
+
+If the stack was already running before compose changes or before a new migration was added, recreate it:
+
+```bash
+docker compose --env-file .env.development -f compose.yml -f compose.dev.yml down
+docker compose --env-file .env.development -f compose.yml -f compose.dev.yml up -d --build
 ```
 
 Hot reload check:
@@ -548,6 +578,8 @@ docker compose --env-file .env.production -f compose.yml run --rm seed
 ```
 
 `migrate` and `seed` use the `build` target (not `prod-distroless`) because they require CLI/dev tooling (`typeorm-ts-node-commonjs`, `ts-node`).
+
+In the dev stack these services still exist as one-off jobs, but `api` and `payments-service` now explicitly wait for `migrate` to finish first, which avoids startup races around schema-dependent features such as the outbox relay.
 
 ### Docker Scripts (Dev Stack)
 
@@ -650,6 +682,17 @@ What this collection verifies:
 - order payment (`POST /api/v1/orders/:orderId/pay`) with gRPC `Payments.Capture`
 - repeat payment call idempotency (same paid payment is returned)
 - `paidAt` is set after capture
+
+Audit logging Postman collection:
+
+- `postman/rest_audit_logging_collection.custom.json`
+
+What this collection verifies:
+
+- failed login produces `auth.login_failed`
+- Bob payment flow triggers `payment.capture_requested`
+- admin manual status change triggers `order.status_override`
+- tokens and target order IDs are stored in collection variables automatically for sequential runs
 
 Timeout check:
 
