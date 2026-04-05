@@ -12,6 +12,7 @@ The main goal of the project is to demonstrate a clean, well-structured, and sca
 - [Project Setup](#project-setup)
 - [Environment Variables](#environment-variables)
 - [Compile and Run the Project](#compile-and-run-the-project)
+- [Cursor Pagination](#cursor-pagination)
 - [Health and Metrics](#health-and-metrics)
 - [Monitoring](#monitoring)
 - [Tracing](#tracing)
@@ -171,6 +172,50 @@ npm run start:dev
 # production mode
 npm run start:prod
 ```
+
+## Cursor Pagination
+
+The project uses cursor-based pagination for list endpoints where stable forward-only navigation is needed.
+
+Current REST endpoints with cursor pagination:
+
+- `GET /api/v1/orders`
+- `GET /api/v1/users`
+- `GET /api/v1/products`
+
+Request format:
+
+- `limit` - number of records to return
+- `cursor` - opaque cursor from the previous response
+
+Example:
+
+```http
+GET /api/v1/users?limit=10
+GET /api/v1/users?limit=10&cursor=eyJpZCI6Ii4uLiIsImNyZWF0ZWRBdCI6Ii4uLiJ9
+```
+
+Response format:
+
+```json
+{
+  "data": {
+    "items": [],
+    "pagination": {
+      "hasNext": true,
+      "nextCursor": "opaque-cursor"
+    }
+  }
+}
+```
+
+Notes:
+
+- cursors are opaque and must be treated as a black box by clients
+- pagination is forward-only and uses `createdAt DESC, id DESC` as a stable ordering
+- clients should pass back `pagination.nextCursor` to request the next page
+- when `hasNext` is `false`, the client has reached the end of the collection
+- invalid or malformed cursors return `400 Bad Request`
 
 ## Health and Metrics
 
