@@ -1,9 +1,4 @@
-import {
-  Module,
-  NestModule,
-  MiddlewareConsumer,
-  RequestMethod,
-} from '@nestjs/common';
+import { Logger, Module } from '@nestjs/common';
 
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { UsersModule } from './users/users.module';
@@ -24,11 +19,6 @@ import {
   IDatabaseConfig,
 } from './config';
 
-import {
-  logger,
-  LoggerMiddleware,
-} from './common/middleware/logger.middleware';
-import { UsersV1Controller } from './users/v1/users.controller.v1';
 import { User, Order, OrderItem, Product } from './database/entities';
 import { AppGraphqlModule } from './graphql/graphql.module';
 import { authConfig } from './config/auth/auth.config';
@@ -100,24 +90,14 @@ import { MetricsModule } from './metrics/metrics.module';
   controllers: [],
   providers: [S3Service],
 })
-export class AppModule implements NestModule {
-  configure(consumer: MiddlewareConsumer) {
-    consumer
-      // .apply(LoggerMiddleware)
-      .apply(logger)
-      .exclude(
-        'users/{*wildcard}',
-        { method: RequestMethod.PATCH, path: 'users' },
-        { method: RequestMethod.PUT, path: 'users' },
-      )
-      .forRoutes(UsersV1Controller);
-  }
+export class AppModule {
+  private readonly logger = new Logger(AppModule.name);
 
   onModuleInit() {
-    console.log('AppModule initialized');
+    this.logger.log('Application module initialized');
   }
 
   onModuleDestroy() {
-    console.log('AppModule destroyed');
+    this.logger.log('Application module destroyed');
   }
 }

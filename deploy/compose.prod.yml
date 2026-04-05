@@ -120,6 +120,10 @@ services:
       DB_PORT: 5432
       PAYMENTS_GRPC_URL: payments-service:5021
       PAYMENTS_GRPC_BIND_URL: 0.0.0.0:5021
+      OTEL_ENABLED: ${OTEL_ENABLED:-false}
+      OTEL_DIAGNOSTICS_ENABLED: ${OTEL_DIAGNOSTICS_ENABLED:-false}
+      OTEL_SERVICE_NAME: ecommerce-payments-service
+      OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: ${OTEL_EXPORTER_OTLP_TRACES_ENDPOINT:-}
     env_file:
       - ../.env.production
     command: ["dist/payment-service/main.js"]
@@ -148,6 +152,10 @@ services:
       DB_PORT: 5432
       PAYMENTS_GRPC_URL: payments-service:5021
       AWS_S3_ENDPOINT: http://minio:9000
+      OTEL_ENABLED: ${OTEL_ENABLED:-false}
+      OTEL_DIAGNOSTICS_ENABLED: ${OTEL_DIAGNOSTICS_ENABLED:-false}
+      OTEL_SERVICE_NAME: ecommerce-order-api
+      OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: ${OTEL_EXPORTER_OTLP_TRACES_ENDPOINT:-}
     env_file:
       - ../.env.production
     ports:
