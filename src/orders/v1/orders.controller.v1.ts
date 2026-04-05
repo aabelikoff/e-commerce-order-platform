@@ -27,6 +27,7 @@ import { ERoles } from '../../auth/access/roles';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
 import { CursorPaginationQueryDto } from '../../common/dto/cursor-pagination-query.dto';
 import { AdminWritesThrottle } from '../../common/decorators';
+import { buildAuditRequestContext } from '../../common/audit';
 
 @UseGuards(JwtAuthGuard, AccessGuard)
 @Controller('orders')
@@ -73,7 +74,12 @@ export class OrdersV1Controller {
     @Body() dto: UpdateOrderStatusDto,
     @Req() req: Request & { user: AuthUser },
   ) {
-    return await this.orderService.updateStatus(id, dto.status, req.user);
+    return await this.orderService.updateStatus(
+      id,
+      dto.status,
+      req.user,
+      buildAuditRequestContext(req),
+    );
   }
 
   @Roles(ERoles.ADMIN)

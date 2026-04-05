@@ -1,4 +1,26 @@
 services:
+  loki:
+    image: grafana/loki:3.1.1
+    container_name: ecommerce-loki
+    restart: unless-stopped
+    command: ['-config.file=/etc/loki/loki.yml']
+    volumes:
+      - ./loki/loki.yml:/etc/loki/loki.yml:ro
+      - loki_data:/loki
+    ports:
+      - '3100:3100'
+
+  promtail:
+    image: grafana/promtail:3.1.1
+    container_name: ecommerce-promtail
+    restart: unless-stopped
+    command: ['-config.file=/etc/promtail/promtail.yml']
+    volumes:
+      - ./promtail/promtail.yml:/etc/promtail/promtail.yml:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      - loki
+
   prometheus:
     image: prom/prometheus:v2.54.1
     container_name: ecommerce-prometheus
@@ -29,7 +51,9 @@ services:
       - '3000:3000'
     depends_on:
       - prometheus
+      - loki
 
 volumes:
+  loki_data:
   prometheus_data:
   grafana_data:

@@ -13,6 +13,7 @@ import { CanPayGuard } from './guards/can-pay.guard';
 import { AuthUser } from 'src/auth/types';
 import { Request } from 'express';
 import { PaymentsThrottle } from 'src/common/decorators';
+import { buildAuditRequestContext } from 'src/common/audit';
 
 @Controller('orders')
 export class PaymentsController {
@@ -26,6 +27,10 @@ export class PaymentsController {
     @Req() req: Request & { user: AuthUser },
   ): Promise<Payment> {
     const user = req.user;
-    return this.paymentsService.payOrder(id, user);
+    return this.paymentsService.payOrder(
+      id,
+      user,
+      buildAuditRequestContext(req),
+    );
   }
 }

@@ -42,6 +42,7 @@ import { MetricsService } from 'src/metrics/metrics.service';
 import { CursorPaginationQueryDto } from '../common/dto/cursor-pagination-query.dto';
 import { ResponseListDto } from '../common/dto/response-list.dto';
 import { paginateQueryBuilderByCursor } from '../common/pagination/cursor/paginate-query-builder';
+import { AuditRequestContext, AuditService } from '../common/audit';
 
 @Injectable()
 export class OrdersService implements OnModuleInit {
@@ -55,6 +56,7 @@ export class OrdersService implements OnModuleInit {
     private readonly outboxService: OutboxService,
     private readonly configService: ConfigService,
     private readonly metricsService: MetricsService,
+    private readonly auditService: AuditService,
     @Inject(PAYMENTS_GRPC_CLIENT)
     private readonly paymentsGrpcClient: ClientGrpc,
   ) {}
@@ -375,6 +377,7 @@ export class OrdersService implements OnModuleInit {
     orderId: string,
     status: EOrderStatus,
     user: AuthUser,
+    request?: AuditRequestContext,
   ): Promise<Order> {
     if (!this.isStaff(user.roles)) {
       throw new ForbiddenException(`Only staff can change order status`);
@@ -404,6 +407,27 @@ export class OrdersService implements OnModuleInit {
       toStatus: status,
       changedAt: saved.updatedAt.toISOString(),
     });
+
+    this.auditService.recordWithRequest(
+      {
+        action: 'order.status_override',
+        actor: {
+          id: user.sub,
+          roles: user.roles ?? [],
+          scopes: user.scopes ?? [],
+        },
+        targetType: 'order',
+        targetId: saved.id,
+        outcome: 'success',
+        reason: 'manual_status_change',
+        details: {
+          fromStatus,
+          toStatus: status,
+          statusVersion: saved.statusVersion,
+        },
+      },
+      request,
+    );
 
     return saved;
   }

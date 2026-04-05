@@ -1,0 +1,233 @@
+{
+  "info": {
+    "name": "E-Commerce REST Audit Logging Checks",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Audit-focused REST checks: failed login, Bob payment capture, admin status override."
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080" },
+    { "key": "adminEmail", "value": "admin@example.com" },
+    { "key": "bobEmail", "value": "bob@example.com" },
+    { "key": "password", "value": "password" },
+    { "key": "wrongPassword", "value": "wrong-password" },
+    { "key": "tokenAdmin", "value": "" },
+    { "key": "tokenBob", "value": "" },
+    { "key": "bobOrderId", "value": "" },
+    { "key": "adminTargetOrderId", "value": "" },
+    { "key": "nextOrderStatus", "value": "cancelled" }
+  ],
+  "item": [
+    {
+      "name": "1) Failed login (Admin wrong password) -> audit auth.login_failed",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": "{{baseUrl}}/api/v1/auth/login",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{wrongPassword}}\"\n}",
+          "options": { "raw": { "language": "json" } }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('failed login returns 401', function () {",
+              "  pm.expect(pm.response.code).to.eql(401);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "2) Login (Bob) -> set tokenBob",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": "{{baseUrl}}/api/v1/auth/login",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{bobEmail}}\",\n  \"password\": \"{{password}}\"\n}",
+          "options": { "raw": { "language": "json" } }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('bob login success', function () {",
+              "  pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+              "});",
+              "const json = pm.response.json();",
+              "const token = json?.data?.accessToken || json?.accessToken;",
+              "pm.expect(token, 'Bob accessToken missing').to.be.a('string').and.not.empty;",
+              "pm.collectionVariables.set('tokenBob', token);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "3) GET Bob orders -> set pending bobOrderId",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{tokenBob}}" }
+        ],
+        "url": "{{baseUrl}}/api/v1/orders"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('bob orders loaded', function () {",
+              "  pm.expect(pm.response.code).to.eql(200);",
+              "});",
+              "const json = pm.response.json();",
+              "const data = json?.data || json;",
+              "const items = data?.items || data?.data?.items || [];",
+              "pm.expect(items.length, 'No Bob orders returned').to.be.greaterThan(0);",
+              "const pending = items.find((order) => order?.status === 'PENDING') || items[0];",
+              "pm.expect(pending?.id, 'No Bob order id found').to.be.a('string').and.not.empty;",
+              "pm.collectionVariables.set('bobOrderId', pending.id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "4) Pay Bob order -> audit payment.capture_requested",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{tokenBob}}" }
+        ],
+        "url": "{{baseUrl}}/api/v1/orders/{{bobOrderId}}/pay"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('pay order success', function () {",
+              "  pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+              "});",
+              "const json = pm.response.json();",
+              "const payment = json?.data || json;",
+              "pm.expect(payment?.id, 'Payment id missing').to.be.a('string').and.not.empty;",
+              "pm.expect(payment?.status, 'Payment status missing').to.be.a('string');"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "5) Login (Admin) -> set tokenAdmin",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": "{{baseUrl}}/api/v1/auth/login",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{password}}\"\n}",
+          "options": { "raw": { "language": "json" } }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('admin login success', function () {",
+              "  pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+              "});",
+              "const json = pm.response.json();",
+              "const token = json?.data?.accessToken || json?.accessToken;",
+              "pm.expect(token, 'Admin accessToken missing').to.be.a('string').and.not.empty;",
+              "pm.collectionVariables.set('tokenAdmin', token);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "6) Admin GET orders -> set adminTargetOrderId",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{tokenAdmin}}" }
+        ],
+        "url": "{{baseUrl}}/api/v1/orders"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('admin orders loaded', function () {",
+              "  pm.expect(pm.response.code).to.eql(200);",
+              "});",
+              "const json = pm.response.json();",
+              "const data = json?.data || json;",
+              "const items = data?.items || data?.data?.items || [];",
+              "pm.expect(items.length, 'No admin-visible orders returned').to.be.greaterThan(0);",
+              "const order = items.find((entry) => entry?.id && entry?.status !== pm.collectionVariables.get('nextOrderStatus')) || items[0];",
+              "pm.expect(order?.id, 'No admin target order found').to.be.a('string').and.not.empty;",
+              "pm.collectionVariables.set('adminTargetOrderId', order.id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "7) Admin PATCH order status -> audit order.status_override",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{tokenAdmin}}" }
+        ],
+        "url": "{{baseUrl}}/api/v1/orders/{{adminTargetOrderId}}/status",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"status\": \"{{nextOrderStatus}}\"\n}",
+          "options": { "raw": { "language": "json" } }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status override success', function () {",
+              "  pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+              "});",
+              "const json = pm.response.json();",
+              "const order = json?.data || json;",
+              "pm.expect(order?.id, 'Order id missing').to.eql(pm.collectionVariables.get('adminTargetOrderId'));",
+              "pm.expect(order?.status, 'Updated status missing').to.eql(pm.collectionVariables.get('nextOrderStatus'));"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -39,6 +39,7 @@ import { paymentsServiceConfig } from './config/payments-service/payments-servic
 import { HealthModule } from './health/health.module';
 import { MetricsModule } from './metrics/metrics.module';
 import { AppThrottlerGuard } from './common/guards/app-throttler.guard';
+import { AuditModule } from './common/audit';
 
 @Module({
   imports: [
@@ -130,6 +131,7 @@ import { AppThrottlerGuard } from './common/guards/app-throttler.guard';
     KafkaModule,
     HealthModule,
     MetricsModule,
+    AuditModule,
   ],
   controllers: [],
   providers: [
