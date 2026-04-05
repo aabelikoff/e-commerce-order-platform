@@ -187,17 +187,36 @@ The goal of this baseline is to document the current security posture, identify 
 ### What is added in this homework
 
 - abuse protection is now defined as a required baseline area.
-- requirement is explicit: at least two throttling policies must exist.
+- the service now uses application-level throttling with environment-driven policies configured through typed config.
+- at least two throttling modes are now present in code:
+  - global baseline policy
+  - stricter risk-endpoint policies
+
+Current throttling policies:
+
+- `default`: `THROTTLE_DEFAULT_LIMIT` requests per `THROTTLE_DEFAULT_TTL_MS`
+- `auth`: `THROTTLE_AUTH_LIMIT` requests per `THROTTLE_AUTH_TTL_MS`
+- `payments`: `THROTTLE_PAYMENTS_LIMIT` requests per `THROTTLE_PAYMENTS_TTL_MS`
+- `adminWrites`: `THROTTLE_ADMIN_WRITES_LIMIT` requests per `THROTTLE_ADMIN_WRITES_TTL_MS`
+
+Protected routes:
+
+- global throttling via application throttler guard
+- stricter policy on `POST /api/v1/auth/login` via `@AuthThrottle()`
+- stricter policy on `POST /api/v1/orders/:orderId/pay` via `@PaymentsThrottle()`
+- stricter policy on `PATCH /api/v1/orders/:id/status` via `@AdminWritesThrottle()`
+
+Implementation note:
+
+- throttling policies are defined centrally in typed config
+- route handlers select a named policy semantically through custom decorators
+- the custom guard applies `default` globally and only the explicitly selected named policy for risk endpoints
 
 ### Backlog / TODO
 
-- add a global throttling policy
-- add stricter throttling for:
-  - login
-  - payment actions
-  - admin status changes
 - verify client IP behavior behind reverse proxy / edge
 - optionally add GraphQL-specific query abuse controls
+- add route-level evidence for real `429` responses in stage/local checks
 
 ---
 
@@ -314,3 +333,10 @@ The most important backlog items after this baseline review are:
 Before hardening, the project already had solid foundations in auth, guards, typed config, and request logging, but it lacked a formal security baseline around abuse protection, security headers, auditability, and documented secrets/TLS posture.
 
 This file turns those gaps into a concrete engineering plan and defines the minimum controls that must be added to establish a usable security baseline for the service.
+
+Current implementation status:
+
+- security headers baseline is enabled with `helmet`
+- throttling is enabled globally through `@nestjs/throttler`
+- throttling limits are configured through typed env-driven config rather than hardcoded values in the module
+- risk routes opt into named throttling policies through custom decorators instead of duplicating limits in controllers

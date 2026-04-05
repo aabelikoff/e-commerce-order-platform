@@ -13,6 +13,7 @@ The main goal of the project is to demonstrate a clean, well-structured, and sca
 - [Environment Variables](#environment-variables)
 - [Compile and Run the Project](#compile-and-run-the-project)
 - [Cursor Pagination](#cursor-pagination)
+- [Security Baseline](#security-baseline)
 - [Health and Metrics](#health-and-metrics)
 - [Monitoring](#monitoring)
 - [Tracing](#tracing)
@@ -149,6 +150,16 @@ JWT_REFRESH_SECRET=jwt_refresh_secret
 JWT_ACCESS_TTL=15m
 JWT_REFRESH_TTL=30d
 
+# Throttling Configuration
+THROTTLE_DEFAULT_TTL_MS=60000
+THROTTLE_DEFAULT_LIMIT=100
+THROTTLE_AUTH_TTL_MS=60000
+THROTTLE_AUTH_LIMIT=5
+THROTTLE_PAYMENTS_TTL_MS=60000
+THROTTLE_PAYMENTS_LIMIT=5
+THROTTLE_ADMIN_WRITES_TTL_MS=60000
+THROTTLE_ADMIN_WRITES_LIMIT=10
+
 # Bucket Configuration
 AWS_REGION=eu-central-1
 AWS_S3_BUCKET=ecommerce-files-private
@@ -216,6 +227,58 @@ Notes:
 - clients should pass back `pagination.nextCursor` to request the next page
 - when `hasNext` is `false`, the client has reached the end of the collection
 - invalid or malformed cursors return `400 Bad Request`
+
+## Security Baseline
+
+The project includes a minimal application security baseline focused on the highest-risk surfaces:
+
+- auth / access control
+- secrets handling
+- transport / TLS posture
+- abuse protection with rate limiting
+- security headers
+- auditability backlog
+
+Implemented hardening in code:
+
+- `helmet` is enabled in [src/main.ts](./src/main.ts) as the HTTP security headers baseline
+- `@nestjs/throttler` is enabled globally through a custom app throttler guard
+- risk endpoints use stricter throttling than ordinary API traffic
+- throttling settings are configured via typed env-driven config, not hardcoded directly in module bootstrap
+- named throttling policies are selected through custom decorators instead of repeating numeric limits in controllers
+
+Current throttling environment variables:
+
+- `THROTTLE_DEFAULT_TTL_MS`
+- `THROTTLE_DEFAULT_LIMIT`
+- `THROTTLE_AUTH_TTL_MS`
+- `THROTTLE_AUTH_LIMIT`
+- `THROTTLE_PAYMENTS_TTL_MS`
+- `THROTTLE_PAYMENTS_LIMIT`
+- `THROTTLE_ADMIN_WRITES_TTL_MS`
+- `THROTTLE_ADMIN_WRITES_LIMIT`
+
+Current route coverage:
+
+- global baseline policy for ordinary API traffic
+- stricter policy for `POST /api/v1/auth/login` via `@AuthThrottle()`
+- stricter policy for `POST /api/v1/orders/:orderId/pay` via `@PaymentsThrottle()`
+- stricter policy for `PATCH /api/v1/orders/:id/status` via `@AdminWritesThrottle()`
+
+Implementation details:
+
+- policy values live in `throttling` config and are resolved from environment variables
+- the global guard applies the `default` policy to ordinary routes
+- handlers can opt into named policies semantically through custom decorators:
+  - `@AuthThrottle()`
+  - `@PaymentsThrottle()`
+  - `@AdminWritesThrottle()`
+
+Documentation:
+
+- [SECURITY-BASELINE.md](./SECURITY-BASELINE.md)
+- [security-evidence/secret-flow-note.md](./security-evidence/secret-flow-note.md)
+- [security-evidence/tls-note.md](./security-evidence/tls-note.md)
 
 ## Health and Metrics
 
