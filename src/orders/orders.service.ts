@@ -42,7 +42,7 @@ import { MetricsService } from 'src/metrics/metrics.service';
 import { CursorPaginationQueryDto } from '../common/dto/cursor-pagination-query.dto';
 import { ResponseListDto } from '../common/dto/response-list.dto';
 import { paginateQueryBuilderByCursor } from '../common/pagination/cursor/paginate-query-builder';
-import { AuditRequestContext, AuditService } from '../common/audit';
+import { AuditAction, AuditRequestContext, AuditService } from '../common/audit';
 
 @Injectable()
 export class OrdersService implements OnModuleInit {
@@ -410,7 +410,7 @@ export class OrdersService implements OnModuleInit {
 
     this.auditService.recordWithRequest(
       {
-        action: 'order.status_override',
+        action: AuditAction.OrderStatusOverride,
         actor: {
           id: user.sub,
           roles: user.roles ?? [],

@@ -23,7 +23,7 @@ import { PaymentsClient } from '../generated/payments/v1/payments';
 import { ConfigService } from '@nestjs/config';
 import { IPaymentsServiceConfig } from 'src/config/payments-service';
 import { lastValueFrom, TimeoutError, timeout } from 'rxjs';
-import { AuditRequestContext, AuditService } from 'src/common/audit';
+import { AuditAction, AuditRequestContext, AuditService } from 'src/common/audit';
 
 @Injectable()
 export class PaymentsService implements OnModuleInit {
@@ -133,7 +133,7 @@ export class PaymentsService implements OnModuleInit {
 
       this.auditService.recordWithRequest(
         {
-          action: 'payment.capture_requested',
+          action: AuditAction.PaymentCaptureRequested,
           actor: {
             id: user.sub,
             roles: user.roles ?? [],
@@ -154,7 +154,7 @@ export class PaymentsService implements OnModuleInit {
     } catch (error) {
       this.auditService.recordWithRequest(
         {
-          action: 'payment.capture_requested',
+          action: AuditAction.PaymentCaptureRequested,
           actor: {
             id: user.sub,
             roles: user.roles ?? [],

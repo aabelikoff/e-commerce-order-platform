@@ -9,7 +9,7 @@ import { LoginDto } from './dto/login.dto';
 import { checkArrayToEnum } from 'src/common/utils/chek-array-to-enum.utils';
 import { EUnitedScopes } from './access/scopes';
 import { ERoles } from './access/roles';
-import { AuditRequestContext, AuditService } from 'src/common/audit';
+import { AuditAction, AuditRequestContext, AuditService } from 'src/common/audit';
 
 @Injectable()
 export class AuthService {
@@ -33,7 +33,7 @@ export class AuthService {
     if (!user?.passwordHash) {
       this.auditService.recordWithRequest(
         {
-          action: 'auth.login_failed',
+          action: AuditAction.AuthLoginFailed,
           actor: {
             id: 'anonymous',
             roles: ['anonymous'],
@@ -53,7 +53,7 @@ export class AuthService {
     if (!isValid) {
       this.auditService.recordWithRequest(
         {
-          action: 'auth.login_failed',
+          action: AuditAction.AuthLoginFailed,
           actor: {
             id: user.id,
             roles: (user.roles ?? []) as string[],
