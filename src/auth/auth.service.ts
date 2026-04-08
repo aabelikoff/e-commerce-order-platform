@@ -9,17 +9,20 @@ import { LoginDto } from './dto/login.dto';
 import { checkArrayToEnum } from 'src/common/utils/chek-array-to-enum.utils';
 import { EUnitedScopes } from './access/scopes';
 import { ERoles } from './access/roles';
+import { AuditAction, AuditRequestContext, AuditService } from 'src/common/audit';
 
 @Injectable()
 export class AuthService {
   constructor(
     @InjectRepository(User) private userRepository: Repository<User>,
     private jwtService: JwtService,
+    private readonly auditService: AuditService,
   ) {}
 
   private async validateUser(
     email: string,
     password: string,
+    request?: AuditRequestContext,
   ): Promise<AuthUser> {
     const user = await this.userRepository
       .createQueryBuilder('user')
@@ -28,12 +31,41 @@ export class AuthService {
       .getOne();
 
     if (!user?.passwordHash) {
+      this.auditService.recordWithRequest(
+        {
+          action: AuditAction.AuthLoginFailed,
+          actor: {
+            id: 'anonymous',
+            roles: ['anonymous'],
+          },
+          targetType: 'auth_identity',
+          targetId: 'unknown',
+          outcome: 'failure',
+          reason: 'invalid_credentials',
+        },
+        request,
+      );
       throw new UnauthorizedException('Invalid email or password');
     }
 
     const isValid = await bcrypt.compare(password, user.passwordHash);
 
     if (!isValid) {
+      this.auditService.recordWithRequest(
+        {
+          action: AuditAction.AuthLoginFailed,
+          actor: {
+            id: user.id,
+            roles: (user.roles ?? []) as string[],
+            scopes: (user.scopes ?? []) as string[],
+          },
+          targetType: 'user',
+          targetId: user.id,
+          outcome: 'failure',
+          reason: 'invalid_credentials',
+        },
+        request,
+      );
       throw new UnauthorizedException('Invalid email or password');
     }
 
@@ -62,10 +94,13 @@ export class AuthService {
     return { accessToken };
   }
 
-  async login(dto: LoginDto): Promise<{ accessToken: string }> {
+  async login(
+    dto: LoginDto,
+    request?: AuditRequestContext,
+  ): Promise<{ accessToken: string }> {
     const { email, password } = dto;
 
-    const user = await this.validateUser(email, password);
+    const user = await this.validateUser(email, password, request);
 
     return this.signAccessToken(user);
   }

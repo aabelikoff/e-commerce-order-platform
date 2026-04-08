@@ -68,6 +68,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
       payments-service:
         condition: service_started
       kafka-init:
@@ -101,6 +103,7 @@ services:
   kafka:
     image: apache/kafka:3.9.0
     container_name: ecommerce-kafka
+    hostname: kafka
     restart: unless-stopped
     ports:
       - "9094:9094"
@@ -144,6 +147,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     build:
       context: .
       target: prod-distroless

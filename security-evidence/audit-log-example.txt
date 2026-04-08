@@ -1,0 +1,18 @@
+Audit logging verification examples
+
+Working Grafana Loki search patterns:
+
+{compose_service="api"} |= "\"logType\":\"audit\""
+{compose_service="api"} |= "\"action\":\"auth.login_failed\""
+{compose_service="api"} |= "\"action\":\"payment.capture_requested\""
+{compose_service="api"} |= "\"action\":\"order.status_override\""
+
+Example raw audit line shape:
+
+{"logType":"audit","timestamp":"2026-04-05T22:10:57.829Z","action":"auth.login_failed","actorId":"<user-id>","actorRole":["admin"],"scopes":["order:read","order:write","payment:read","payment:write","refund:write","user:write","user:read","product:read","product:write"],"targetType":"user","targetId":"<user-id>","outcome":"failure","correlationId":"<request-id>","requestId":"<request-id>","reason":"invalid_credentials","ip":"::ffff:172.19.0.1","userAgent":"curl/8.18.0"}
+
+Notes:
+
+- audit logs are emitted by `AuditService`
+- current Loki verification is most reliable via raw JSON search in Explore
+- expected high-signal fields: `action`, `actorId`, `targetType`, `targetId`, `outcome`, `requestId`, `ip`, `userAgent`
