@@ -1,0 +1,79 @@
+Rate limiting evidence
+
+Goal:
+
+- confirm that stricter throttling is active on the high-risk auth endpoint
+
+Checked endpoint:
+
+- `POST /api/v1/auth/login`
+
+Verification command:
+
+```powershell
+1..7 | ForEach-Object {
+  curl.exe -i -X POST http://localhost:8080/api/v1/auth/login `
+    -H "Content-Type: application/json" `
+    -d "{\"email\":\"admin@example.com\",\"password\":\"wrong-password\"}"
+}
+```
+
+Observed behavior summary:
+
+- requests 1-5 returned `401 Unauthorized`
+- auth-specific throttling headers were present during the allowed attempts:
+  - `X-RateLimit-Limit-auth: 5`
+  - `X-RateLimit-Remaining-auth: 4 -> 0`
+- subsequent requests returned `429 Too Many Requests`
+- throttled responses included `Retry-After-auth: 60`
+
+Observed response excerpts:
+
+```http
+HTTP/1.1 401 Unauthorized
+X-RateLimit-Limit-auth: 5
+X-RateLimit-Remaining-auth: 4
+X-RateLimit-Reset-auth: 60
+```
+
+```http
+HTTP/1.1 401 Unauthorized
+X-RateLimit-Limit-auth: 5
+X-RateLimit-Remaining-auth: 0
+X-RateLimit-Reset-auth: 59
+```
+
+```http
+HTTP/1.1 429 Too Many Requests
+Retry-After-auth: 60
+Content-Type: application/problem+json; charset=utf-8
+```
+
+Observed throttled body excerpt:
+
+```json
+{
+  "type": "urn:problem:http_exception",
+  "title": "TOO_MANY_REQUESTS",
+  "status": 429,
+  "detail": "ThrottlerException: Too Many Requests",
+  "instance": "/api/v1/auth/login",
+  "code": "HTTP_EXCEPTION"
+}
+```
+
+Relevant configuration:
+
+- `THROTTLE_AUTH_LIMIT=5`
+- `THROTTLE_AUTH_TTL_MS=60000`
+
+Notes:
+
+- auth throttling is applied through `@AuthThrottle()`
+- this evidence is intentionally based on invalid credentials, which is the most realistic brute-force simulation path
+- global throttling headers may also appear, but the key evidence here is the dedicated auth policy headers and the resulting `429`
+
+Conclusion:
+
+- stricter rate limiting is active on `POST /api/v1/auth/login`
+- the auth-specific policy allows 5 attempts per 60-second window and then blocks additional requests with `429 Too Many Requests`
