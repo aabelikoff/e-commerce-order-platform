@@ -6,12 +6,11 @@ import { THROTTLING_POLICY_METADATA_KEY } from '../decorators/throttle-policy.de
 @Injectable()
 export class AppThrottlerGuard extends ThrottlerGuard {
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const selectedPolicy = this.reflector.getAllAndOverride<
-      ThrottlingPolicyName | undefined
-    >(THROTTLING_POLICY_METADATA_KEY, [
-      context.getHandler(),
-      context.getClass(),
-    ]);
+    const selectedPolicy =
+      this.reflector.getAllAndOverride<ThrottlingPolicyName | undefined>(
+        THROTTLING_POLICY_METADATA_KEY,
+        [context.getHandler(), context.getClass()],
+      );
 
     const originalThrottlers = this.throttlers;
     this.throttlers = this.throttlers.filter(

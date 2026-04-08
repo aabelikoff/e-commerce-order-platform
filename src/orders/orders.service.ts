@@ -42,11 +42,7 @@ import { MetricsService } from 'src/metrics/metrics.service';
 import { CursorPaginationQueryDto } from '../common/dto/cursor-pagination-query.dto';
 import { ResponseListDto } from '../common/dto/response-list.dto';
 import { paginateQueryBuilderByCursor } from '../common/pagination/cursor/paginate-query-builder';
-import {
-  AuditAction,
-  AuditRequestContext,
-  AuditService,
-} from '../common/audit';
+import { AuditAction, AuditRequestContext, AuditService } from '../common/audit';
 
 @Injectable()
 export class OrdersService implements OnModuleInit {
