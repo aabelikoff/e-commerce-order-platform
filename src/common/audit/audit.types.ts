@@ -4,8 +4,7 @@ export const AuditAction = {
   OrderStatusOverride: 'order.status_override',
 } as const;
 
-export type AuditAction =
-  (typeof AuditAction)[keyof typeof AuditAction];
+export type AuditAction = (typeof AuditAction)[keyof typeof AuditAction];
 
 export type AuditOutcome = 'success' | 'failure' | 'denied';
 
