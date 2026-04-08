@@ -23,11 +23,7 @@ import { PaymentsClient } from '../generated/payments/v1/payments';
 import { ConfigService } from '@nestjs/config';
 import { IPaymentsServiceConfig } from 'src/config/payments-service';
 import { lastValueFrom, TimeoutError, timeout } from 'rxjs';
-import {
-  AuditAction,
-  AuditRequestContext,
-  AuditService,
-} from 'src/common/audit';
+import { AuditAction, AuditRequestContext, AuditService } from 'src/common/audit';
 
 @Injectable()
 export class PaymentsService implements OnModuleInit {

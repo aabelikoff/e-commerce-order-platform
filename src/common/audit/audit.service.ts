@@ -46,13 +46,7 @@ export class AuditService {
   recordWithRequest(
     event: Omit<
       AuditEvent,
-      | 'actorId'
-      | 'actorRole'
-      | 'scopes'
-      | 'correlationId'
-      | 'requestId'
-      | 'ip'
-      | 'userAgent'
+      'actorId' | 'actorRole' | 'scopes' | 'correlationId' | 'requestId' | 'ip' | 'userAgent'
     > & { actor?: AuditActorContext },
     request?: AuditRequestContext,
   ): void {
