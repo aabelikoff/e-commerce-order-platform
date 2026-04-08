@@ -73,11 +73,20 @@ export class AuthService {
       throw new UnauthorizedException('Invalid email or password');
     }
 
+    const rawRoles = user.roles ?? [];
+    const rawScopes = user.scopes ?? [];
+    const roles = checkArrayToEnum(rawRoles, ERoles)
+      ? rawRoles
+      : [];
+    const scopes = checkArrayToEnum(rawScopes, EUnitedScopes)
+      ? rawScopes
+      : [];
+
     const safeUser: AuthUser = {
       sub: user.id,
       email: user.email,
-      roles: (user.roles ?? []) as ERoles[],
-      scopes: (user.scopes ?? []) as EUnitedScopes[],
+      roles,
+      scopes,
     };
 
     return safeUser;
