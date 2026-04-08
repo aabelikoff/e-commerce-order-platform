@@ -7,7 +7,7 @@ import { User } from 'src/database/entities';
 import { AuthUser, JwtAccessPayload } from './types';
 import { LoginDto } from './dto/login.dto';
 import { checkArrayToEnum } from 'src/common/utils/chek-array-to-enum.utils';
-import { EUnitedScopes } from './access/scopes';
+import { EUnitedScopes, UNITED_SCOPES } from './access/scopes';
 import { ERoles } from './access/roles';
 import {
   AuditAction,
@@ -22,6 +22,10 @@ export class AuthService {
     private jwtService: JwtService,
     private readonly auditService: AuditService,
   ) {}
+
+  private isUnitedScope(scope: string): scope is EUnitedScopes {
+    return UNITED_SCOPES.includes(scope as EUnitedScopes);
+  }
 
   private async validateUser(
     email: string,
@@ -76,9 +80,9 @@ export class AuthService {
     const rawRoles = user.roles ?? [];
     const rawScopes = user.scopes ?? [];
     const roles = checkArrayToEnum(rawRoles, ERoles) ? rawRoles : [];
-    const scopes = checkArrayToEnum(rawScopes, EUnitedScopes)
-      ? rawScopes
-      : [];
+    const scopes = rawScopes.filter((scope): scope is EUnitedScopes =>
+      this.isUnitedScope(scope),
+    );
 
     const safeUser: AuthUser = {
       sub: user.id,

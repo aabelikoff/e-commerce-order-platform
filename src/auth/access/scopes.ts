@@ -22,9 +22,12 @@ export enum ERefundScopes {
   REFUND_WRITE = 'refund:write',
 }
 
-export type EUnitedScopes =
-  | EOrderScopes
-  | EProductScopes
-  | EUserScopes
-  | EPaymentScopes
-  | ERefundScopes;
+export const UNITED_SCOPES = [
+  ...Object.values(EOrderScopes),
+  ...Object.values(EProductScopes),
+  ...Object.values(EUserScopes),
+  ...Object.values(EPaymentScopes),
+  ...Object.values(ERefundScopes),
+] as const;
+
+export type EUnitedScopes = (typeof UNITED_SCOPES)[number];
