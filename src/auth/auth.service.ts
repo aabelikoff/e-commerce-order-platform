@@ -9,7 +9,11 @@ import { LoginDto } from './dto/login.dto';
 import { checkArrayToEnum } from 'src/common/utils/chek-array-to-enum.utils';
 import { EUnitedScopes } from './access/scopes';
 import { ERoles } from './access/roles';
-import { AuditAction, AuditRequestContext, AuditService } from 'src/common/audit';
+import {
+  AuditAction,
+  AuditRequestContext,
+  AuditService,
+} from 'src/common/audit';
 
 @Injectable()
 export class AuthService {
@@ -56,8 +60,8 @@ export class AuthService {
           action: AuditAction.AuthLoginFailed,
           actor: {
             id: user.id,
-            roles: (user.roles ?? []) as string[],
-            scopes: (user.scopes ?? []) as string[],
+            roles: user.roles ?? [],
+            scopes: user.scopes ?? [],
           },
           targetType: 'user',
           targetId: user.id,
@@ -71,9 +75,7 @@ export class AuthService {
 
     const rawRoles = user.roles ?? [];
     const rawScopes = user.scopes ?? [];
-    const roles = checkArrayToEnum(rawRoles, ERoles)
-      ? rawRoles
-      : [];
+    const roles = checkArrayToEnum(rawRoles, ERoles) ? rawRoles : [];
     const scopes = checkArrayToEnum(rawScopes, EUnitedScopes)
       ? rawScopes
       : [];
