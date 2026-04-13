@@ -23,6 +23,11 @@ import { PaymentsClient } from '../generated/payments/v1/payments';
 import { ConfigService } from '@nestjs/config';
 import { IPaymentsServiceConfig } from 'src/config/payments-service';
 import { lastValueFrom, TimeoutError, timeout } from 'rxjs';
+import {
+  AuditAction,
+  AuditRequestContext,
+  AuditService,
+} from 'src/common/audit';
 
 @Injectable()
 export class PaymentsService implements OnModuleInit {
@@ -34,6 +39,7 @@ export class PaymentsService implements OnModuleInit {
     @InjectRepository(Order) private ordersRepository: Repository<Order>,
     private readonly paymentsEventsPublisher: PaymentsEventsPublisher,
     private readonly configService: ConfigService,
+    private readonly auditService: AuditService,
     @Inject(PAYMENTS_GRPC_CLIENT)
     private readonly paymentsGrpcClient: ClientGrpc,
   ) {}
@@ -44,7 +50,11 @@ export class PaymentsService implements OnModuleInit {
     );
   }
 
-  async payOrder(orderId: string, user: AuthUser): Promise<Payment> {
+  async payOrder(
+    orderId: string,
+    user: AuthUser,
+    request?: AuditRequestContext,
+  ): Promise<Payment> {
     const isStaff = user.roles?.some(
       (role) => role === ERoles.ADMIN || role === ERoles.SUPPORT,
     );
@@ -124,8 +134,45 @@ export class PaymentsService implements OnModuleInit {
       }
 
       await this.publishCapturedEvent(updated, order);
+
+      this.auditService.recordWithRequest(
+        {
+          action: AuditAction.PaymentCaptureRequested,
+          actor: {
+            id: user.sub,
+            roles: user.roles ?? [],
+            scopes: user.scopes ?? [],
+          },
+          targetType: 'payment',
+          targetId: updated.id,
+          outcome: 'success',
+          details: {
+            orderId: order.id,
+            paymentStatus: updated.status,
+          },
+        },
+        request,
+      );
+
       return updated;
     } catch (error) {
+      this.auditService.recordWithRequest(
+        {
+          action: AuditAction.PaymentCaptureRequested,
+          actor: {
+            id: user.sub,
+            roles: user.roles ?? [],
+            scopes: user.scopes ?? [],
+          },
+          targetType: 'order',
+          targetId: orderId,
+          outcome: 'failure',
+          reason:
+            error instanceof Error ? error.message : 'payment_capture_failed',
+        },
+        request,
+      );
+
       if (error instanceof TimeoutError) {
         throw new GatewayTimeoutException('Payments capture timeout');
       }

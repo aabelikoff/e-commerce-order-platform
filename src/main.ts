@@ -1,3 +1,4 @@
+import './tracing';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { appConfig } from './config/app/app.config';
@@ -6,15 +7,32 @@ import { RequestMethod, ValidationPipe, VersioningType } from '@nestjs/common';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
-import { logger } from './common/middleware/logger.middleware';
 import { CatchErrorInterceptor } from './common/interceptors/catch-error.interceptor';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { MetricsService } from './metrics/metrics.service';
+import { HttpMetricsInterceptor } from './metrics/metrics.interceptor';
+import helmet from 'helmet';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { cors: true });
 
+  const expressApp = app.getHttpAdapter().getInstance();
+  expressApp.set('trust proxy', 1);
+
+  app.use(
+    helmet({
+      contentSecurityPolicy: false,
+      crossOriginEmbedderPolicy: false,
+    }),
+  );
+
   app.setGlobalPrefix('api', {
-    exclude: [{ path: 'graphql', method: RequestMethod.ALL }],
+    exclude: [
+      { path: 'graphql', method: RequestMethod.ALL },
+      { path: 'health', method: RequestMethod.GET },
+      { path: 'ready', method: RequestMethod.GET },
+      { path: 'metrics', method: RequestMethod.GET },
+    ],
   });
 
   app.enableVersioning({
@@ -33,13 +51,14 @@ async function bootstrap() {
 
   app.useGlobalFilters(new HttpExceptionFilter());
 
+  const metricsService = app.get(MetricsService);
+
   app.useGlobalInterceptors(
     new LoggingInterceptor(),
     new ResponseInterceptor(),
     new CatchErrorInterceptor(),
+    new HttpMetricsInterceptor(metricsService),
   );
-
-  app.use(logger);
 
   const config = new DocumentBuilder()
     .setTitle('API Documentation')

@@ -12,6 +12,9 @@ export class ResponseInterceptor<T> implements NestInterceptor {
     const req = context.switchToHttp().getRequest();
 
     if (!req) return next.handle();
+    if (this.shouldBypassResponseWrap(req.path)) {
+      return next.handle();
+    }
 
     return next.handle().pipe(
       map((data) => ({
@@ -22,5 +25,10 @@ export class ResponseInterceptor<T> implements NestInterceptor {
         },
       })),
     );
+  }
+
+  private shouldBypassResponseWrap(path?: string): boolean {
+    const normalizedPath = (path ?? '').replace(/^\/v\d+\//, '/');
+    return ['/health', '/ready', '/metrics'].includes(normalizedPath);
   }
 }

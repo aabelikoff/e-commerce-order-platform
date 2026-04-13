@@ -1,9 +1,5 @@
-import {
-  Module,
-  NestModule,
-  MiddlewareConsumer,
-  RequestMethod,
-} from '@nestjs/common';
+import { Logger, Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
 
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { UsersModule } from './users/users.module';
@@ -15,6 +11,7 @@ import { ReportingsModule } from './reportings/reportings.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { GraphQLModule } from '@nestjs/graphql';
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
+import { ThrottlerModule } from '@nestjs/throttler';
 
 import { TypeOrmModule } from '@nestjs/typeorm';
 import {
@@ -22,13 +19,10 @@ import {
   databaseConfig,
   appConfig,
   IDatabaseConfig,
+  throttlingConfig,
+  IThrottlingConfig,
 } from './config';
 
-import {
-  logger,
-  LoggerMiddleware,
-} from './common/middleware/logger.middleware';
-import { UsersV1Controller } from './users/v1/users.controller.v1';
 import { User, Order, OrderItem, Product } from './database/entities';
 import { AppGraphqlModule } from './graphql/graphql.module';
 import { authConfig } from './config/auth/auth.config';
@@ -42,6 +36,10 @@ import { OutboxModule } from './outbox/outbox.module';
 import { kafkaConfig } from './config/kafka';
 import { KafkaModule } from './kafka/kafka.module';
 import { paymentsServiceConfig } from './config/payments-service/payments-service.config';
+import { HealthModule } from './health/health.module';
+import { MetricsModule } from './metrics/metrics.module';
+import { AppThrottlerGuard } from './common/guards/app-throttler.guard';
+import { AuditModule } from './common/audit';
 
 @Module({
   imports: [
@@ -54,6 +52,7 @@ import { paymentsServiceConfig } from './config/payments-service/payments-servic
         rabbitMQConfig,
         kafkaConfig,
         paymentsServiceConfig,
+        throttlingConfig,
       ],
       envFilePath: getEnvFilePath(),
       isGlobal: true,
@@ -79,6 +78,44 @@ import { paymentsServiceConfig } from './config/payments-service/payments-servic
         };
       },
     }),
+    ThrottlerModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (cfg: ConfigService) => {
+        const throttling = cfg.get<IThrottlingConfig>('throttling', {
+          infer: true,
+        }) as IThrottlingConfig;
+
+        return {
+          throttlers: [
+            {
+              name: 'default',
+              ttl: throttling.default.ttl,
+              limit: throttling.default.limit,
+              ignoreUserAgents: [/Googlebot/, /Bingbot/],
+            },
+            {
+              name: 'auth',
+              ttl: throttling.auth.ttl,
+              limit: throttling.auth.limit,
+              ignoreUserAgents: [/Googlebot/, /Bingbot/],
+            },
+            {
+              name: 'payments',
+              ttl: throttling.payments.ttl,
+              limit: throttling.payments.limit,
+              ignoreUserAgents: [/Googlebot/, /Bingbot/],
+            },
+            {
+              name: 'adminWrites',
+              ttl: throttling.adminWrites.ttl,
+              limit: throttling.adminWrites.limit,
+              ignoreUserAgents: [/Googlebot/, /Bingbot/],
+            },
+          ],
+        };
+      },
+    }),
     UsersModule,
     AuthModule,
     ProductsModule,
@@ -92,28 +129,27 @@ import { paymentsServiceConfig } from './config/payments-service/payments-servic
     RabbitmqModule,
     OutboxModule,
     KafkaModule,
+    HealthModule,
+    MetricsModule,
+    AuditModule,
   ],
   controllers: [],
-  providers: [S3Service],
+  providers: [
+    S3Service,
+    {
+      provide: APP_GUARD,
+      useClass: AppThrottlerGuard,
+    },
+  ],
 })
-export class AppModule implements NestModule {
-  configure(consumer: MiddlewareConsumer) {
-    consumer
-      // .apply(LoggerMiddleware)
-      .apply(logger)
-      .exclude(
-        'users/{*wildcard}',
-        { method: RequestMethod.PATCH, path: 'users' },
-        { method: RequestMethod.PUT, path: 'users' },
-      )
-      .forRoutes(UsersV1Controller);
-  }
+export class AppModule {
+  private readonly logger = new Logger(AppModule.name);
 
   onModuleInit() {
-    console.log('AppModule initialized');
+    this.logger.log('Application module initialized');
   }
 
   onModuleDestroy() {
-    console.log('AppModule destroyed');
+    this.logger.log('Application module destroyed');
   }
 }

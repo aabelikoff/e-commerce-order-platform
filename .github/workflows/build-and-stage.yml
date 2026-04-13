@@ -185,7 +185,7 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            const url = 'http://127.0.0.1:8080/api/docs';
+            const url = 'http://127.0.0.1:8082/api/docs';
             const maxAttempts = 24;
             const delayMs = 5000;
 

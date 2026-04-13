@@ -7,19 +7,30 @@ import { User } from 'src/database/entities';
 import { AuthUser, JwtAccessPayload } from './types';
 import { LoginDto } from './dto/login.dto';
 import { checkArrayToEnum } from 'src/common/utils/chek-array-to-enum.utils';
-import { EUnitedScopes } from './access/scopes';
+import { EUnitedScopes, UNITED_SCOPES } from './access/scopes';
 import { ERoles } from './access/roles';
+import {
+  AuditAction,
+  AuditRequestContext,
+  AuditService,
+} from 'src/common/audit';
 
 @Injectable()
 export class AuthService {
   constructor(
     @InjectRepository(User) private userRepository: Repository<User>,
     private jwtService: JwtService,
+    private readonly auditService: AuditService,
   ) {}
+
+  private isUnitedScope(scope: string): scope is EUnitedScopes {
+    return UNITED_SCOPES.includes(scope as EUnitedScopes);
+  }
 
   private async validateUser(
     email: string,
     password: string,
+    request?: AuditRequestContext,
   ): Promise<AuthUser> {
     const user = await this.userRepository
       .createQueryBuilder('user')
@@ -28,20 +39,56 @@ export class AuthService {
       .getOne();
 
     if (!user?.passwordHash) {
+      this.auditService.recordWithRequest(
+        {
+          action: AuditAction.AuthLoginFailed,
+          actor: {
+            id: 'anonymous',
+            roles: ['anonymous'],
+          },
+          targetType: 'auth_identity',
+          targetId: 'unknown',
+          outcome: 'failure',
+          reason: 'invalid_credentials',
+        },
+        request,
+      );
       throw new UnauthorizedException('Invalid email or password');
     }
 
     const isValid = await bcrypt.compare(password, user.passwordHash);
 
     if (!isValid) {
+      this.auditService.recordWithRequest(
+        {
+          action: AuditAction.AuthLoginFailed,
+          actor: {
+            id: user.id,
+            roles: user.roles ?? [],
+            scopes: user.scopes ?? [],
+          },
+          targetType: 'user',
+          targetId: user.id,
+          outcome: 'failure',
+          reason: 'invalid_credentials',
+        },
+        request,
+      );
       throw new UnauthorizedException('Invalid email or password');
     }
+
+    const rawRoles = user.roles ?? [];
+    const rawScopes = user.scopes ?? [];
+    const roles = checkArrayToEnum(rawRoles, ERoles) ? rawRoles : [];
+    const scopes = rawScopes.filter((scope): scope is EUnitedScopes =>
+      this.isUnitedScope(scope),
+    );
 
     const safeUser: AuthUser = {
       sub: user.id,
       email: user.email,
-      roles: (user.roles ?? []) as ERoles[],
-      scopes: (user.scopes ?? []) as EUnitedScopes[],
+      roles,
+      scopes,
     };
 
     return safeUser;
@@ -62,10 +109,13 @@ export class AuthService {
     return { accessToken };
   }
 
-  async login(dto: LoginDto): Promise<{ accessToken: string }> {
+  async login(
+    dto: LoginDto,
+    request?: AuditRequestContext,
+  ): Promise<{ accessToken: string }> {
     const { email, password } = dto;
 
-    const user = await this.validateUser(email, password);
+    const user = await this.validateUser(email, password, request);
 
     return this.signAccessToken(user);
   }

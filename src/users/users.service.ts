@@ -1,19 +1,12 @@
-import {
-  ConflictException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { CreateUserDto, UpdateUserDto, UserResponseDto } from './v1/dto';
-import { paginateByCursor } from 'src/common/pagination/cursor/paginate-by-cursor';
 import { ResponseListDto } from 'src/common/dto/response-list.dto';
 import { CursorPaginationQueryDto } from 'src/common/dto/cursor-pagination-query.dto';
-import { OffsetPaginationQueryDto } from 'src/common/dto/offset-pagination-query.dto';
-import { paginateOffset } from 'src/common/pagination/offset/paginate-offset';
-import { ProblemTypes } from 'src/common/types/problem-types';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from 'src/database/entities';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
+import { paginateQueryBuilderByCursor } from 'src/common/pagination/cursor/paginate-query-builder';
 
 @Injectable()
 export class UsersService {
@@ -22,15 +15,13 @@ export class UsersService {
     private usersRepository: Repository<User>,
   ) {}
 
-  findAll(query: OffsetPaginationQueryDto): Promise<User[]> {
-    const { limit, page } = query;
-    const offset = (page - 1) * limit;
-    console.log('Find all in service');
-    return this.usersRepository.find({
-      take: limit,
-      skip: offset,
-      order: { createdAt: 'DESC' },
-    });
+  findAll(query: CursorPaginationQueryDto): Promise<ResponseListDto<User>> {
+    const usersQuery = this.usersRepository
+      .createQueryBuilder('user')
+      .orderBy('user.createdAt', 'DESC')
+      .addOrderBy('user.id', 'DESC');
+
+    return paginateQueryBuilderByCursor(usersQuery, query, 'user');
   }
 
   findOne(id: string): Promise<User> {
@@ -64,13 +55,6 @@ export class UsersService {
       updatedAt: resultUser.updatedAt,
     };
   }
-
-  // async getAll(
-  //   query: OffsetPaginationQueryDto,
-  // ): Promise<ResponseListDto<User>> {
-  //   return paginateOffset(query, await this.usersRepository.find());
-  // }
-
   async getById(id: string): Promise<User> {
     return this.usersRepository.findOneByOrFail({ id });
   }

@@ -1,0 +1,71 @@
+services:
+  loki:
+    image: grafana/loki:3.1.1
+    container_name: ecommerce-prod-loki
+    restart: unless-stopped
+    command:
+      - '-config.file=/etc/loki/loki.yml'
+    volumes:
+      - ../monitoring/loki/loki.yml:/etc/loki/loki.yml:ro
+      - loki_prod_data:/loki
+    ports:
+      - '3102:3100'
+    networks:
+      - public
+
+  promtail:
+    image: grafana/promtail:3.1.1
+    container_name: ecommerce-prod-promtail
+    restart: unless-stopped
+    command:
+      - '-config.file=/etc/promtail/promtail.yml'
+    volumes:
+      - ../monitoring/promtail/promtail.yml:/etc/promtail/promtail.yml:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - public
+    depends_on:
+      - loki
+
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    container_name: ecommerce-prod-prometheus
+    restart: unless-stopped
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    volumes:
+      - ../monitoring/prometheus/prometheus.prod.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_prod_data:/prometheus
+    ports:
+      - '9092:9090'
+    networks:
+      - public
+      - internal
+    depends_on:
+      api:
+        condition: service_started
+
+  grafana:
+    image: grafana/grafana:11.2.0
+    container_name: ecommerce-prod-grafana
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+    volumes:
+      - grafana_prod_data:/var/lib/grafana
+      - ../monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ../monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    ports:
+      - '3003:3000'
+    networks:
+      - public
+    depends_on:
+      - prometheus
+      - loki
+
+volumes:
+  loki_prod_data:
+  prometheus_prod_data:
+  grafana_prod_data:
