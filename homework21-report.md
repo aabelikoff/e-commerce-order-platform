@@ -128,6 +128,5 @@ Load test flow used for both baseline and final measurement:
 
 Supporting notes:
 
-- [baseline.md](e:/R_D/e-commerce-order-platform/baseline.md)
-- [bottleneck-notes.md](e:/R_D/e-commerce-order-platform/bottleneck-notes.md)
-
+- [baseline.md](e:/R_D/e-commerce-order-platform/performance-homework/baseline.md)
+- [bottleneck-notes.md](e:/R_D/e-commerce-order-platform/performance-homework/bottleneck-notes.md)
