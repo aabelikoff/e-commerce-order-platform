@@ -4,10 +4,6 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
-  OnModuleInit,
-  Inject,
-  GatewayTimeoutException,
-  ServiceUnavailableException,
 } from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -26,18 +22,6 @@ import { OrdersEventsService } from './orders-events.service';
 import { OrdersProcessMessage } from './orders-queue.types';
 import { OutboxService } from 'src/outbox/outbox.service';
 import { OrderEventEnvelopeV1 } from './orders-kafka-events.types';
-import { type ClientGrpc } from '@nestjs/microservices';
-import {
-  PAYMENTS_GRPC_CLIENT,
-  PAYMENTS_SERVICE_NAME,
-} from '../common/grpc/grpc.constants';
-import {
-  AuthorizeResponse,
-  PaymentsClient,
-} from '../generated/payments/v1/payments';
-import { ConfigService } from '@nestjs/config';
-import { IPaymentsServiceConfig } from '../config/payments-service';
-import { lastValueFrom, TimeoutError, timeout } from 'rxjs';
 import { MetricsService } from 'src/metrics/metrics.service';
 import { CursorPaginationQueryDto } from '../common/dto/cursor-pagination-query.dto';
 import { ResponseListDto } from '../common/dto/response-list.dto';
@@ -68,32 +52,21 @@ function centsToMoney(value: bigint): string {
 }
 
 @Injectable()
-export class OrdersService implements OnModuleInit {
-  private paymentsClient!: PaymentsClient;
-
+export class OrdersService {
   constructor(
     private readonly dataSource: DataSource,
     @InjectRepository(Order)
     private readonly ordersRepository: Repository<Order>,
     private readonly ordersEventsService: OrdersEventsService,
     private readonly outboxService: OutboxService,
-    private readonly configService: ConfigService,
     private readonly metricsService: MetricsService,
     private readonly auditService: AuditService,
-    @Inject(PAYMENTS_GRPC_CLIENT)
-    private readonly paymentsGrpcClient: ClientGrpc,
   ) {}
-
-  onModuleInit() {
-    this.paymentsClient = this.paymentsGrpcClient.getService<PaymentsClient>(
-      PAYMENTS_SERVICE_NAME,
-    );
-  }
 
   async create(
     dto: CreateOrderDto,
     idempotencyKey: string,
-  ): Promise<{ created: boolean; order: Order; payment?: AuthorizeResponse }> {
+  ): Promise<{ created: boolean; order: Order }> {
     if (!dto.items?.length) {
       throw new BadRequestException('Order items are required');
     }
@@ -276,25 +249,6 @@ export class OrdersService implements OnModuleInit {
 
       await qr.commitTransaction();
 
-      const paymentsTimeoutMs =
-        this.configService.get<IPaymentsServiceConfig['paymentsGrpcTimeoutMs']>(
-          'paymentsServiceConfig.paymentsGrpcTimeoutMs',
-        ) ?? 2500;
-
-      const payment = await lastValueFrom(
-        this.paymentsClient
-          .authorize({
-            orderId: order.id,
-            userId: dto.userId,
-            total: {
-              amount: totalAmount,
-              currency: 'USD',
-            },
-            idempotencyKey,
-          })
-          .pipe(timeout(paymentsTimeoutMs)),
-      );
-
       this.metricsService.incrementOrdersCreated();
       order.items = orderItems;
       order.userId = dto.userId;
@@ -302,16 +256,9 @@ export class OrdersService implements OnModuleInit {
       return {
         order,
         created: true,
-        payment,
       };
     } catch (e: unknown) {
       this.metricsService.incrementOrdersFailed();
-      if (e instanceof TimeoutError) {
-        throw new GatewayTimeoutException('Payments service timeout');
-      }
-      if ((e as { code?: number })?.code !== undefined) {
-        throw new ServiceUnavailableException('Payments service unavailable');
-      }
       if (qr.isTransactionActive) {
         await qr.rollbackTransaction();
       }
