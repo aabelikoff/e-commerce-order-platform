@@ -24,7 +24,7 @@ export enum EOrderStatus {
 @Entity({ name: 'orders' })
 export class Order {
   @PrimaryGeneratedColumn('uuid')
-  id: string;
+  id!: string;
 
   @Column({
     name: 'status',
@@ -32,7 +32,7 @@ export class Order {
     enum: EOrderStatus,
     default: EOrderStatus.PENDING,
   })
-  status: EOrderStatus;
+  status!: EOrderStatus;
 
   // snapshots
   @Column({
@@ -42,7 +42,7 @@ export class Order {
     scale: 2,
     default: 0,
   })
-  itemsSubtotal: string;
+  itemsSubtotal!: string;
 
   @Column({
     name: 'items_discount_total',
@@ -51,7 +51,7 @@ export class Order {
     scale: 2,
     default: 0,
   })
-  itemsDiscountTotal: string;
+  itemsDiscountTotal!: string;
 
   @Column({
     name: 'shipping_amount',
@@ -60,7 +60,7 @@ export class Order {
     scale: 2,
     default: 0,
   })
-  shippingAmount: string;
+  shippingAmount!: string;
 
   @Column({
     name: 'order_discount_amount',
@@ -69,7 +69,7 @@ export class Order {
     scale: 2,
     default: 0,
   })
-  orderDiscountAmount: string;
+  orderDiscountAmount!: string;
 
   @Column({
     name: 'total_amount',
@@ -78,7 +78,7 @@ export class Order {
     scale: 2,
     default: 0,
   })
-  totalAmount: string;
+  totalAmount!: string;
 
   @Column({
     name: 'paid_amount',
@@ -87,39 +87,39 @@ export class Order {
     scale: 2,
     default: 0,
   })
-  paidAmount: string;
+  paidAmount!: string;
 
   @Column({ name: 'paid_at', type: 'timestamptz', nullable: true })
-  paidAt: Date | null;
+  paidAt!: Date | null;
 
   @Column({ name: 'idempotency_key', type: 'uuid', unique: true })
-  idempotencyKey: string;
+  idempotencyKey!: string;
 
   @ManyToOne(() => User, (u) => u.orders, {
     nullable: false,
     onDelete: 'RESTRICT',
   })
   @JoinColumn({ name: 'user_id' })
-  user: User;
+  user!: User;
 
   @RelationId((order: Order) => order.user)
-  userId: string;
+  userId!: string;
 
   @OneToMany(() => OrderItem, (i) => i.order)
-  items: OrderItem[];
+  items!: OrderItem[];
 
   @OneToMany(() => Payment, (p) => p.order)
-  payments: Payment[];
+  payments!: Payment[];
 
   @Column({ name: 'status_version', type: 'integer' })
-  statusVersion: number;
+  statusVersion!: number;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
-  createdAt: Date;
+  createdAt!: Date;
 
   @UpdateDateColumn({ name: 'updated_at', type: 'timestamptz' })
-  updatedAt: Date;
+  updatedAt!: Date;
 
   @Column({ name: 'processed_at', type: 'timestamptz', nullable: true })
-  processedAt: Date | null;
+  processedAt!: Date | null;
 }

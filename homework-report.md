@@ -131,12 +131,3 @@ Supporting notes:
 - [baseline.md](e:/R_D/e-commerce-order-platform/baseline.md)
 - [bottleneck-notes.md](e:/R_D/e-commerce-order-platform/bottleneck-notes.md)
 
-## 8. What To Submit
-
-- repository link or PR link
-- this report: [homework-report.md](e:/R_D/e-commerce-order-platform/homework-report.md)
-- before / after table from section 5
-- 1-2 screenshots from metrics or logs
-- short list of implemented changes:
-  - DB round-trip reduction in order creation
-  - async payment authorization in worker
