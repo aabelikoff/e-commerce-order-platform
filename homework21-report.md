@@ -100,7 +100,7 @@ The final comparison below uses:
 - final optimized version after moving payment authorization to async worker
 
 | Metric | Before | After | Comment |
-|---|---:|---:|---|
+| --- | ---: | ---: | --- |
 | p50 latency | `29.74 ms` | `20.58 ms` | improved by about `30.8%` |
 | p95 latency | `77.11 ms` | `63.09 ms` | improved by about `18.2%` |
 | p99 latency | `88.82 ms` | `74.46 ms` | improved by about `16.2%` |
