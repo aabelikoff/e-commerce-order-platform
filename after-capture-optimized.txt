@@ -1,0 +1,88 @@
+count          : 20
+p50_ms         : 20.58
+p95_ms         : 63.09
+p99_ms         : 74.46
+throughput_rps : 27.34
+error_rate_pct : 0
+
+
+
+   ms status   ok
+   -- ------   --
+74.46    201 True
+26.85    201 True
+63.09    201 True
+ 39.7    201 True
+25.16    201 True
+24.95    201 True
+21.99    201 True
+21.83    201 True
+27.41    201 True
+18.94    201 True
+20.58    201 True
+20.15    201 True
+17.22    201 True
+ 18.8    201 True
+30.77    201 True
+ 16.6    201 True
+16.47    201 True
+19.12    201 True
+17.37    201 True
+16.74    201 True
+
+
+=== BEFORE ===
+# HELP http_requests_total Total number of HTTP requests
+# TYPE http_requests_total counter
+http_requests_total{method="POST",route="/api/v1/auth/login",status="201"} 2
+http_requests_total{method="GET",route="/api/v1/products",status="200"} 1
+http_requests_total{method="GET",route="/api/v1/auth/me",status="200"} 1
+
+# HELP orders_created_total Total number of successfully created orders
+# TYPE orders_created_total counter
+orders_created_total 0
+
+# HELP orders_failed_total Total number of failed order creation attempts
+# TYPE orders_failed_total counter
+orders_failed_total 0
+
+# HELP process_cpu_seconds_total Total user and system CPU time spent in seconds.
+# TYPE process_cpu_seconds_total counter
+process_cpu_seconds_total 9.202138
+
+# HELP process_resident_memory_bytes Resident memory size in bytes.
+# TYPE process_resident_memory_bytes gauge
+process_resident_memory_bytes 157065216
+
+# HELP nodejs_eventloop_lag_seconds Lag of event loop in seconds.
+# TYPE nodejs_eventloop_lag_seconds gauge
+nodejs_eventloop_lag_seconds 0
+
+=== AFTER ===
+# HELP http_requests_total Total number of HTTP requests
+# TYPE http_requests_total counter
+http_requests_total{method="POST",route="/api/v1/auth/login",status="201"} 2
+http_requests_total{method="GET",route="/api/v1/products",status="200"} 1
+http_requests_total{method="GET",route="/api/v1/auth/me",status="200"} 1
+http_requests_total{method="GET",route="/metrics",status="200"} 1
+http_requests_total{method="POST",route="/api/v1/orders",status="201"} 20
+
+# HELP orders_created_total Total number of successfully created orders
+# TYPE orders_created_total counter
+orders_created_total 20
+
+# HELP orders_failed_total Total number of failed order creation attempts
+# TYPE orders_failed_total counter
+orders_failed_total 0
+
+# HELP process_cpu_seconds_total Total user and system CPU time spent in seconds.
+# TYPE process_cpu_seconds_total counter
+process_cpu_seconds_total 9.788024
+
+# HELP process_resident_memory_bytes Resident memory size in bytes.
+# TYPE process_resident_memory_bytes gauge
+process_resident_memory_bytes 170168320
+
+# HELP nodejs_eventloop_lag_seconds Lag of event loop in seconds.
+# TYPE nodejs_eventloop_lag_seconds gauge
+nodejs_eventloop_lag_seconds 0.004481482
