@@ -48,9 +48,28 @@ import {
   AuditService,
 } from '../common/audit';
 
+const MONEY_SCALE = 100n;
+
+function moneyToCents(value: string): bigint {
+  const normalized = value.trim();
+  const negative = normalized.startsWith('-');
+  const unsigned = negative ? normalized.slice(1) : normalized;
+  const [whole = '0', fraction = '0'] = unsigned.split('.');
+  const cents = BigInt(whole) * MONEY_SCALE + BigInt(fraction.padEnd(2, '0'));
+  return negative ? -cents : cents;
+}
+
+function centsToMoney(value: bigint): string {
+  const negative = value < 0n;
+  const abs = negative ? -value : value;
+  const whole = abs / MONEY_SCALE;
+  const fraction = (abs % MONEY_SCALE).toString().padStart(2, '0');
+  return `${negative ? '-' : ''}${whole.toString()}.${fraction}`;
+}
+
 @Injectable()
 export class OrdersService implements OnModuleInit {
-  private paymentsClient: PaymentsClient;
+  private paymentsClient!: PaymentsClient;
 
   constructor(
     private readonly dataSource: DataSource,
@@ -131,6 +150,19 @@ export class OrdersService implements OnModuleInit {
 
       // mapping products by their ids
       const byId = new Map(products.map((p) => [String(p.id), p]));
+      const pricedItems = dto.items.map((item) => {
+        const product = byId.get(String(item.productId));
+        if (!product) {
+          throw new BadRequestException('Product not found');
+        }
+
+        return {
+          item,
+          productId: String(item.productId),
+          unitPrice: product.price,
+          lineSubtotal: moneyToCents(product.price) * BigInt(item.quantity),
+        };
+      });
 
       // check existing stock for every product item
       for (const item of dto.items) {
@@ -143,25 +175,44 @@ export class OrdersService implements OnModuleInit {
         }
       }
 
+      const itemsSubtotal = centsToMoney(
+        pricedItems.reduce(
+          (sum, pricedItem) => sum + pricedItem.lineSubtotal,
+          0n,
+        ),
+      );
+      const itemsDiscountTotal = '0.00';
+      const shippingAmount = '0.00';
+      const orderDiscountAmount = '0.00';
+      const totalAmount = centsToMoney(
+        moneyToCents(itemsSubtotal) -
+          moneyToCents(itemsDiscountTotal) -
+          moneyToCents(orderDiscountAmount) +
+          moneyToCents(shippingAmount),
+      );
+
       //3) Create order
       const order = await manager.save(
         manager.create(Order, {
           idempotencyKey,
           status: EOrderStatus.PENDING,
           user: { id: dto.userId } as User,
+          itemsSubtotal,
+          itemsDiscountTotal,
+          shippingAmount,
+          orderDiscountAmount,
+          totalAmount,
         }),
       );
 
       //4) Create items
-      const orderItems = dto.items.map((i) => {
-        const p = byId.get(String(i.productId));
-        if (!p) throw new BadRequestException('Product not found');
+      const orderItems = pricedItems.map(({ item, productId, unitPrice }) => {
         return manager.create(OrderItem, {
           order,
-          product: { id: String(i.productId) } as Product,
-          quantity: i.quantity.toString(10),
-          unitPrice: p.price,
-          discountAmount: '0', // TODO:  untill wi don't have any logic for setting discounts neither for items nor for orders
+          product: { id: productId } as Product,
+          quantity: item.quantity.toString(10),
+          unitPrice,
+          discountAmount: '0', // TODO:  untill we don't have any logic for setting discounts neither for items nor for orders
         });
       });
       await manager.save(OrderItem, orderItems);
@@ -184,50 +235,7 @@ export class OrdersService implements OnModuleInit {
         }
       }
 
-      //6) count amount totals fields for Order. JS is not used as it might lead to wrong results
-      const [totals] = await manager.query(
-        `
-        SELECT
-          COALESCE(SUM(oi.unit_price * oi.quantity::numeric), 0) AS items_subtotal,
-          COALESCE(SUM(oi.discount_amount), 0) AS items_discount_total
-        FROM order_items oi
-        WHERE oi.order_id = $1
-        `,
-        [order.id],
-      );
-
-      const itemsSubtotal = totals.items_subtotal;
-      const itemsDiscountTotal = totals.items_discount_total;
-      const shippingAmount = '0'; //  TODO: add functionality
-      const orderDiscountAmount = '0'; // TODO: add functionality
-
-      const [calc] = await manager.query(
-        `
-        SELECT
-          ($1::numeric - $2::numeric - $3::numeric + $4::numeric) AS total_amount
-        `,
-        [
-          itemsSubtotal,
-          itemsDiscountTotal,
-          orderDiscountAmount,
-          shippingAmount,
-        ],
-      );
-
-      // 7) Update Order
-      await manager.update(
-        Order,
-        { id: order.id },
-        {
-          itemsSubtotal,
-          itemsDiscountTotal,
-          shippingAmount,
-          orderDiscountAmount,
-          totalAmount: calc.total_amount,
-        },
-      );
-
-      // 8) Insert OutboxEvent
+      // 6) Insert OutboxEvent
 
       const message: OrdersProcessMessage = {
         messageId: randomUUID(),
@@ -253,7 +261,7 @@ export class OrdersService implements OnModuleInit {
         order: {
           orderId: order.id,
           userId: dto.userId,
-          totalAmount: calc.total_amount,
+          totalAmount,
           currency: 'USD', //TODO: implement different currency options
         },
       };
@@ -268,11 +276,6 @@ export class OrdersService implements OnModuleInit {
 
       await qr.commitTransaction();
 
-      const createdOrder = await this.ordersRepository.findOneOrFail({
-        where: { id: order.id },
-        relations: { items: true },
-      });
-
       const paymentsTimeoutMs =
         this.configService.get<IPaymentsServiceConfig['paymentsGrpcTimeoutMs']>(
           'paymentsServiceConfig.paymentsGrpcTimeoutMs',
@@ -284,7 +287,7 @@ export class OrdersService implements OnModuleInit {
             orderId: order.id,
             userId: dto.userId,
             total: {
-              amount: calc.total_amount,
+              amount: totalAmount,
               currency: 'USD',
             },
             idempotencyKey,
@@ -293,9 +296,11 @@ export class OrdersService implements OnModuleInit {
       );
 
       this.metricsService.incrementOrdersCreated();
+      order.items = orderItems;
+      order.userId = dto.userId;
 
       return {
-        order: createdOrder,
+        order,
         created: true,
         payment,
       };
