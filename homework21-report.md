@@ -128,5 +128,11 @@ Load test flow used for both baseline and final measurement:
 
 Supporting notes:
 
-- [baseline.md](e:/R_D/e-commerce-order-platform/performance-homework/baseline.md)
-- [bottleneck-notes.md](e:/R_D/e-commerce-order-platform/performance-homework/bottleneck-notes.md)
+- [baseline.md](./performance-homework/baseline.md)
+- [bottleneck-notes.md](./performance-homework/bottleneck-notes.md)
+
+Saved evidence:
+
+- [grafana-after-optimization.png](./performance-homework/grafana-after-optimization.png)
+- [baseline-capture-before-optimization.txt](./performance-homework/baseline-capture-before-optimization.txt)
+- [after-capture-optimized.txt](./performance-homework/after-capture-optimized.txt)
