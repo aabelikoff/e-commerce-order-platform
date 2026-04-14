@@ -31,7 +31,7 @@ error_rate_pct : 0
 16.74    201 True
 
 
-=== BEFORE ===
+=== BEFORE LOAD ===
 # HELP http_requests_total Total number of HTTP requests
 # TYPE http_requests_total counter
 http_requests_total{method="POST",route="/api/v1/auth/login",status="201"} 2
@@ -58,7 +58,7 @@ process_resident_memory_bytes 157065216
 # TYPE nodejs_eventloop_lag_seconds gauge
 nodejs_eventloop_lag_seconds 0
 
-=== AFTER ===
+=== AFTER LOAD ===
 # HELP http_requests_total Total number of HTTP requests
 # TYPE http_requests_total counter
 http_requests_total{method="POST",route="/api/v1/auth/login",status="201"} 2

@@ -32,7 +32,7 @@ error_rate_pct : 0
 56.12    201 True
 
 
-=== BEFORE ===
+=== BEFORE LOAD ===
 
 # HELP http_requests_total Total number of HTTP requests
 # TYPE http_requests_total counter
@@ -200,7 +200,7 @@ nodejs_eventloop_lag_p90_seconds 0.010477567
 # TYPE nodejs_eventloop_lag_p99_seconds gauge
 nodejs_eventloop_lag_p99_seconds 0.010838015
 
-=== AFTER ===
+=== AFTER LOAD ===
 # HELP http_requests_total Total number of HTTP requests
 # TYPE http_requests_total counter
 http_requests_total{method="GET",route="/health",status="200"} 1
