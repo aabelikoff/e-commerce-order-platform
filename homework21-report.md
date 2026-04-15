@@ -126,11 +126,6 @@ Load test flow used for both baseline and final measurement:
 4. Send 20 sequential `POST /api/v1/orders` requests
 5. Capture `p50`, `p95`, `p99`, throughput, error rate, CPU, memory, and event loop lag from `/metrics`
 
-Supporting notes:
-
-- [baseline.md](./performance-homework/baseline.md)
-- [bottleneck-notes.md](./performance-homework/bottleneck-notes.md)
-
 Saved evidence:
 
 - [grafana-after-optimization.png](./performance-homework/grafana-after-optimization.png)
