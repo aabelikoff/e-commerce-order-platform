@@ -15,13 +15,13 @@ export function CreatePaginatedType<T>(
   @ObjectType({ isAbstract: true })
   abstract class PaginatedType implements IPaginatedType<T> {
     @Field(() => [classRef], { nullable })
-    nodes: T[];
+    nodes!: T[];
 
     @Field(() => Int)
-    totalCount: number;
+    totalCount!: number;
 
     @Field(() => PageInfo)
-    pageInfo: PageInfo;
+    pageInfo!: PageInfo;
   }
   return PaginatedType as Type<IPaginatedType<T>>;
 }

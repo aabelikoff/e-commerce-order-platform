@@ -1,0 +1,231 @@
+count          : 20
+p50_ms         : 29.74
+p95_ms         : 77.11
+p99_ms         : 88.82
+throughput_rps : 26.8
+error_rate_pct : 0
+
+
+
+
+   ms status   ok
+   -- ------   --
+88.82    201 True
+ 35.8    201 True
+30.32    201 True
+29.32    201 True
+28.58    201 True
+27.09    201 True
+27.06    201 True
+33.45    201 True
+32.77    201 True
+36.15    201 True
+29.74    201 True
+35.75    201 True
+28.83    201 True
+24.68    201 True
+24.55    201 True
+27.48    201 True
+38.24    201 True
+24.21    201 True
+77.11    201 True
+56.12    201 True
+
+
+=== BEFORE LOAD ===
+
+# HELP http_requests_total Total number of HTTP requests
+# TYPE http_requests_total counter
+http_requests_total{method="GET",route="/health",status="200"} 1
+http_requests_total{method="POST",route="/api/v1/auth/login",status="201"} 5
+http_requests_total{method="GET",route="/api/v1/auth/me",status="200"} 4
+http_requests_total{method="GET",route="/api/v1/products",status="200"} 4
+http_requests_total{method="GET",route="/metrics",status="200"} 2
+http_requests_total{method="POST",route="/api/v1/orders",status="201"} 1
+
+# HELP http_request_duration_seconds HTTP request duration in seconds
+# TYPE http_request_duration_seconds histogram
+http_request_duration_seconds_bucket{le="0.005",method="GET",route="/health",status="200"} 1
+http_request_duration_seconds_bucket{le="0.01",method="GET",route="/health",status="200"} 1
+http_request_duration_seconds_bucket{le="0.025",method="GET",route="/health",status="200"} 1
+http_request_duration_seconds_bucket{le="0.05",method="GET",route="/health",status="200"} 1
+http_request_duration_seconds_bucket{le="0.1",method="GET",route="/health",status="200"} 1
+http_request_duration_seconds_bucket{le="0.3",method="GET",route="/health",status="200"} 1
+http_request_duration_seconds_bucket{le="0.5",method="GET",route="/health",status="200"} 1
+http_request_duration_seconds_bucket{le="1",method="GET",route="/health",status="200"} 1
+http_request_duration_seconds_bucket{le="2",method="GET",route="/health",status="200"} 1
+http_request_duration_seconds_bucket{le="5",method="GET",route="/health",status="200"} 1
+http_request_duration_seconds_bucket{le="+Inf",method="GET",route="/health",status="200"} 1
+http_request_duration_seconds_sum{method="GET",route="/health",status="200"} 0.00041802
+http_request_duration_seconds_count{method="GET",route="/health",status="200"} 1
+http_request_duration_seconds_bucket{le="0.005",method="POST",route="/api/v1/auth/login",status="201"} 0
+http_request_duration_seconds_bucket{le="0.01",method="POST",route="/api/v1/auth/login",status="201"} 0
+http_request_duration_seconds_bucket{le="0.025",method="POST",route="/api/v1/auth/login",status="201"} 0
+http_request_duration_seconds_bucket{le="0.05",method="POST",route="/api/v1/auth/login",status="201"} 3
+http_request_duration_seconds_bucket{le="0.1",method="POST",route="/api/v1/auth/login",status="201"} 4
+http_request_duration_seconds_bucket{le="0.3",method="POST",route="/api/v1/auth/login",status="201"} 5
+http_request_duration_seconds_bucket{le="0.5",method="POST",route="/api/v1/auth/login",status="201"} 5
+http_request_duration_seconds_bucket{le="1",method="POST",route="/api/v1/auth/login",status="201"} 5
+http_request_duration_seconds_bucket{le="2",method="POST",route="/api/v1/auth/login",status="201"} 5
+http_request_duration_seconds_bucket{le="5",method="POST",route="/api/v1/auth/login",status="201"} 5
+http_request_duration_seconds_bucket{le="+Inf",method="POST",route="/api/v1/auth/login",status="201"} 5
+http_request_duration_seconds_sum{method="POST",route="/api/v1/auth/login",status="201"} 0.40282297300000003
+http_request_duration_seconds_count{method="POST",route="/api/v1/auth/login",status="201"} 5
+http_request_duration_seconds_bucket{le="0.005",method="GET",route="/api/v1/auth/me",status="200"} 4
+http_request_duration_seconds_bucket{le="0.01",method="GET",route="/api/v1/auth/me",status="200"} 4
+http_request_duration_seconds_bucket{le="0.025",method="GET",route="/api/v1/auth/me",status="200"} 4
+http_request_duration_seconds_bucket{le="0.05",method="GET",route="/api/v1/auth/me",status="200"} 4
+http_request_duration_seconds_bucket{le="0.1",method="GET",route="/api/v1/auth/me",status="200"} 4
+http_request_duration_seconds_bucket{le="0.3",method="GET",route="/api/v1/auth/me",status="200"} 4
+http_request_duration_seconds_bucket{le="0.5",method="GET",route="/api/v1/auth/me",status="200"} 4
+http_request_duration_seconds_bucket{le="1",method="GET",route="/api/v1/auth/me",status="200"} 4
+http_request_duration_seconds_bucket{le="2",method="GET",route="/api/v1/auth/me",status="200"} 4
+http_request_duration_seconds_bucket{le="5",method="GET",route="/api/v1/auth/me",status="200"} 4
+http_request_duration_seconds_bucket{le="+Inf",method="GET",route="/api/v1/auth/me",status="200"} 4
+http_request_duration_seconds_sum{method="GET",route="/api/v1/auth/me",status="200"} 0.000953081
+http_request_duration_seconds_count{method="GET",route="/api/v1/auth/me",status="200"} 4
+http_request_duration_seconds_bucket{le="0.005",method="GET",route="/api/v1/products",status="200"} 3
+http_request_duration_seconds_bucket{le="0.01",method="GET",route="/api/v1/products",status="200"} 4
+http_request_duration_seconds_bucket{le="0.025",method="GET",route="/api/v1/products",status="200"} 4
+http_request_duration_seconds_bucket{le="0.05",method="GET",route="/api/v1/products",status="200"} 4
+http_request_duration_seconds_bucket{le="0.1",method="GET",route="/api/v1/products",status="200"} 4
+http_request_duration_seconds_bucket{le="0.3",method="GET",route="/api/v1/products",status="200"} 4
+http_request_duration_seconds_bucket{le="0.5",method="GET",route="/api/v1/products",status="200"} 4
+http_request_duration_seconds_bucket{le="1",method="GET",route="/api/v1/products",status="200"} 4
+http_request_duration_seconds_bucket{le="2",method="GET",route="/api/v1/products",status="200"} 4
+http_request_duration_seconds_bucket{le="5",method="GET",route="/api/v1/products",status="200"} 4
+http_request_duration_seconds_bucket{le="+Inf",method="GET",route="/api/v1/products",status="200"} 4
+http_request_duration_seconds_sum{method="GET",route="/api/v1/products",status="200"} 0.015959137
+http_request_duration_seconds_count{method="GET",route="/api/v1/products",status="200"} 4
+http_request_duration_seconds_bucket{le="0.005",method="GET",route="/metrics",status="200"} 1
+http_request_duration_seconds_bucket{le="0.01",method="GET",route="/metrics",status="200"} 2
+http_request_duration_seconds_bucket{le="0.025",method="GET",route="/metrics",status="200"} 2
+http_request_duration_seconds_bucket{le="0.05",method="GET",route="/metrics",status="200"} 2
+http_request_duration_seconds_bucket{le="0.1",method="GET",route="/metrics",status="200"} 2
+http_request_duration_seconds_bucket{le="0.3",method="GET",route="/metrics",status="200"} 2
+http_request_duration_seconds_bucket{le="0.5",method="GET",route="/metrics",status="200"} 2
+http_request_duration_seconds_bucket{le="1",method="GET",route="/metrics",status="200"} 2
+http_request_duration_seconds_bucket{le="2",method="GET",route="/metrics",status="200"} 2
+http_request_duration_seconds_bucket{le="5",method="GET",route="/metrics",status="200"} 2
+http_request_duration_seconds_bucket{le="+Inf",method="GET",route="/metrics",status="200"} 2
+http_request_duration_seconds_sum{method="GET",route="/metrics",status="200"} 0.010098475
+http_request_duration_seconds_count{method="GET",route="/metrics",status="200"} 2
+http_request_duration_seconds_bucket{le="0.005",method="POST",route="/api/v1/orders",status="201"} 0
+http_request_duration_seconds_bucket{le="0.01",method="POST",route="/api/v1/orders",status="201"} 0
+http_request_duration_seconds_bucket{le="0.025",method="POST",route="/api/v1/orders",status="201"} 0
+http_request_duration_seconds_bucket{le="0.05",method="POST",route="/api/v1/orders",status="201"} 0
+http_request_duration_seconds_bucket{le="0.1",method="POST",route="/api/v1/orders",status="201"} 0
+http_request_duration_seconds_bucket{le="0.3",method="POST",route="/api/v1/orders",status="201"} 1
+http_request_duration_seconds_bucket{le="0.5",method="POST",route="/api/v1/orders",status="201"} 1
+http_request_duration_seconds_bucket{le="1",method="POST",route="/api/v1/orders",status="201"} 1
+http_request_duration_seconds_bucket{le="2",method="POST",route="/api/v1/orders",status="201"} 1
+http_request_duration_seconds_bucket{le="5",method="POST",route="/api/v1/orders",status="201"} 1
+http_request_duration_seconds_bucket{le="+Inf",method="POST",route="/api/v1/orders",status="201"} 1
+http_request_duration_seconds_sum{method="POST",route="/api/v1/orders",status="201"} 0.211894909
+http_request_duration_seconds_count{method="POST",route="/api/v1/orders",status="201"} 1
+
+# HELP orders_created_total Total number of successfully created orders
+# TYPE orders_created_total counter
+orders_created_total 1
+
+# HELP orders_failed_total Total number of failed order creation attempts
+# TYPE orders_failed_total counter
+orders_failed_total 0
+
+# HELP process_cpu_user_seconds_total Total user CPU time spent in seconds.
+# TYPE process_cpu_user_seconds_total counter
+process_cpu_user_seconds_total 73.304275
+
+# HELP process_cpu_system_seconds_total Total system CPU time spent in seconds.
+# TYPE process_cpu_system_seconds_total counter
+process_cpu_system_seconds_total 14.035759
+
+# HELP process_cpu_seconds_total Total user and system CPU time spent in seconds.
+# TYPE process_cpu_seconds_total counter
+process_cpu_seconds_total 87.340034
+
+# HELP process_start_time_seconds Start time of the process since unix epoch in seconds.
+# TYPE process_start_time_seconds gauge
+process_start_time_seconds 1776178008
+
+# HELP process_resident_memory_bytes Resident memory size in bytes.
+# TYPE process_resident_memory_bytes gauge
+process_resident_memory_bytes 193159168
+
+# HELP process_virtual_memory_bytes Virtual memory size in bytes.
+# TYPE process_virtual_memory_bytes gauge
+process_virtual_memory_bytes 12174565376
+
+# HELP process_heap_bytes Process heap size in bytes.
+# TYPE process_heap_bytes gauge
+process_heap_bytes 219217920
+
+# HELP process_open_fds Number of open file descriptors.
+# TYPE process_open_fds gauge
+process_open_fds 33
+
+# HELP process_max_fds Maximum number of open file descriptors.
+# TYPE process_max_fds gauge
+process_max_fds 1048576
+
+# HELP nodejs_eventloop_lag_seconds Lag of event loop in seconds.
+# TYPE nodejs_eventloop_lag_seconds gauge
+nodejs_eventloop_lag_seconds 0.011052959
+
+# HELP nodejs_eventloop_lag_min_seconds The minimum recorded event loop delay.
+# TYPE nodejs_eventloop_lag_min_seconds gauge
+nodejs_eventloop_lag_min_seconds 0.009003008
+
+# HELP nodejs_eventloop_lag_max_seconds The maximum recorded event loop delay.
+# TYPE nodejs_eventloop_lag_max_seconds gauge
+nodejs_eventloop_lag_max_seconds 0.038600703
+
+# HELP nodejs_eventloop_lag_mean_seconds The mean of the recorded event loop delays.
+# TYPE nodejs_eventloop_lag_mean_seconds gauge
+nodejs_eventloop_lag_mean_seconds 0.01011185699810964
+
+# HELP nodejs_eventloop_lag_stddev_seconds The standard deviation of the recorded event loop delays.
+# TYPE nodejs_eventloop_lag_stddev_seconds gauge
+nodejs_eventloop_lag_stddev_seconds 0.00047521204305550277
+
+# HELP nodejs_eventloop_lag_p50_seconds The 50th percentile of the recorded event loop delays.
+# TYPE nodejs_eventloop_lag_p50_seconds gauge
+nodejs_eventloop_lag_p50_seconds 0.010174463
+
+# HELP nodejs_eventloop_lag_p90_seconds The 90th percentile of the recorded event loop delays.
+# TYPE nodejs_eventloop_lag_p90_seconds gauge
+nodejs_eventloop_lag_p90_seconds 0.010477567
+
+# HELP nodejs_eventloop_lag_p99_seconds The 99th percentile of the recorded event loop delays.
+# TYPE nodejs_eventloop_lag_p99_seconds gauge
+nodejs_eventloop_lag_p99_seconds 0.010838015
+
+=== AFTER LOAD ===
+# HELP http_requests_total Total number of HTTP requests
+# TYPE http_requests_total counter
+http_requests_total{method="GET",route="/health",status="200"} 1
+http_requests_total{method="POST",route="/api/v1/auth/login",status="201"} 5
+http_requests_total{method="GET",route="/api/v1/auth/me",status="200"} 4
+http_requests_total{method="GET",route="/api/v1/products",status="200"} 4
+http_requests_total{method="GET",route="/metrics",status="200"} 3
+http_requests_total{method="POST",route="/api/v1/orders",status="201"} 21
+
+# HELP orders_created_total Total number of successfully created orders
+# TYPE orders_created_total counter
+orders_created_total 21
+
+# HELP orders_failed_total Total number of failed order creation attempts
+# TYPE orders_failed_total counter
+orders_failed_total 0
+
+# HELP process_cpu_seconds_total Total user and system CPU time spent in seconds.
+# TYPE process_cpu_seconds_total counter
+process_cpu_seconds_total 88.053713
+
+# HELP process_resident_memory_bytes Resident memory size in bytes.
+# TYPE process_resident_memory_bytes gauge
+process_resident_memory_bytes 196915200
+
+# HELP nodejs_eventloop_lag_seconds Lag of event loop in seconds.
+# TYPE nodejs_eventloop_lag_seconds gauge
+nodejs_eventloop_lag_seconds 0.001584242

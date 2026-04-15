@@ -1,9 +1,12 @@
 import {
+  Inject,
   Injectable,
   Logger,
   OnApplicationBootstrap,
   OnModuleDestroy,
+  OnModuleInit,
 } from '@nestjs/common';
+import type { ClientGrpc } from '@nestjs/microservices';
 import { ConfigService } from '@nestjs/config';
 import { DataSource } from 'typeorm';
 import type { ConsumeMessage } from 'amqplib';
@@ -16,13 +19,21 @@ import {
 } from '../rabbitmq/rabbitmq.topology';
 import { EOrderStatus } from '../database/entities';
 import { OrdersDlqMessage, OrdersProcessMessage } from './orders-queue.types';
+import {
+  PAYMENTS_GRPC_CLIENT,
+  PAYMENTS_SERVICE_NAME,
+} from '../common/grpc/grpc.constants';
+import { PaymentsClient } from '../generated/payments/v1/payments';
+import { IPaymentsServiceConfig } from '../config/payments-service';
+import { lastValueFrom, TimeoutError, timeout } from 'rxjs';
 
 @Injectable()
 export class OrdersProcessorConsumer
-  implements OnApplicationBootstrap, OnModuleDestroy
+  implements OnModuleInit, OnApplicationBootstrap, OnModuleDestroy
 {
   private readonly logger = new Logger(OrdersProcessorConsumer.name);
   private consumerTag?: string;
+  private paymentsClient!: PaymentsClient;
   private readonly FACTOR = 2;
   private readonly MAX_DELAY_MS = 60_000;
 
@@ -30,7 +41,15 @@ export class OrdersProcessorConsumer
     private readonly rabbitMqService: RabbitmqService,
     private readonly dataSource: DataSource,
     private readonly configService: ConfigService,
+    @Inject(PAYMENTS_GRPC_CLIENT)
+    private readonly paymentsGrpcClient: ClientGrpc,
   ) {}
+
+  onModuleInit(): void {
+    this.paymentsClient = this.paymentsGrpcClient.getService<PaymentsClient>(
+      PAYMENTS_SERVICE_NAME,
+    );
+  }
 
   async onApplicationBootstrap(): Promise<void> {
     const channel = this.rabbitMqService.getChannel();
@@ -186,6 +205,31 @@ export class OrdersProcessorConsumer
         throw new Error('Simulated worker error');
       }
 
+      const [order]: Array<{
+        id: string;
+        userId: string;
+        totalAmount: string;
+        idempotencyKey: string;
+      }> = await qr.query(
+        `
+          SELECT
+            id,
+            user_id AS "userId",
+            total_amount AS "totalAmount",
+            idempotency_key AS "idempotencyKey"
+          FROM orders
+          WHERE id = $1
+          FOR UPDATE
+        `,
+        [message.orderId],
+      );
+
+      if (!order) {
+        throw new Error(`Order not found: ${message.orderId}`);
+      }
+
+      await this.authorizePayment(order);
+
       const updated: Array<{ id: string }> = await qr.query(
         `
           UPDATE orders
@@ -225,5 +269,41 @@ export class OrdersProcessorConsumer
       return error.message;
     }
     return String(error);
+  }
+
+  private async authorizePayment(order: {
+    id: string;
+    userId: string;
+    totalAmount: string;
+    idempotencyKey: string;
+  }): Promise<void> {
+    const paymentsTimeoutMs =
+      this.configService.get<IPaymentsServiceConfig['paymentsGrpcTimeoutMs']>(
+        'paymentsServiceConfig.paymentsGrpcTimeoutMs',
+      ) ?? 2500;
+
+    try {
+      await lastValueFrom(
+        this.paymentsClient
+          .authorize({
+            orderId: order.id,
+            userId: order.userId,
+            total: {
+              amount: order.totalAmount,
+              currency: 'USD',
+            },
+            idempotencyKey: order.idempotencyKey,
+          })
+          .pipe(timeout(paymentsTimeoutMs)),
+      );
+    } catch (error: unknown) {
+      if (error instanceof TimeoutError) {
+        throw new Error('Payments service timeout');
+      }
+      if ((error as { code?: number })?.code !== undefined) {
+        throw new Error('Payments service unavailable');
+      }
+      throw error;
+    }
   }
 }
