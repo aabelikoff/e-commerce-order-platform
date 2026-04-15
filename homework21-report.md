@@ -68,7 +68,7 @@ This sequence is important because the bottleneck conclusion was based on measur
 
 ### Change 1: performance optimization
 
-Reduced unnecessary DB work in [src/orders/orders.service.ts](e:/R_D/e-commerce-order-platform/src/orders/orders.service.ts):
+Reduced unnecessary DB work in [src/orders/orders.service.ts](./src/orders/orders.service.ts):
 
 - totals are computed in memory from already loaded product prices
 - the order is created immediately with final money fields
@@ -81,7 +81,7 @@ Purpose:
 
 ### Change 2: cost/runtime optimization
 
-Moved payment authorization out of the synchronous HTTP request path into [src/orders/orders-processor.consumer.ts](e:/R_D/e-commerce-order-platform/src/orders/orders-processor.consumer.ts):
+Moved payment authorization out of the synchronous HTTP request path into [src/orders/orders-processor.consumer.ts](./src/orders/orders-processor.consumer.ts):
 
 - `POST /api/v1/orders` now creates the order and writes `order.process_requested` into the outbox
 - the worker consumes the message asynchronously
