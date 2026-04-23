@@ -45,7 +45,7 @@ describe('AuthController', () => {
 
     mockAuthService.login.mockResolvedValue({
       accessToken: 'jwt-token',
-    }); 
+    });
 
     const result = await controller.login(dto, req as any);
 
