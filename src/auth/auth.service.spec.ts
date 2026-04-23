@@ -15,7 +15,9 @@ jest.mock('bcrypt', () => ({
 
 describe('AuthService', () => {
   let service: AuthService;
-  const compareMock = bcrypt.compare as jest.MockedFunction<typeof bcrypt.compare>;
+  const compareMock = bcrypt.compare as jest.MockedFunction<
+    typeof bcrypt.compare
+  >;
 
   const mockQueryBuilder = {
     addSelect: jest.fn().mockReturnThis(),
