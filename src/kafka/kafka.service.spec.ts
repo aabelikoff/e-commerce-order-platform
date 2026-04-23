@@ -31,9 +31,7 @@ const mockKafkaInstance = {
   consumer: jest.fn(() => mockConsumer),
 };
 
-const kafkaConstructorMock = jest.fn(
-  (_config: unknown) => mockKafkaInstance,
-);
+const kafkaConstructorMock = jest.fn((_config: unknown) => mockKafkaInstance);
 
 jest.mock('kafkajs', () => ({
   Kafka: jest.fn((config: unknown) => kafkaConstructorMock(config)),
