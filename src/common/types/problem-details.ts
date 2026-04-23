@@ -1,13 +1,12 @@
 export type ProblemDetails = {
-  // fields for RFC 7807
   type: string;
-  title: string; //short title
-  status: number; // exception code
+  title: string;
+  status: number;
   detail?: string;
-  instance?: string; // what request called the problem
+  instance?: string;
 
-  code?: string; //
-  errors?: string;
+  code?: string;
+  errors?: string | string[];
   timestamp?: string;
   requestId?: string;
 };
