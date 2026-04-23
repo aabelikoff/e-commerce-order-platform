@@ -36,4 +36,4 @@ async function bootstrap() {
   console.log(`payments-service gRPC started on ${url}`);
 }
 
-bootstrap();
+void bootstrap();

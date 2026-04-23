@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { FindProductsQueryDto } from './dto/find-products.query.dto';
 import { ProductsV1Controller } from './products.controller.v1';
 import { ProductsService } from '../products.service';
 
@@ -30,7 +31,7 @@ describe('ProductsController', () => {
   });
 
   it('delegates findProducts to ProductsService', async () => {
-    const query = {
+    const query: FindProductsQueryDto = {
       q: 'phone',
       fields: ['name', 'price'],
       limit: 10,
@@ -44,7 +45,7 @@ describe('ProductsController', () => {
       },
     });
 
-    const result = await controller.findProducts(query as any);
+    const result = await controller.findProducts(query);
 
     expect(mockProductsService.findProducts).toHaveBeenCalledWith(query);
     expect(result).toEqual({

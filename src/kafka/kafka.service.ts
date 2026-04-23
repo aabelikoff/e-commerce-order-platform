@@ -27,20 +27,23 @@ export class KafkaService implements OnModuleInit, OnModuleDestroy {
       this.logger.log('Kafka is disabled');
       return;
     }
+    const kafkaConfig: IKafkaConfig = cfg;
 
     const kafka = new Kafka({
-      clientId: cfg.clientId,
-      brokers: cfg.brokers,
+      clientId: kafkaConfig.clientId,
+      brokers: kafkaConfig.brokers,
     });
 
     this.admin = kafka.admin();
     await this.admin.connect();
-    await this.ensureTopics(cfg);
+    await this.ensureTopics(kafkaConfig);
 
     this.producer = kafka.producer();
     await this.producer.connect();
     this.enabled = true;
-    this.logger.log(`Kafka producer connected: ${cfg.brokers.join(',')}`);
+    this.logger.log(
+      `Kafka producer connected: ${kafkaConfig.brokers.join(',')}`,
+    );
     this.kafka = kafka;
   }
 

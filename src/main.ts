@@ -72,4 +72,4 @@ async function bootstrap() {
 
   await app.listen(configService.port || 3001);
 }
-bootstrap();
+void bootstrap();

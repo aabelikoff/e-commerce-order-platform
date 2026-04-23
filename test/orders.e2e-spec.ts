@@ -60,6 +60,9 @@ describe('OrdersController (e2e)', () => {
     delete: jest.fn(),
   };
 
+  const getHttpServer = (): Parameters<typeof request>[0] =>
+    app.getHttpServer() as Parameters<typeof request>[0];
+
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       controllers: [OrdersV1Controller],
@@ -126,11 +129,11 @@ describe('OrdersController (e2e)', () => {
   });
 
   it('returns unauthorized for protected orders route without token', async () => {
-    await request(app.getHttpServer()).get('/api/v1/orders').expect(401);
+    await request(getHttpServer()).get('/api/v1/orders').expect(401);
   });
 
   it('lists orders for authenticated user and passes query to service', async () => {
-    const response = await request(app.getHttpServer())
+    const response = await request(getHttpServer())
       .get('/api/v1/orders?limit=5&cursor=cursor-1')
       .set('Authorization', 'Bearer user-token')
       .expect(200);
@@ -154,7 +157,7 @@ describe('OrdersController (e2e)', () => {
   });
 
   it('creates an order when auth, scope and idempotency header are valid', async () => {
-    const response = await request(app.getHttpServer())
+    const response = await request(getHttpServer())
       .post('/api/v1/orders')
       .set('Authorization', 'Bearer user-token')
       .set('Idempotency-Key', '550e8400-e29b-41d4-a716-446655440000')
@@ -188,7 +191,7 @@ describe('OrdersController (e2e)', () => {
   });
 
   it('returns bad request when idempotency key is missing', async () => {
-    const response = await request(app.getHttpServer())
+    const response = await request(getHttpServer())
       .post('/api/v1/orders')
       .set('Authorization', 'Bearer user-token')
       .send({
@@ -211,7 +214,7 @@ describe('OrdersController (e2e)', () => {
   });
 
   it('forbids status update for non-admin user', async () => {
-    const response = await request(app.getHttpServer())
+    const response = await request(getHttpServer())
       .patch('/api/v1/orders/6d413bd6-a6f0-4b57-9c10-4d3521e1a001/status')
       .set('Authorization', 'Bearer user-token')
       .send({
@@ -228,7 +231,7 @@ describe('OrdersController (e2e)', () => {
   });
 
   it('updates status for admin and forwards audit request context', async () => {
-    const response = await request(app.getHttpServer())
+    const response = await request(getHttpServer())
       .patch('/api/v1/orders/6d413bd6-a6f0-4b57-9c10-4d3521e1a001/status')
       .set('Authorization', 'Bearer admin-token')
       .set('User-Agent', 'jest-e2e')

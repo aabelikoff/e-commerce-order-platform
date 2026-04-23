@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { Request } from 'express';
 import { ERoles } from 'src/auth/access/roles';
 import { AuthUser } from 'src/auth/types';
 import {
@@ -10,6 +11,10 @@ import { FilesService } from './files.service';
 
 describe('FilesController', () => {
   let controller: FilesController;
+
+  type AuthenticatedRequest = Request & {
+    user: AuthUser;
+  };
 
   const mockFilesService = {
     createPresignedUpload: jest.fn(),
@@ -59,7 +64,8 @@ describe('FilesController', () => {
       contentType: 'image/png',
     });
 
-    const result = await controller.presign({ user } as any, dto);
+    const req: AuthenticatedRequest = { user } as AuthenticatedRequest;
+    const result = await controller.presign(req, dto);
 
     expect(mockFilesService.createPresignedUpload).toHaveBeenCalledWith(
       user,
@@ -83,7 +89,8 @@ describe('FilesController', () => {
       status: EFileStatus.READY,
     });
 
-    const result = await controller.complete({ user } as any, dto);
+    const req: AuthenticatedRequest = { user } as AuthenticatedRequest;
+    const result = await controller.complete(req, dto);
 
     expect(mockFilesService.completeUpload).toHaveBeenCalledWith(user, dto);
     expect(result).toEqual({
@@ -98,7 +105,8 @@ describe('FilesController', () => {
       ownerId: 'user-1',
     });
 
-    const result = await controller.getById({ user } as any, 'file-1');
+    const req: AuthenticatedRequest = { user } as AuthenticatedRequest;
+    const result = await controller.getById(req, 'file-1');
 
     expect(mockFilesService.getFileById).toHaveBeenCalledWith(user, 'file-1');
     expect(result).toEqual({

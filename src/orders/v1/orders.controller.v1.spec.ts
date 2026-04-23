@@ -1,12 +1,21 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { Request } from 'express';
 import { ERoles } from 'src/auth/access/roles';
 import { AuthUser } from 'src/auth/types';
+import { CursorPaginationQueryDto } from 'src/common/dto/cursor-pagination-query.dto';
 import { EOrderStatus } from 'src/database/entities';
+import { CreateOrderDto } from './dto/create-order.dto';
 import { OrdersV1Controller } from './orders.controller.v1';
 import { OrdersService } from '../orders.service';
+import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
 
 describe('OrdersController', () => {
   let controller: OrdersV1Controller;
+
+  type AuthenticatedRequest = Request & {
+    user: AuthUser;
+    requestId?: string;
+  };
 
   const mockOrdersService = {
     create: jest.fn(),
@@ -44,7 +53,7 @@ describe('OrdersController', () => {
   });
 
   it('delegates create to OrdersService', async () => {
-    const dto = {
+    const dto: CreateOrderDto = {
       userId: 'user-1',
       items: [{ productId: 'product-1', quantity: 2 }],
     };
@@ -54,7 +63,7 @@ describe('OrdersController', () => {
       order: { id: 'order-1' },
     });
 
-    const result = await controller.create(dto as any, 'idem-1');
+    const result = await controller.create(dto, 'idem-1');
 
     expect(mockOrdersService.create).toHaveBeenCalledWith(dto, 'idem-1');
     expect(result).toEqual({
@@ -64,14 +73,15 @@ describe('OrdersController', () => {
   });
 
   it('delegates getAll using req.user and query', async () => {
-    const query = { limit: 10 };
+    const query: CursorPaginationQueryDto = { limit: 10 };
 
     mockOrdersService.findAll.mockResolvedValue({
       items: [],
       pagination: { hasNext: false, nextCursor: null },
     });
 
-    const result = await controller.getAll({ user } as any, query as any);
+    const req: AuthenticatedRequest = { user } as AuthenticatedRequest;
+    const result = await controller.getAll(req, query);
 
     expect(mockOrdersService.findAll).toHaveBeenCalledWith(user, query);
     expect(result).toEqual({
@@ -83,14 +93,15 @@ describe('OrdersController', () => {
   it('delegates getOne using req.user and id', async () => {
     mockOrdersService.findOne.mockResolvedValue({ id: 'order-1' });
 
-    const result = await controller.getOne({ user } as any, 'order-1');
+    const req: AuthenticatedRequest = { user } as AuthenticatedRequest;
+    const result = await controller.getOne(req, 'order-1');
 
     expect(mockOrdersService.findOne).toHaveBeenCalledWith(user, 'order-1');
     expect(result).toEqual({ id: 'order-1' });
   });
 
   it('delegates updateStatus with audit request context', async () => {
-    const req = {
+    const req: AuthenticatedRequest = {
       user: {
         sub: 'admin-1',
         email: 'admin@example.com',
@@ -102,8 +113,8 @@ describe('OrdersController', () => {
       headers: {
         'user-agent': 'jest',
       },
-    };
-    const dto = {
+    } as AuthenticatedRequest;
+    const dto: UpdateOrderStatusDto = {
       status: EOrderStatus.PAID,
     };
 
@@ -112,7 +123,7 @@ describe('OrdersController', () => {
       status: EOrderStatus.PAID,
     });
 
-    const result = await controller.updateStatus('order-1', dto, req as any);
+    const result = await controller.updateStatus('order-1', dto, req);
 
     expect(mockOrdersService.updateStatus).toHaveBeenCalledWith(
       'order-1',

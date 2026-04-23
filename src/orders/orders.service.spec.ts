@@ -10,6 +10,7 @@ import { DataSource, DeleteResult } from 'typeorm';
 import { ERoles } from 'src/auth/access/roles';
 import { AuthUser } from 'src/auth/types';
 import { AuditAction, AuditService } from 'src/common/audit';
+import { CursorPaginationQueryDto } from 'src/common/dto/cursor-pagination-query.dto';
 import { Order, EOrderStatus } from 'src/database/entities';
 import { MetricsService } from 'src/metrics/metrics.service';
 import { OutboxService } from 'src/outbox/outbox.service';
@@ -112,13 +113,15 @@ describe('OrdersService', () => {
 
   beforeEach(async () => {
     jest.clearAllMocks();
-    paginateMock.mockResolvedValue({
-      items: [],
-      pagination: {
-        hasNext: false,
-        nextCursor: null,
-      },
-    } as any);
+    const emptyPage: Awaited<ReturnType<typeof paginateQueryBuilderByCursor>> =
+      {
+        items: [],
+        pagination: {
+          hasNext: false,
+          nextCursor: null,
+        },
+      };
+    paginateMock.mockResolvedValue(emptyPage);
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -189,9 +192,9 @@ describe('OrdersService', () => {
   });
 
   it('filters findAll by user id for non-staff users', async () => {
-    const query = { limit: 10 };
+    const query: CursorPaginationQueryDto = { limit: 10 };
 
-    await service.findAll(customerUser, query as any);
+    await service.findAll(customerUser, query);
 
     expect(mockOrdersRepository.createQueryBuilder).toHaveBeenCalledWith(
       'order',
@@ -207,9 +210,9 @@ describe('OrdersService', () => {
   });
 
   it('does not add user filter in findAll for staff users', async () => {
-    const query = { limit: 5 };
+    const query: CursorPaginationQueryDto = { limit: 5 };
 
-    await service.findAll(adminUser, query as any);
+    await service.findAll(adminUser, query);
 
     expect(mockQueryBuilder.where).not.toHaveBeenCalled();
     expect(paginateMock).toHaveBeenCalledWith(mockQueryBuilder, query, 'order');

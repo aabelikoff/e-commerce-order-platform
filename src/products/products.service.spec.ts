@@ -2,6 +2,7 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { Test, TestingModule } from '@nestjs/testing';
 import { paginateQueryBuilderByCursor } from 'src/common/pagination/cursor/paginate-query-builder';
 import { Product } from 'src/database/entities';
+import { FindProductsQueryDto } from './v1/dto/find-products.query.dto';
 import { ProductsService } from './products.service';
 
 jest.mock('src/common/pagination/cursor/paginate-query-builder', () => ({
@@ -30,13 +31,15 @@ describe('ProductsService', () => {
 
   beforeEach(async () => {
     jest.clearAllMocks();
-    paginateMock.mockResolvedValue({
-      items: [],
-      pagination: {
-        hasNext: false,
-        nextCursor: null,
-      },
-    } as any);
+    const emptyPage: Awaited<ReturnType<typeof paginateQueryBuilderByCursor>> =
+      {
+        items: [],
+        pagination: {
+          hasNext: false,
+          nextCursor: null,
+        },
+      };
+    paginateMock.mockResolvedValue(emptyPage);
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -56,11 +59,11 @@ describe('ProductsService', () => {
   });
 
   it('selects default direct fields when fields are not provided', async () => {
-    const query = {
+    const query: FindProductsQueryDto = {
       limit: 10,
     };
 
-    await service.findProducts(query as any);
+    await service.findProducts(query);
 
     expect(mockProductsRepository.createQueryBuilder).toHaveBeenCalledWith('p');
     expect(mockQueryBuilder.select).toHaveBeenNthCalledWith(1, 'p.id');
@@ -78,12 +81,12 @@ describe('ProductsService', () => {
   });
 
   it('selects only allowed direct fields and joins items when requested', async () => {
-    const query = {
+    const query: FindProductsQueryDto = {
       fields: ['name', 'price', 'items', 'unknown'],
       limit: 5,
     };
 
-    await service.findProducts(query as any);
+    await service.findProducts(query);
 
     expect(mockQueryBuilder.select).toHaveBeenNthCalledWith(1, 'p.id');
     expect(mockQueryBuilder.select).toHaveBeenNthCalledWith(2, [
@@ -102,12 +105,12 @@ describe('ProductsService', () => {
   });
 
   it('adds name filter when q is present after trimming', async () => {
-    const query = {
+    const query: FindProductsQueryDto = {
       q: '  phone ',
       limit: 10,
     };
 
-    await service.findProducts(query as any);
+    await service.findProducts(query);
 
     expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith('p.name ILIKE :q', {
       q: '%phone%',
@@ -115,22 +118,22 @@ describe('ProductsService', () => {
   });
 
   it('does not add filter when q becomes empty after trimming', async () => {
-    const query = {
+    const query: FindProductsQueryDto = {
       q: '   ',
       limit: 10,
     };
 
-    await service.findProducts(query as any);
+    await service.findProducts(query);
 
     expect(mockQueryBuilder.andWhere).not.toHaveBeenCalled();
   });
 
   it('applies stable ordering before pagination', async () => {
-    const query = {
+    const query: FindProductsQueryDto = {
       limit: 20,
     };
 
-    await service.findProducts(query as any);
+    await service.findProducts(query);
 
     expect(mockQueryBuilder.orderBy).toHaveBeenCalledWith(
       'p.createdAt',

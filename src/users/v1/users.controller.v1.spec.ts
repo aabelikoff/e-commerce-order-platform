@@ -1,6 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { CursorPaginationQueryDto } from 'src/common/dto/cursor-pagination-query.dto';
 import { User } from 'src/database/entities';
 import { UsersService } from '../users.service';
+import { CreateUserDto } from './dto';
 import { UsersV1Controller } from './users.controller.v1';
 
 describe('UsersController', () => {
@@ -34,7 +36,7 @@ describe('UsersController', () => {
   });
 
   it('delegates create to UsersService', async () => {
-    const dto = {
+    const dto: CreateUserDto = {
       firstName: 'Alice',
       lastName: 'Doe',
       email: 'alice@example.com',
@@ -48,7 +50,7 @@ describe('UsersController', () => {
       email: 'alice@example.com',
     });
 
-    const result = await controller.create(dto as any);
+    const result = await controller.create(dto);
 
     expect(mockUsersService.create).toHaveBeenCalledWith(dto);
     expect(result).toEqual({
@@ -84,11 +86,11 @@ describe('UsersController', () => {
 
     mockUsersService.findAll.mockResolvedValue(response);
 
-    const query = {
+    const query: CursorPaginationQueryDto = {
       limit: 10,
       cursor: 'cursor-1',
     };
-    const result = await controller.getAll(query as any);
+    const result = await controller.getAll(query);
 
     expect(mockUsersService.findAll).toHaveBeenCalledWith(query);
     expect(result).toEqual(response);

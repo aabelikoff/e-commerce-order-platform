@@ -7,8 +7,11 @@ import { validate as uuidValidate, version as uuidVersion } from 'uuid';
 
 export const IdempotencyKey = createParamDecorator(
   (_: unknown, ctx: ExecutionContext): string => {
-    const req = ctx.switchToHttp().getRequest();
-    const value = req.headers['idempotency-key'];
+    const req = ctx.switchToHttp().getRequest<{
+      headers: Record<string, string | string[] | undefined>;
+    }>();
+    const headerValue = req.headers['idempotency-key'];
+    const value = Array.isArray(headerValue) ? headerValue[0] : headerValue;
 
     if (!value) {
       throw new BadRequestException('Missing Idempotency-Key header');

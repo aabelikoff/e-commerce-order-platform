@@ -1,8 +1,10 @@
 import * as bcrypt from 'bcrypt';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
+import { CursorPaginationQueryDto } from 'src/common/dto/cursor-pagination-query.dto';
 import { paginateQueryBuilderByCursor } from 'src/common/pagination/cursor/paginate-query-builder';
 import { User } from 'src/database/entities';
+import { CreateUserDto } from './v1/dto';
 import { UsersService } from './users.service';
 
 jest.mock('bcrypt', () => ({
@@ -38,13 +40,15 @@ describe('UsersService', () => {
   beforeEach(async () => {
     jest.clearAllMocks();
 
-    paginateMock.mockResolvedValue({
-      items: [],
-      pagination: {
-        hasNext: false,
-        nextCursor: null,
-      },
-    } as any);
+    const emptyPage: Awaited<ReturnType<typeof paginateQueryBuilderByCursor>> =
+      {
+        items: [],
+        pagination: {
+          hasNext: false,
+          nextCursor: null,
+        },
+      };
+    paginateMock.mockResolvedValue(emptyPage);
 
     hashMock.mockResolvedValue('hashed-password' as never);
     mockUsersRepository.save.mockImplementation(async (entity: User) => entity);
@@ -73,12 +77,12 @@ describe('UsersService', () => {
   });
 
   it('builds a cursor-paginated query for findAll', async () => {
-    const query = {
+    const query: CursorPaginationQueryDto = {
       limit: 10,
       cursor: 'cursor-1',
     };
 
-    await service.findAll(query as any);
+    await service.findAll(query);
 
     expect(mockUsersRepository.createQueryBuilder).toHaveBeenCalledWith('user');
     expect(mockQueryBuilder.orderBy).toHaveBeenCalledWith(
@@ -90,7 +94,7 @@ describe('UsersService', () => {
   });
 
   it('creates a user with hashed password and returns response dto', async () => {
-    const dto = {
+    const dto: CreateUserDto = {
       firstName: 'Alice',
       lastName: 'Doe',
       email: 'alice@example.com',
@@ -106,7 +110,7 @@ describe('UsersService', () => {
       ...input,
     }));
 
-    const result = await service.create(dto as any);
+    const result = await service.create(dto);
 
     expect(hashMock).toHaveBeenCalledWith('secret123', 10);
     expect(mockUsersRepository.create).toHaveBeenCalledWith({

@@ -60,7 +60,7 @@ export class LoadersFactory {
           );
 
           for (const orderItem of orderItems) {
-            const oid = (orderItem as any).orderId ?? orderItem.order?.id;
+            const oid = orderItem.orderId ?? orderItem.order?.id;
             if (oid) orderItemsByOrderId.get(oid)?.push(orderItem);
           }
 

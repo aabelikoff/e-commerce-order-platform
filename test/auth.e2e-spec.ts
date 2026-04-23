@@ -43,6 +43,9 @@ describe('AuthController (e2e)', () => {
     login: jest.fn(),
   };
 
+  const getHttpServer = (): Parameters<typeof request>[0] =>
+    app.getHttpServer() as Parameters<typeof request>[0];
+
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       controllers: [AuthController],
@@ -88,7 +91,7 @@ describe('AuthController (e2e)', () => {
   });
 
   it('logs in and returns wrapped access token', async () => {
-    const response = await request(app.getHttpServer())
+    const response = await request(getHttpServer())
       .post('/api/v1/auth/login')
       .set('User-Agent', 'jest-e2e')
       .send({
@@ -119,7 +122,7 @@ describe('AuthController (e2e)', () => {
   });
 
   it('returns validation problem details for invalid login payload', async () => {
-    const response = await request(app.getHttpServer())
+    const response = await request(getHttpServer())
       .post('/api/v1/auth/login')
       .send({
         email: 'not-an-email',
@@ -143,7 +146,7 @@ describe('AuthController (e2e)', () => {
   });
 
   it('returns unauthorized for /auth/me without bearer token', async () => {
-    const response = await request(app.getHttpServer())
+    const response = await request(getHttpServer())
       .get('/api/v1/auth/me')
       .expect(401);
 
@@ -156,7 +159,7 @@ describe('AuthController (e2e)', () => {
   });
 
   it('returns authenticated user for /auth/me', async () => {
-    const response = await request(app.getHttpServer())
+    const response = await request(getHttpServer())
       .get('/api/v1/auth/me')
       .set('Authorization', 'Bearer user-token')
       .expect(200);

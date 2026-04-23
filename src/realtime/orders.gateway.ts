@@ -26,6 +26,14 @@ type RealtimeClientData = {
   subscribeCalls?: number[];
 };
 
+type HandshakeAuth = {
+  token?: string;
+};
+
+type HandshakeQuery = {
+  token?: string | string[];
+};
+
 @WebSocketGateway({ namespace: '/realtime', cors: { origin: true } })
 export class OrdersGateway
   implements
@@ -73,8 +81,9 @@ export class OrdersGateway
         await this.jwtService.verifyAsync<JwtAccessPayload>(token);
       (client.data as RealtimeClientData).user = payload;
       (client.data as RealtimeClientData).subscribeCalls = [];
-    } catch (err: any) {
-      this.logger.warn(`WS auth failed: ${err?.message ?? String(err)}`);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      this.logger.warn(`WS auth failed: ${message}`);
       client.disconnect();
     }
   }
@@ -105,8 +114,9 @@ export class OrdersGateway
 
     try {
       await this.ordersService.canSubscribeToOrder(orderId, user);
-    } catch (err: any) {
-      const message = err?.message ?? 'Subscription denied';
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : 'Subscription denied';
       this.logger.warn(
         `subscribeOrder denied userId=${user.sub} orderId=${orderId} reason=${message}`,
       );
@@ -143,7 +153,8 @@ export class OrdersGateway
   }
 
   private getTokenFromHandshake(client: Socket): string | null {
-    const authToken = (client.handshake.auth as any)?.token;
+    const authToken = (client.handshake.auth as HandshakeAuth | undefined)
+      ?.token;
     if (typeof authToken === 'string' && authToken.length > 0) {
       return authToken;
     }
@@ -156,9 +167,17 @@ export class OrdersGateway
       return header.slice('bearer '.length).trim();
     }
 
-    const queryToken = (client.handshake.query as any)?.token;
+    const queryToken = (client.handshake.query as HandshakeQuery | undefined)
+      ?.token;
     if (typeof queryToken === 'string' && queryToken.length > 0) {
       return queryToken;
+    }
+    if (
+      Array.isArray(queryToken) &&
+      typeof queryToken[0] === 'string' &&
+      queryToken[0].length > 0
+    ) {
+      return queryToken[0];
     }
 
     return null;
