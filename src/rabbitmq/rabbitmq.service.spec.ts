@@ -109,19 +109,31 @@ describe('RabbitmqService', () => {
       'direct',
       { durable: true },
     );
-    expect(mockChannel.assertQueue).toHaveBeenNthCalledWith(1, ORDERS_PROCESS_QUEUE, {
-      durable: true,
-    });
-    expect(mockChannel.assertQueue).toHaveBeenNthCalledWith(2, ORDERS_RETRY_QUEUE, {
-      durable: true,
-      arguments: {
-        'x-dead-letter-exchange': ORDERS_EXCHANGE,
-        'x-dead-letter-routing-key': ORDERS_PROCESS_ROUTING_KEY,
+    expect(mockChannel.assertQueue).toHaveBeenNthCalledWith(
+      1,
+      ORDERS_PROCESS_QUEUE,
+      {
+        durable: true,
       },
-    });
-    expect(mockChannel.assertQueue).toHaveBeenNthCalledWith(3, ORDERS_DLQ_QUEUE, {
-      durable: true,
-    });
+    );
+    expect(mockChannel.assertQueue).toHaveBeenNthCalledWith(
+      2,
+      ORDERS_RETRY_QUEUE,
+      {
+        durable: true,
+        arguments: {
+          'x-dead-letter-exchange': ORDERS_EXCHANGE,
+          'x-dead-letter-routing-key': ORDERS_PROCESS_ROUTING_KEY,
+        },
+      },
+    );
+    expect(mockChannel.assertQueue).toHaveBeenNthCalledWith(
+      3,
+      ORDERS_DLQ_QUEUE,
+      {
+        durable: true,
+      },
+    );
     expect(mockChannel.bindQueue).toHaveBeenNthCalledWith(
       1,
       ORDERS_PROCESS_QUEUE,

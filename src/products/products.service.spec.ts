@@ -132,7 +132,10 @@ describe('ProductsService', () => {
 
     await service.findProducts(query as any);
 
-    expect(mockQueryBuilder.orderBy).toHaveBeenCalledWith('p.createdAt', 'DESC');
+    expect(mockQueryBuilder.orderBy).toHaveBeenCalledWith(
+      'p.createdAt',
+      'DESC',
+    );
     expect(mockQueryBuilder.addOrderBy).toHaveBeenCalledWith('p.id', 'DESC');
   });
 });

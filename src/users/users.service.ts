@@ -31,7 +31,7 @@ export class UsersService {
   }
 
   async remove(id: string) {
-    this.usersRepository.delete(id);
+    await this.usersRepository.delete(id);
   }
 
   async create(user: CreateUserDto): Promise<UserResponseDto> {
