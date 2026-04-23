@@ -49,7 +49,6 @@ Each major business domain is implemented as an isolated module:
 - `orders`
 - `payments`
 - `auth`
-- `profiles`
 - `notifications`
 - `reportings`
 
@@ -67,7 +66,13 @@ src/
  |- payments/
  |- payment-service/
  |- products/
- |- profiles/
+ |- files/
+ |- realtime/
+ |- rabbitmq/
+ |- outbox/
+ |- kafka/
+ |- health/
+ |- metrics/
  |- notifications/
  |- reportings/
  |- config/
@@ -92,7 +97,7 @@ This follows the Single Responsibility Principle and improves readability and ma
 
 Core domain modules: `users`, `products`, `orders`, `payments`
 
-Isolated modules: `auth`, `profiles`, `notifications`, `reportings`
+Platform/support modules: `auth`, `files`, `realtime`, `rabbitmq`, `outbox`, `kafka`, `health`, `metrics`, `notifications`, `reportings`
 
 Dedicated gRPC microservice module: `payment-service` (separate entrypoint for Payments gRPC server)
 
@@ -362,12 +367,24 @@ In `stage` and `production`, tracing is disabled by default and can be turned on
 # unit tests
 npm run test
 
+# CI unit/integration suite
+npm run test:unit:ci
+
 # e2e tests
 npm run test:e2e
+
+# CI full suite (unit/integration + e2e)
+npm run test:ci
 
 # test coverage
 npm run test:cov
 ```
+
+Current automated coverage includes:
+
+- unit tests for core services and controllers
+- integration tests for `orders + outbox` and `payments + publisher`
+- e2e tests for `auth`, `orders`, and realtime subscriptions
 
 ## CI/CD
 
@@ -405,7 +422,7 @@ What it does:
 4. creates a release manifest with commit, image, and digest
 5. uploads deploy artifacts for downstream jobs
 6. deploys the exact same built image to the `stage` environment
-7. runs a smoke check against `http://127.0.0.1:8080/api/docs`
+7. runs a smoke check against `http://127.0.0.1:8082/api/docs`
 
 Important properties:
 

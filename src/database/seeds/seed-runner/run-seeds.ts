@@ -2,7 +2,7 @@ import { runSeeders } from 'typeorm-extension';
 import { assertSeedAllowed } from './seed.guard';
 import { AppDataSource } from '../../data-source';
 
-(async function () {
+void (async function () {
   assertSeedAllowed();
   try {
     await AppDataSource.initialize();

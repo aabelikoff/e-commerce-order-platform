@@ -31,7 +31,7 @@ export class UsersService {
   }
 
   async remove(id: string) {
-    this.usersRepository.delete(id);
+    await this.usersRepository.delete(id);
   }
 
   async create(user: CreateUserDto): Promise<UserResponseDto> {
@@ -65,6 +65,8 @@ export class UsersService {
   }
 
   async delete(id: string): Promise<User> {
-    return this.delete(id);
+    const user = await this.usersRepository.findOneByOrFail({ id });
+    await this.usersRepository.delete(id);
+    return user;
   }
 }
