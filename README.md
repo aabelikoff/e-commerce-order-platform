@@ -1,6 +1,6 @@
 ## Description
 
-This project is a training backend application built with NestJS.  
+This project is a backend application built with NestJS.  
 The main goal of the project is to demonstrate a clean, well-structured, and scalable backend architecture that follows modern industry best practices.
 
 # Table of Contents
@@ -11,6 +11,7 @@ The main goal of the project is to demonstrate a clean, well-structured, and sca
 - [Requirements](#requirements)
 - [Project Setup](#project-setup)
 - [Environment Variables](#environment-variables)
+- [Local Docker Quick Start](#local-docker-quick-start)
 - [Compile and Run the Project](#compile-and-run-the-project)
 - [Cursor Pagination](#cursor-pagination)
 - [Security Baseline](#security-baseline)
@@ -20,6 +21,7 @@ The main goal of the project is to demonstrate a clean, well-structured, and sca
 - [Run Tests](#run-tests)
 - [CI/CD](#cicd)
 - [Deployment](#deployment)
+- [Deployed Stage](#deployed-stage)
 - [Docker / Containers](#docker--containers)
 - [(RabbitMQ + Outbox)](#rabbitmq--outbox)
 - [gRPC Payments Service](#grpc-payments-service)
@@ -175,6 +177,51 @@ AWS_S3_FORCE_PATH_STYLE=true
 AWS_CLOUDFRONT_URL=
 FILES_PRESIGN_EXPIRES_IN_SEC=900
 ```
+
+## Local Docker Quick Start
+
+
+1. Create local env files from the template:
+
+```bash
+cp .env.example .env.development
+cp .env.example .env.production
+```
+
+2. Start the local stack:
+
+```bash
+npm run docker:dev
+```
+
+3. Verify containers:
+
+```bash
+npm run docker:dev:status
+```
+
+4. Open the main local endpoints:
+
+- API docs: `http://localhost:8080/api/docs`
+- Health: `http://localhost:8080/health`
+- GraphQL: `http://localhost:8080/graphql`
+- RabbitMQ UI: `http://localhost:15673`
+- MinIO console: `http://localhost:9001`
+- Kafka UI: `http://localhost:18080`
+
+5. Follow API logs if needed:
+
+```bash
+npm run docker:dev:logs
+```
+
+Recommended local demo flow:
+
+1. `POST /api/v1/auth/login`
+2. `POST /api/v1/orders`
+3. `GET /api/v1/orders`
+4. `POST /api/v1/orders/:orderId/pay`
+5. `GET /api/v1/orders/:id`
 
 ## Compile and Run the Project
 
@@ -488,6 +535,21 @@ This is required because the deployment target must keep running after the workf
 
 Project deployment details are environment-specific.
 
+## Deployed Stage
+
+The project is deployed to an external stage environment and can be used for demo checks.
+
+Public stage endpoints:
+
+- `Health`: `http://167.235.66.16:8082/health`
+- `Swagger`: `http://167.235.66.16:8082/api/docs`
+
+Notes:
+
+- the stage stack is deployed on an external VPS with Docker Compose
+- the API is available on port `8082`
+- this stage instance is intended for external verification and demo of the main business flow
+
 ## Docker / Containers
 
 This project includes a Docker-based workflow for both prod-like local runs and dev hot reload.
@@ -627,14 +689,11 @@ docker build --target prod-distroless -t ecommerse-api:distroless .
 
 - Use `--env-file .env.production` / `--env-file .env.development` in compose commands so `${...}` values are substituted correctly.
 - `postgres` is intentionally not published to host (`no ports:` in `compose.yml`).
+- For local verification, prefer the `compose.dev.yml` flow described in `Local Docker Quick Start`.
 
 ## RabbitMQ + Outbox
 
-Implementation details are documented in:
-
-- `homework12.md`
-
-Quick run for this homework:
+Quick local run:
 
 ```bash
 npm run docker:dev
@@ -651,7 +710,7 @@ Useful logs command:
 docker compose --env-file .env.development -f compose.yml -f compose.dev.yml logs api --tail=200
 ```
 
-Implemented in this homework:
+Implemented in this area:
 
 - RabbitMQ topology (`orders.exchange`, `orders.process`, `orders.dlq`)
 - Orders worker with manual ack
@@ -661,11 +720,7 @@ Implemented in this homework:
 
 ## gRPC Payments Service
 
-Implementation details are documented in:
-
-- `homework13.md`
-
-Implemented in this homework:
+Implemented in this area:
 
 - dedicated `payments-service` with separate NestJS entrypoint (`src/payment-service/main.ts`)
 - `.proto` contract at `proto/payments/v1/payments.proto`
@@ -673,7 +728,7 @@ Implemented in this homework:
 - timeout on Orders -> Payments call from env/config (`PAYMENTS_RPC_TIMEOUT_MS`)
 - happy path response includes payment authorization result (`paymentId`, `status`)
 
-### Homework 13 quick check
+### gRPC Quick Check
 
 Run stack:
 
