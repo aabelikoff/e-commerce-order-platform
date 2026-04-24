@@ -102,7 +102,7 @@ jobs:
   deploy-stage:
     name: Deploy to Stage
     needs: build-image
-    runs-on: self-hosted
+    runs-on: [self-hosted, Linux, X64, stage]
     environment:
       name: stage
     concurrency:
