@@ -8,11 +8,11 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: ${DB_NAME}
     ports:
-      - "5447:5432"
+      - '5447:5432'
     volumes:
       - pgdata_ecommerce_stage:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      test: ['CMD-SHELL', 'pg_isready -U ${DB_USER} -d ${DB_NAME}']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -26,8 +26,8 @@ services:
     container_name: ecommerce-stage-rabbitmq
     restart: unless-stopped
     ports:
-      - "5675:5672"
-      - "15675:15672"
+      - '5675:5672'
+      - '15675:15672'
     networks:
       - public
 
@@ -40,8 +40,8 @@ services:
       MINIO_ROOT_PASSWORD: ${AWS_SECRET_ACCESS_KEY}
     command: server /data --console-address ":9001"
     ports:
-      - "${MINIO_API_PORT:-9002}:9000"
-      - "${MINIO_CONSOLE_PORT:-9003}:9001"
+      - '${MINIO_API_PORT:-9002}:9000'
+      - '${MINIO_CONSOLE_PORT:-9003}:9001'
     volumes:
       - minio_ecommerce_stage:/data
     networks:
@@ -52,7 +52,7 @@ services:
     container_name: ecommerce-stage-minio-init
     depends_on:
       - minio
-    restart: "no"
+    restart: 'no'
     networks:
       - public
     entrypoint: >
@@ -72,7 +72,7 @@ services:
     hostname: kafka
     restart: unless-stopped
     ports:
-      - "9096:9094"
+      - '9096:9094'
     environment:
       KAFKA_NODE_ID: 1
       KAFKA_PROCESS_ROLES: broker,controller
@@ -94,7 +94,7 @@ services:
     container_name: ecommerce-stage-kafka-init
     depends_on:
       - kafka
-    restart: "no"
+    restart: 'no'
     entrypoint: >
       /bin/sh -c "
       until /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 --list >/dev/null 2>&1; do
@@ -127,9 +127,9 @@ services:
       OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: ${OTEL_EXPORTER_OTLP_TRACES_ENDPOINT:-}
     env_file:
       - ../.env.stage
-    command: ["dist/payment-service/main.js"]
+    command: ['dist/payment-service/main.js']
     ports:
-      - "127.0.0.1:5023:5021"
+      - '127.0.0.1:5023:5021'
     networks:
       - internal
       - public
@@ -160,7 +160,7 @@ services:
     env_file:
       - ../.env.stage
     ports:
-      - "127.0.0.1:8082:3001"
+      - '8082:3001'
     networks:
       - internal
       - public
