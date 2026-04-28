@@ -1,4 +1,3 @@
-// src/common/filters/problem-details.filter.ts
 import {
   ArgumentsHost,
   Catch,
@@ -8,7 +7,17 @@ import {
 } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { ProblemDetails } from '../types/problem-details';
-import { GqlArgumentsHost } from '@nestjs/graphql';
+
+type HttpExceptionPayload = {
+  type?: string;
+  title?: string;
+  code?: string;
+  detail?: string;
+  error?: string;
+  message?: string | string[];
+  errors?: string | string[];
+  details?: string | string[];
+};
 
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
@@ -27,39 +36,36 @@ export class HttpExceptionFilter implements ExceptionFilter {
 
     if (exception instanceof HttpException) {
       const status = exception.getStatus();
-      const payload = exception.getResponse() as any;
+      const rawResponse = exception.getResponse();
+      const payload: HttpExceptionPayload =
+        typeof rawResponse === 'object' && rawResponse !== null
+          ? (rawResponse as HttpExceptionPayload)
+          : {};
 
-      // Nest default: { statusCode, message, error }
-      // payload.message could be string | string[]
-      const code = payload?.code ?? 'HTTP_EXCEPTION';
-
+      const code = payload.code ?? 'HTTP_EXCEPTION';
       const title =
-        payload?.title ??
-        (typeof payload?.error === 'string'
+        payload.title ??
+        (typeof payload.error === 'string'
           ? payload.error
           : HttpStatus[status]) ??
         'Error';
-
       const detail =
-        payload?.detail ??
-        (typeof payload?.message === 'string'
+        payload.detail ??
+        (typeof payload.message === 'string'
           ? payload.message
           : typeof exception.message === 'string'
             ? exception.message
             : undefined);
-
       const errors =
-        payload?.errors ??
-        (Array.isArray(payload?.message) ? payload.message : payload?.details);
+        payload.errors ??
+        (Array.isArray(payload.message) ? payload.message : payload.details);
 
       const problem: ProblemDetails = {
-        type: payload?.type ?? mapType(status, code),
+        type: payload.type ?? mapType(status, code),
         title,
         status,
         ...(detail ? { detail } : {}),
         instance,
-
-        // extensions
         code,
         ...(errors ? { errors } : {}),
         timestamp,
@@ -75,8 +81,6 @@ export class HttpExceptionFilter implements ExceptionFilter {
       status: HttpStatus.INTERNAL_SERVER_ERROR,
       detail: 'Unexpected error',
       instance,
-
-      // extensions
       code: 'INTERNAL_SERVER_ERROR',
       timestamp,
       requestId: req.requestId,
@@ -90,9 +94,9 @@ export class HttpExceptionFilter implements ExceptionFilter {
 }
 
 function mapType(status: number, code?: string) {
-  // RFC allows about:blank as “generic error type”
-  // Might be done as URL to documentation: https://api.example.com/problems/...
-  if (code) return `urn:problem:${code.toLowerCase()}`;
+  if (typeof code === 'string' && code.length > 0) {
+    return `urn:problem:${code.toLowerCase()}`;
+  }
 
   switch (status) {
     case 400:

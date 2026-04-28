@@ -18,8 +18,13 @@ export class HttpMetricsInterceptor implements NestInterceptor {
     }
 
     const http = context.switchToHttp();
-    const request = http.getRequest();
-    const response = http.getResponse();
+    const request = http.getRequest<{
+      method: string;
+      route?: { path?: string | string[] };
+      baseUrl?: string;
+      path?: string;
+    }>();
+    const response = http.getResponse<{ statusCode?: number }>();
     const startedAt = process.hrtime.bigint();
 
     return next.handle().pipe(

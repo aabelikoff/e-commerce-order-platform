@@ -9,7 +9,10 @@ import { map } from 'rxjs/operators';
 @Injectable()
 export class ResponseInterceptor<T> implements NestInterceptor {
   intercept(context: ExecutionContext, next: CallHandler) {
-    const req = context.switchToHttp().getRequest();
+    const req = context.switchToHttp().getRequest<{
+      path?: string;
+      requestId?: string;
+    }>();
 
     if (!req) return next.handle();
     if (this.shouldBypassResponseWrap(req.path)) {

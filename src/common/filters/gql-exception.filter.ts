@@ -1,22 +1,29 @@
-// src/common/filters/gql-exception.filter.ts
-import { Catch, Logger } from '@nestjs/common';
-import { GqlExceptionFilter, GqlArgumentsHost } from '@nestjs/graphql';
+import { ArgumentsHost, Catch, HttpException, Logger } from '@nestjs/common';
+import { GqlArgumentsHost, GqlExceptionFilter } from '@nestjs/graphql';
 import { GraphQLError } from 'graphql';
-import { HttpException } from '@nestjs/common';
+
+type GraphqlRequestContext = {
+  req?: {
+    requestId?: string;
+    headers?: Record<string, string | string[] | undefined>;
+  };
+};
 
 @Catch()
 export class GqlAllExceptionsFilter implements GqlExceptionFilter {
   private readonly logger = new Logger(GqlAllExceptionsFilter.name);
 
-  catch(exception: any, host: any) {
+  catch(exception: unknown, host: ArgumentsHost) {
     const gqlHost = GqlArgumentsHost.create(host);
-    const ctx = gqlHost.getContext<{ req?: any }>();
-    const requestId =
-      ctx?.req?.requestId ?? ctx?.req?.headers?.['x-request-id'];
+    const ctx = gqlHost.getContext<GraphqlRequestContext>();
+    const requestIdHeader = ctx.req?.headers?.['x-request-id'];
+    const requestId = Array.isArray(requestIdHeader)
+      ? requestIdHeader[0]
+      : (requestIdHeader ?? ctx.req?.requestId);
 
     this.logger.error(
       `GraphQL error${requestId ? ` (requestId=${requestId})` : ''}`,
-      exception?.stack ?? String(exception),
+      exception instanceof Error ? exception.stack : String(exception),
     );
 
     if (exception instanceof HttpException) {
