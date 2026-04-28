@@ -107,6 +107,50 @@ Configuration layer: the `config` directory contains centralized and strongly ty
 
 ---
 
+## Architecture Overview
+
+The application is organized around one main NestJS API plus a dedicated gRPC payments service.
+
+Primary runtime flow:
+
+1. client sends HTTP request to the API
+2. request passes validation, authentication, and access control
+3. domain service executes business logic
+4. state is stored in PostgreSQL
+5. follow-up async work is persisted to the outbox table
+6. outbox relay publishes events to RabbitMQ and Kafka
+7. payment orchestration delegates to the internal gRPC `payments-service`
+8. health, metrics, logs, and traces expose runtime observability
+
+Main runtime components:
+
+- `api` - main NestJS HTTP backend
+- `payments-service` - separate NestJS gRPC service
+- `postgres` - primary relational database
+- `rabbitmq` - async queue transport
+- `kafka` - event stream transport
+- `minio` - S3-compatible object storage
+- `grafana` / `prometheus` / `loki` / `promtail` - observability stack
+
+Architecture sketch:
+
+```text
+Client
+  -> NestJS API
+     -> PostgreSQL
+     -> Outbox table
+     -> RabbitMQ
+     -> Kafka
+     -> gRPC payments-service
+     -> MinIO
+
+Observability:
+  API / payments-service -> logs -> Promtail -> Loki -> Grafana
+  API -> /metrics -> Prometheus -> Grafana
+```
+
+---
+
 ## Requirements
 
 - Node.js v22.14.0
@@ -385,6 +429,25 @@ Stage and production monitoring:
 - stage Prometheus scrapes internal target `api:3001`
 - prod Prometheus scrapes internal target `api:3001`
 
+Monitoring and logging evidence:
+
+- request/audit log example: [security-evidence/audit-log-example.txt](./security-evidence/audit-log-example.txt)
+- monitoring compose for stage: [deploy/compose.monitoring.stage.yml](./deploy/compose.monitoring.stage.yml)
+- local metrics endpoint: `http://localhost:8080/metrics`
+- local Grafana: `http://localhost:3000`
+- local Prometheus: `http://localhost:9090`
+- stage metrics endpoint: `http://167.235.66.16:8082/metrics`
+- stage Grafana: `http://167.235.66.16:3002`
+- stage Prometheus: `http://167.235.66.16:9091`
+
+- prepared screenshot set is stored in [`evidence/screenshots`](./evidence/screenshots):
+  - `01-stage-health.png`
+  - `02-stage-swagger.png`
+  - `03-stage-metrics.png`
+  - `04-grafana-loki-audit-logs.png`
+  - `05-prometheus-up-stage.png`
+  - `06-github-actions-pipeline.png`
+
 ## Tracing
 
 Jaeger can be used to inspect distributed traces for the API and payments service.
@@ -531,6 +594,13 @@ Both deploy workflows run on a `self-hosted` GitHub Actions runner.
 
 This is required because the deployment target must keep running after the workflow job finishes. GitHub-hosted runners are ephemeral, so they are suitable for build/test jobs but not for a persistent stage or production runtime.
 
+Pipeline evidence:
+
+- pull request verification workflow: [`.github/workflows/pr-checks.yml`](./.github/workflows/pr-checks.yml)
+- build + stage deployment workflow: [`.github/workflows/build-and-stage.yml`](./.github/workflows/build-and-stage.yml)
+- production promotion workflow: [`.github/workflows/deploy-prod.yml`](./.github/workflows/deploy-prod.yml)
+- a passing GitHub Actions run can be used as the final pipeline proof artifact
+
 ## Deployment
 
 Project deployment details are environment-specific.
@@ -543,11 +613,15 @@ Public stage endpoints:
 
 - `Health`: `http://167.235.66.16:8082/health`
 - `Swagger`: `http://167.235.66.16:8082/api/docs`
+- `Metrics`: `http://167.235.66.16:8082/metrics`
+- `Grafana`: `http://167.235.66.16:3002`
+- `Prometheus`: `http://167.235.66.16:9091`
 
 Notes:
 
 - the stage stack is deployed on an external VPS with Docker Compose
 - the API is available on port `8082`
+- the stage monitoring stack is exposed separately through Grafana and Prometheus
 - this stage instance is intended for external verification and demo of the main business flow
 
 ## Docker / Containers
