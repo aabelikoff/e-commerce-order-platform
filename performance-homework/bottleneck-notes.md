@@ -82,6 +82,16 @@ Improvement versus baseline:
 
 This gives a much stronger signal than intuition alone: the synchronous external dependency was the main bottleneck affecting real request latency.
 
+### Direct Runtime Evidence
+
+Timing logs were added around `payments.authorize()` in the async worker flow so the external dependency can be observed directly through:
+
+- `payment_authorize result=success ... durationMs=...`
+- `payment_authorize result=timeout ... durationMs=...`
+- `payment_authorize result=unavailable ... durationMs=...`
+
+Even though the call now runs outside the HTTP request path, it is the same dependency that previously blocked `POST /api/v1/orders`. That makes the timing log a direct evidence source for the external wait cost that used to sit on the critical path.
+
 ## Why It Matters Economically
 
 This bottleneck is not only technical.

@@ -277,6 +277,7 @@ export class OrdersProcessorConsumer
     totalAmount: string;
     idempotencyKey: string;
   }): Promise<void> {
+    const startedAt = Date.now();
     const paymentsTimeoutMs =
       this.configService.get<IPaymentsServiceConfig['paymentsGrpcTimeoutMs']>(
         'paymentsServiceConfig.paymentsGrpcTimeoutMs',
@@ -296,11 +297,21 @@ export class OrdersProcessorConsumer
           })
           .pipe(timeout(paymentsTimeoutMs)),
       );
+      this.logger.log(
+        `payment_authorize result=success orderId=${order.id} durationMs=${Date.now() - startedAt} timeoutMs=${paymentsTimeoutMs}`,
+      );
     } catch (error: unknown) {
+      const durationMs = Date.now() - startedAt;
       if (error instanceof TimeoutError) {
+        this.logger.warn(
+          `payment_authorize result=timeout orderId=${order.id} durationMs=${durationMs} timeoutMs=${paymentsTimeoutMs}`,
+        );
         throw new Error('Payments service timeout');
       }
       if ((error as { code?: number })?.code !== undefined) {
+        this.logger.warn(
+          `payment_authorize result=unavailable orderId=${order.id} durationMs=${durationMs} timeoutMs=${paymentsTimeoutMs}`,
+        );
         throw new Error('Payments service unavailable');
       }
       throw error;

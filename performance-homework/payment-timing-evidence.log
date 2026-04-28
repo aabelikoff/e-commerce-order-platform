@@ -1,0 +1,120 @@
+ecommerce-order-api  | [32m[Nest] 42  - [39m04/14/2026, 9:15:54 PM [32m    LOG[39m [38;5;3m[LoggingInterceptor] [39m[32m{"msg":"http_request","requestId":"50acac52-fbfb-4731-a455-5c3f0b2d39e9","method":"GET","path":"/metrics","statusCode":200,"latencyMs":1}[39m
+ecommerce-order-api  | [32m[Nest] 42  - [39m04/14/2026, 9:16:07 PM [32m    LOG[39m [38;5;3m[LoggingInterceptor] [39m[32m{"msg":"http_request","requestId":"e92a67a1-5b93-4fc1-b07b-742aeb17854f","method":"GET","path":"/metrics","statusCode":200,"latencyMs":1}[39m
+ecommerce-order-api  | [32m[Nest] 42  - [39m04/14/2026, 9:16:22 PM [32m    LOG[39m [38;5;3m[LoggingInterceptor] [39m[32m{"msg":"http_request","requestId":"a900650a-99a2-40ea-a28b-8f3006fd76e9","method":"GET","path":"/metrics","statusCode":200,"latencyMs":1}[39m
+ecommerce-order-api  | [32m[Nest] 42  - [39m04/14/2026, 9:16:35 PM [32m    LOG[39m [38;5;3m[LoggingInterceptor] [39m[32m{"msg":"http_request","requestId":"4a1df031-f76f-46fd-a83c-03bcd922fe20","method":"GET","path":"/metrics","statusCode":200,"latencyMs":1}[39m
+ecommerce-order-api  | [32m[Nest] 42  - [39m04/14/2026, 9:16:50 PM [32m    LOG[39m [38;5;3m[LoggingInterceptor] [39m[32m{"msg":"http_request","requestId":"79451f61-3f39-48cc-be4c-2bea95326bdb","method":"GET","path":"/metrics","statusCode":200,"latencyMs":2}[39m
+ecommerce-order-api  | [32m[Nest] 42  - [39m04/14/2026, 9:17:02 PM [32m    LOG[39m [38;5;3m[LoggingInterceptor] [39m[32m{"msg":"http_request","requestId":"9721ec25-5950-4d9f-890f-7ad4946ee313","method":"GET","path":"/metrics","statusCode":200,"latencyMs":2}[39m
+ecommerce-order-api  | [32m[Nest] 42  - [39m04/14/2026, 9:17:17 PM [32m    LOG[39m [38;5;3m[LoggingInterceptor] [39m[32m{"msg":"http_request","requestId":"a5b8bb5a-5470-45fd-b35f-c6b20a46aafb","method":"GET","path":"/metrics","statusCode":200,"latencyMs":1}[39m
+ecommerce-order-api  | [32m[Nest] 42  - [39m04/14/2026, 9:17:30 PM [32m    LOG[39m [38;5;3m[LoggingInterceptor] [39m[32m{"msg":"http_request","requestId":"8e7f0b45-73af-42a4-bcd6-4d40ca6b3145","method":"GET","path":"/metrics","statusCode":200,"latencyMs":2}[39m
+ecommerce-order-api  | [32m[Nest] 42  - [39m04/14/2026, 9:17:45 PM [32m    LOG[39m [38;5;3m[LoggingInterceptor] [39m[32m{"msg":"http_request","requestId":"bf06abd3-a287-45bb-a23e-df2be75a84be","method":"GET","path":"/metrics","statusCode":200,"latencyMs":2}[39m
+ecommerce-order-api  | npm error path /app
+ecommerce-order-api  | npm error command failed
+ecommerce-order-api  | npm error signal SIGTERM
+ecommerce-order-api  | npm error command sh -c cross-env NODE_ENV=development nest start --watch
+ecommerce-order-api  | npm error A complete log of this run can be found in: /root/.npm/_logs/2026-04-14T18_58_26_782Z-debug-0.log
+ecommerce-order-api  | 
+ecommerce-order-api  | > e-commerce-order-platform@0.0.1 start:dev
+ecommerce-order-api  | > cross-env NODE_ENV=development nest start --watch
+ecommerce-order-api  | 
+ecommerce-order-api  | [2J[3J[H[[90m1:48:36 PM[0m] Starting compilation in watch mode...
+ecommerce-order-api  | 
+ecommerce-order-api  | [[90m1:48:55 PM[0m] Found 0 errors. Watching for file changes.
+ecommerce-order-api  | 
+ecommerce-order-api  | [32m[Nest] 41  - [39m04/28/2026, 1:49:09 PM [32m    LOG[39m [38;5;3m[NestFactory] [39m[32mStarting Nest application...[39m
+ecommerce-order-api  | [32m[Nest] 41  - [39m04/28/2026, 1:49:09 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mTypeOrmModule dependencies initialized[39m[38;5;3m +114ms[39m
+ecommerce-order-api  | [32m[Nest] 41  - [39m04/28/2026, 1:49:09 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mPassportModule dependencies initialized[39m[38;5;3m +1ms[39m
+ecommerce-order-api  | [32m[Nest] 41  - [39m04/28/2026, 1:49:09 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mReportingsModule dependencies initialized[39m[38;5;3m +0ms[39m
+ecommerce-order-api  | [32m[Nest] 41  - [39m04/28/2026, 1:49:09 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mNotificationsModule dependencies initialized[39m[38;5;3m +0ms[39m
+ecommerce-order-api  | [32m[Nest] 41  - [39m04/28/2026, 1:49:09 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mAuditModule dependencies initialized[39m[38;5;3m +0ms[39m
+ecommerce-order-api  | [32m[Nest] 41  - [39m04/28/2026, 1:49:09 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigHostModule dependencies initialized[39m[38;5;3m +1ms[39m
+ecommerce-order-api  | [32m[Nest] 41  - [39m04/28/2026, 1:49:09 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mMetricsModule dependencies initialized[39m[38;5;3m +457ms[39m
+ecommerce-order-api  | [32m[Nest] 41  - [39m04/28/2026, 1:49:09 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigModule dependencies initialized[39m[38;5;3m +0ms[39m
+ecommerce-order-api  | [32m[Nest] 41  - [39m04/28/2026, 1:49:09 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigModule dependencies initialized[39m[38;5;3m +1ms[39m
+ecommerce-order-api  | [32m[Nest] 41  - [39m04/28/2026, 1:49:09 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mRabbitmqModule dependencies initialized[39m[38;5;3m +153ms[39m
+ecommerce-order-api  | [32m[Nest] 41  - [39m04/28/2026, 1:49:09 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mKafkaModule dependencies initialized[39m[38;5;3m +0ms[39m
+ecommerce-order-api  | [32m[Nest] 41  - [39m04/28/2026, 1:49:09 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mClientsModule dependencies initialized[39m[38;5;3m +1ms[39m
+ecommerce-order-api  | [32m[Nest] 41  - [39m04/28/2026, 1:49:09 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mClientsModule dependencies initialized[39m[38;5;3m +0ms[39m
+ecommerce-order-api  | [32m[Nest] 41  - [39m04/28/2026, 1:49:09 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mThrottlerModule dependencies initialized[39m[38;5;3m +1ms[39m
+ecommerce-order-api  | [32m[Nest] 41  - [39m04/28/2026, 1:49:09 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mJwtModule dependencies initialized[39m[38;5;3m +0ms[39m
+ecommerce-order-api  | [32m[Nest] 41  - [39m04/28/2026, 1:49:09 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mAppModule dependencies initialized[39m[38;5;3m +1ms[39m
+ecommerce-order-api  | [32m[Nest] 41  - [39m04/28/2026, 1:49:09 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mGraphQLSchemaBuilderModule dependencies initialized[39m[38;5;3m +0ms[39m
+ecommerce-order-api  | [32m[Nest] 41  - [39m04/28/2026, 1:49:10 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mTypeOrmCoreModule dependencies initialized[39m[38;5;3m +95ms[39m
+ecommerce-order-api  | [32m[Nest] 41  - [39m04/28/2026, 1:49:10 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mTypeOrmModule dependencies initialized[39m[38;5;3m +0ms[39m
+ecommerce-order-api  | [32m[Nest] 41  - [39m04/28/2026, 1:49:10 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mTypeOrmModule dependencies initialized[39m[38;5;3m +1ms[39m
+ecommerce-order-api  | [32m[Nest] 41  - [39m04/28/2026, 1:49:10 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mTypeOrmModule dependencies initialized[39m[38;5;3m +0ms[39m
+ecommerce-order-api  | [32m[Nest] 41  - [39m04/28/2026, 1:49:10 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mTypeOrmModule dependencies initialized[39m[38;5;3m +0ms[39m
+ecommerce-order-api  | [32m[Nest] 41  - [39m04/28/2026, 1:49:10 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mTypeOrmModule dependencies initialized[39m[38;5;3m +0ms[39m
+ecommerce-order-api  | [32m[Nest] 41  - [39m04/28/2026, 1:49:10 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mTypeOrmModule dependencies initialized[39m[38;5;3m +0ms[39m
+ecommerce-order-api  | [32m[Nest] 41  - [39m04/28/2026, 1:49:10 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mTypeOrmModule dependencies initialized[39m[38;5;3m +0ms[39m
+ecommerce-order-api  | [32m[Nest] 41  - [39m04/28/2026, 1:49:10 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mTypeOrmModule dependencies initialized[39m[38;5;3m +0ms[39m
+ecommerce-order-api  | [32m[Nest] 41  - [39m04/28/2026, 1:49:10 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mTypeOrmModule dependencies initialized[39m[38;5;3m +0ms[39m
+ecommerce-order-api  | [32m[Nest] 41  - [39m04/28/2026, 1:49:10 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mLoadersModule dependencies initialized[39m[38;5;3m +3ms[39m
+ecommerce-order-api  | [32m[Nest] 41  - [39m04/28/2026, 1:49:10 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mHealthModule dependencies initialized[39m[38;5;3m +2ms[39m
+ecommerce-order-api  | [32m[Nest] 41  - [39m04/28/2026, 1:49:10 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mOutboxModule dependencies initialized[39m[38;5;3m +3ms[39m
+ecommerce-order-api  | [32m[Nest] 41  - [39m04/28/2026, 1:49:10 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mProductsModule dependencies initialized[39m[38;5;3m +2ms[39m
+ecommerce-order-api  | [32m[Nest] 41  - [39m04/28/2026, 1:49:10 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mRealtimeModule dependencies initialized[39m[38;5;3m +0ms[39m
+ecommerce-order-api  | [32m[Nest] 41  - [39m04/28/2026, 1:49:10 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mAppGraphqlModule dependencies initialized[39m[38;5;3m +3ms[39m
+ecommerce-order-api  | [32m[Nest] 41  - [39m04/28/2026, 1:49:10 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mUsersModule dependencies initialized[39m[38;5;3m +0ms[39m
+ecommerce-order-api  | [32m[Nest] 41  - [39m04/28/2026, 1:49:10 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mFilesModule dependencies initialized[39m[38;5;3m +0ms[39m
+ecommerce-order-api  | [32m[Nest] 41  - [39m04/28/2026, 1:49:10 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mAuthModule dependencies initialized[39m[38;5;3m +0ms[39m
+ecommerce-order-api  | [32m[Nest] 41  - [39m04/28/2026, 1:49:10 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mPaymentsModule dependencies initialized[39m[38;5;3m +0ms[39m
+ecommerce-order-api  | [32m[Nest] 41  - [39m04/28/2026, 1:49:10 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mGraphQLModule dependencies initialized[39m[38;5;3m +0ms[39m
+ecommerce-order-api  | [32m[Nest] 41  - [39m04/28/2026, 1:49:10 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mOrdersModule dependencies initialized[39m[38;5;3m +0ms[39m
+ecommerce-order-api  | [32m[Nest] 41  - [39m04/28/2026, 1:49:10 PM [32m    LOG[39m [38;5;3m[WebSocketsController] [39m[32mOrdersGateway subscribed to the "subscribeOrder" message[39m[38;5;3m +74ms[39m
+ecommerce-order-api  | [32m[Nest] 41  - [39m04/28/2026, 1:49:10 PM [32m    LOG[39m [38;5;3m[WebSocketsController] [39m[32mOrdersGateway subscribed to the "unsubscribeOrder" message[39m[38;5;3m +0ms[39m
+ecommerce-order-api  | [32m[Nest] 41  - [39m04/28/2026, 1:49:10 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mUsersV1Controller {/api/users} (version: 1):[39m[38;5;3m +5ms[39m
+ecommerce-order-api  | [32m[Nest] 41  - [39m04/28/2026, 1:49:10 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/users, POST} (version: 1) route[39m[38;5;3m +8ms[39m
+ecommerce-order-api  | [32m[Nest] 41  - [39m04/28/2026, 1:49:10 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/users/:id, GET} (version: 1) route[39m[38;5;3m +1ms[39m
+ecommerce-order-api  | [32m[Nest] 41  - [39m04/28/2026, 1:49:10 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/users, GET} (version: 1) route[39m[38;5;3m +1ms[39m
+ecommerce-order-api  | [32m[Nest] 41  - [39m04/28/2026, 1:49:10 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/users/:id, PATCH} (version: 1) route[39m[38;5;3m +1ms[39m
+ecommerce-order-api  | [32m[Nest] 41  - [39m04/28/2026, 1:49:10 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mAuthController {/api/auth} (version: 1):[39m[38;5;3m +0ms[39m
+ecommerce-order-api  | [32m[Nest] 41  - [39m04/28/2026, 1:49:10 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/auth/login, POST} (version: 1) route[39m[38;5;3m +1ms[39m
+ecommerce-order-api  | [32m[Nest] 41  - [39m04/28/2026, 1:49:10 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/auth/me, GET} (version: 1) route[39m[38;5;3m +0ms[39m
+ecommerce-order-api  | [32m[Nest] 41  - [39m04/28/2026, 1:49:10 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mProductsV1Controller {/api/products} (version: 1):[39m[38;5;3m +0ms[39m
+ecommerce-order-api  | [32m[Nest] 41  - [39m04/28/2026, 1:49:10 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/products, GET} (version: 1) route[39m[38;5;3m +1ms[39m
+ecommerce-order-api  | [32m[Nest] 41  - [39m04/28/2026, 1:49:10 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mOrdersV1Controller {/api/orders} (version: 1):[39m[38;5;3m +0ms[39m
+ecommerce-order-api  | [32m[Nest] 41  - [39m04/28/2026, 1:49:10 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/orders, POST} (version: 1) route[39m[38;5;3m +1ms[39m
+ecommerce-order-api  | [32m[Nest] 41  - [39m04/28/2026, 1:49:10 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/orders, GET} (version: 1) route[39m[38;5;3m +1ms[39m
+ecommerce-order-api  | [32m[Nest] 41  - [39m04/28/2026, 1:49:10 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/orders/:id, GET} (version: 1) route[39m[38;5;3m +1ms[39m
+ecommerce-order-api  | [32m[Nest] 41  - [39m04/28/2026, 1:49:10 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/orders/:id/status, PATCH} (version: 1) route[39m[38;5;3m +1ms[39m
+ecommerce-order-api  | [32m[Nest] 41  - [39m04/28/2026, 1:49:10 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/orders/:id, DELETE} (version: 1) route[39m[38;5;3m +0ms[39m
+ecommerce-order-api  | [32m[Nest] 41  - [39m04/28/2026, 1:49:10 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mMetricsController {/api} (version: Neutral):[39m[38;5;3m +0ms[39m
+ecommerce-order-api  | [32m[Nest] 41  - [39m04/28/2026, 1:49:10 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/metrics, GET} (version: Neutral) route[39m[38;5;3m +1ms[39m
+ecommerce-order-api  | [32m[Nest] 41  - [39m04/28/2026, 1:49:10 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mPaymentsController {/api/orders} (version: 1):[39m[38;5;3m +0ms[39m
+ecommerce-order-api  | [32m[Nest] 41  - [39m04/28/2026, 1:49:10 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/orders/:orderId/pay, POST} (version: 1) route[39m[38;5;3m +0ms[39m
+ecommerce-order-api  | [32m[Nest] 41  - [39m04/28/2026, 1:49:10 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mFilesController {/api/files} (version: 1):[39m[38;5;3m +0ms[39m
+ecommerce-order-api  | [32m[Nest] 41  - [39m04/28/2026, 1:49:10 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/files/presign, POST} (version: 1) route[39m[38;5;3m +1ms[39m
+ecommerce-order-api  | [32m[Nest] 41  - [39m04/28/2026, 1:49:10 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/files/complete, POST} (version: 1) route[39m[38;5;3m +0ms[39m
+ecommerce-order-api  | [32m[Nest] 41  - [39m04/28/2026, 1:49:10 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/files/:id, GET} (version: 1) route[39m[38;5;3m +1ms[39m
+ecommerce-order-api  | [32m[Nest] 41  - [39m04/28/2026, 1:49:10 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mHealthController {/api} (version: Neutral):[39m[38;5;3m +0ms[39m
+ecommerce-order-api  | [32m[Nest] 41  - [39m04/28/2026, 1:49:10 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/health, GET} (version: Neutral) route[39m[38;5;3m +0ms[39m
+ecommerce-order-api  | [32m[Nest] 41  - [39m04/28/2026, 1:49:10 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/ready, GET} (version: Neutral) route[39m[38;5;3m +0ms[39m
+ecommerce-order-api  | {"level":"WARN","timestamp":"2026-04-28T13:49:10.178Z","logger":"kafkajs","message":"KafkaJS v2.0.0 switched default partitioner. To retain the same partitioning behavior as in previous versions, create the producer with the option \"createPartitioner: Partitioners.LegacyPartitioner\". See the migration guide at https://kafka.js.org/docs/migration-guide-v2.0.0#producer-new-default-partitioner for details. Silence this warning by setting the environment variable \"KAFKAJS_NO_PARTITIONER_WARNING=1\""}
+ecommerce-order-api  | [32m[Nest] 41  - [39m04/28/2026, 1:49:10 PM [32m    LOG[39m [38;5;3m[KafkaService] [39m[32mKafka producer connected: kafka:9092[39m
+ecommerce-order-api  | [32m[Nest] 41  - [39m04/28/2026, 1:49:10 PM [32m    LOG[39m [38;5;3m[RabbitmqService] [39m[32mRabbitMQ channel initialized[39m
+ecommerce-order-api  | [32m[Nest] 41  - [39m04/28/2026, 1:49:10 PM [32m    LOG[39m [38;5;3m[GraphQLModule] [39m[32mMapped {/graphql, POST} route[39m[38;5;3m +175ms[39m
+ecommerce-order-api  | [32m[Nest] 41  - [39m04/28/2026, 1:49:10 PM [32m    LOG[39m [38;5;3m[AppModule] [39m[32mApplication module initialized[39m
+ecommerce-order-api  | [32m[Nest] 41  - [39m04/28/2026, 1:49:10 PM [32m    LOG[39m [38;5;3m[OrdersProcessorConsumer] [39m[32mConsumer started for queue=orders.process[39m
+ecommerce-order-api  | {"level":"INFO","timestamp":"2026-04-28T13:49:10.482Z","logger":"kafkajs","message":"[Consumer] Starting","groupId":"orders-analytics"}
+ecommerce-order-api  | {"level":"INFO","timestamp":"2026-04-28T13:49:10.493Z","logger":"kafkajs","message":"[Consumer] Starting","groupId":"orders-crm"}
+ecommerce-order-api  | {"level":"INFO","timestamp":"2026-04-28T13:49:10.549Z","logger":"kafkajs","message":"[ConsumerGroup] Consumer has joined the group","groupId":"orders-crm","memberId":"ecommerce-order-api-9e7a7b59-2c5e-4642-b178-4abc4fee77fd","leaderId":"ecommerce-order-api-9e7a7b59-2c5e-4642-b178-4abc4fee77fd","isLeader":true,"memberAssignment":{"orders.events":[0,1,2]},"groupProtocol":"RoundRobinAssigner","duration":55}
+ecommerce-order-api  | [32m[Nest] 41  - [39m04/28/2026, 1:49:10 PM [32m    LOG[39m [38;5;3m[OrdersCrmConsumer] [39m[32mOrders crm consumer started (topic=orders.events, groupId=orders-crm)[39m
+ecommerce-order-api  | {"level":"INFO","timestamp":"2026-04-28T13:49:10.558Z","logger":"kafkajs","message":"[ConsumerGroup] Consumer has joined the group","groupId":"orders-analytics","memberId":"ecommerce-order-api-d6ef976b-9016-4e47-9cf1-03d9e7c2131b","leaderId":"ecommerce-order-api-d6ef976b-9016-4e47-9cf1-03d9e7c2131b","isLeader":true,"memberAssignment":{"orders.events":[0,1,2]},"groupProtocol":"RoundRobinAssigner","duration":74}
+ecommerce-order-api  | [32m[Nest] 41  - [39m04/28/2026, 1:49:10 PM [32m    LOG[39m [38;5;3m[OrdersAnalyticsConsumer] [39m[32mOrders analytics consumer started (topic=orders.events, groupId=orders-analytics)[39m
+ecommerce-order-api  | {"level":"INFO","timestamp":"2026-04-28T13:49:10.568Z","logger":"kafkajs","message":"[Consumer] Starting","groupId":"payments-analytics"}
+ecommerce-order-api  | {"level":"INFO","timestamp":"2026-04-28T13:49:10.590Z","logger":"kafkajs","message":"[Consumer] Starting","groupId":"payments-audit"}
+ecommerce-order-api  | {"level":"INFO","timestamp":"2026-04-28T13:49:10.615Z","logger":"kafkajs","message":"[ConsumerGroup] Consumer has joined the group","groupId":"payments-analytics","memberId":"ecommerce-order-api-6ca65d24-43d5-4841-8ea9-acbabdbca0b5","leaderId":"ecommerce-order-api-6ca65d24-43d5-4841-8ea9-acbabdbca0b5","isLeader":true,"memberAssignment":{"payments.events":[0,1,2]},"groupProtocol":"RoundRobinAssigner","duration":46}
+ecommerce-order-api  | [32m[Nest] 41  - [39m04/28/2026, 1:49:10 PM [32m    LOG[39m [38;5;3m[PaymentsAnalyticsConsumer] [39m[32mPayments analytics consumer started (topic=payments.events, groupId=payments-analytics)[39m
+ecommerce-order-api  | {"level":"INFO","timestamp":"2026-04-28T13:49:10.616Z","logger":"kafkajs","message":"[ConsumerGroup] Consumer has joined the group","groupId":"payments-audit","memberId":"ecommerce-order-api-332e6451-e0b1-4d9a-b1b1-e9b9a068277d","leaderId":"ecommerce-order-api-332e6451-e0b1-4d9a-b1b1-e9b9a068277d","isLeader":true,"memberAssignment":{"payments.events":[0,1,2]},"groupProtocol":"RoundRobinAssigner","duration":26}
+ecommerce-order-api  | [32m[Nest] 41  - [39m04/28/2026, 1:49:10 PM [32m    LOG[39m [38;5;3m[PaymentsAuditConsumer] [39m[32mPayments audit consumer started (topic=payments.events, groupId=payments-audit)[39m
+ecommerce-order-api  | [32m[Nest] 41  - [39m04/28/2026, 1:49:10 PM [32m    LOG[39m [38;5;3m[NestApplication] [39m[32mNest application successfully started[39m[38;5;3m +1ms[39m
+ecommerce-order-api  | [32m[Nest] 41  - [39m04/28/2026, 1:49:55 PM [32m    LOG[39m [38;5;3m[LoggingInterceptor] [39m[32m{"msg":"http_request","requestId":"1776f9ef-2c6e-4e3d-83b6-e0146903a591","method":"GET","path":"/health","statusCode":200,"latencyMs":2}[39m
+ecommerce-order-api  | [32m[Nest] 41  - [39m04/28/2026, 1:51:49 PM [32m    LOG[39m [38;5;3m[LoggingInterceptor] [39m[32m{"msg":"http_request","requestId":"9b3c4b6b-b279-464e-bd73-6dff455c97b5","method":"POST","path":"/api/v1/auth/login","statusCode":201,"latencyMs":69}[39m
+ecommerce-order-api  | [32m[Nest] 41  - [39m04/28/2026, 1:51:49 PM [32m    LOG[39m [38;5;3m[LoggingInterceptor] [39m[32m{"msg":"http_request","requestId":"e57c194f-cafb-4538-87d6-270c3be04a47","method":"GET","path":"/api/v1/auth/me","statusCode":200,"latencyMs":0}[39m
+ecommerce-order-api  | [32m[Nest] 41  - [39m04/28/2026, 1:51:49 PM [32m    LOG[39m [38;5;3m[LoggingInterceptor] [39m[32m{"msg":"http_request","requestId":"1c39a5ce-cd60-44cb-8e74-ece928503cbb","method":"POST","path":"/api/v1/orders","statusCode":201,"latencyMs":44}[39m
+ecommerce-order-api  | [32m[Nest] 41  - [39m04/28/2026, 1:51:49 PM [32m    LOG[39m [38;5;3m[OrdersCrmConsumer] [39m[32mcrm orderPlaced orderId=55d3159c-9359-410d-873b-f9e7511910c3 eventId=ebfa0834-f387-4808-95da-f2468c8836a7 totalAmount=189.96[39m
+ecommerce-order-api  | [32m[Nest] 41  - [39m04/28/2026, 1:51:49 PM [32m    LOG[39m [38;5;3m[OrdersAnalyticsConsumer] [39m[32manalytics orderPlaced orderId=55d3159c-9359-410d-873b-f9e7511910c3 eventId=ebfa0834-f387-4808-95da-f2468c8836a7 totalAmount=189.96[39m
+ecommerce-order-api  | [33m[Nest] 41  - [39m04/28/2026, 1:51:52 PM [33m   WARN[39m [38;5;3m[OrdersProcessorConsumer] [39m[33mpayment_authorize result=timeout orderId=55d3159c-9359-410d-873b-f9e7511910c3 durationMs=2520 timeoutMs=2500[39m
+ecommerce-order-api  | [33m[Nest] 41  - [39m04/28/2026, 1:51:52 PM [33m   WARN[39m [38;5;3m[OrdersProcessorConsumer] [39m[33mresult=retry messageId=8d92f5ac-1cd9-46b0-b8f2-b2f0a028c64f orderId=55d3159c-9359-410d-873b-f9e7511910c3 attempt=1 reason="Payments service timeout"[39m
+ecommerce-order-api  | [32m[Nest] 41  - [39m04/28/2026, 1:51:57 PM [32m    LOG[39m [38;5;3m[OrdersProcessorConsumer] [39m[32mpayment_authorize result=success orderId=55d3159c-9359-410d-873b-f9e7511910c3 durationMs=16 timeoutMs=2500[39m
+ecommerce-order-api  | [32m[Nest] 41  - [39m04/28/2026, 1:51:57 PM [32m    LOG[39m [38;5;3m[OrdersProcessorConsumer] [39m[32mresult=success messageId=8d92f5ac-1cd9-46b0-b8f2-b2f0a028c64f orderId=55d3159c-9359-410d-873b-f9e7511910c3 attempt=2[39m

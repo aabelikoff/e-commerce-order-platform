@@ -1,13 +1,13 @@
 import { Seeder } from 'typeorm-extension';
 import { DataSource } from 'typeorm';
 import {
-  Order,
-  OrderItem,
-  Product,
-  User,
-  Payment,
   EOrderStatus,
   EPaymentStatus,
+  Order,
+  OrderItem,
+  Payment,
+  Product,
+  User,
 } from '../entities';
 
 type SeedOrderItem = {
@@ -104,7 +104,6 @@ export default class OrdersSeed implements Seeder {
 
       await orderItemsRepo.save(items);
 
-      // ✅ payment seed (1 payment per order for demo)
       const paymentAlreadyExists = await paymentsRepo.findOne({
         where: { orderId: order.id },
         select: { id: true },
@@ -113,7 +112,8 @@ export default class OrdersSeed implements Seeder {
       if (!paymentAlreadyExists) {
         await paymentsRepo.save(
           paymentsRepo.create({
-            order, // достаточно, orderId проставится через JoinColumn
+            order,
+            idempotencyKey: seedOrder.idempotencyKey,
             status: seedOrder.payment.status,
             paidAt: seedOrder.payment.paidAt,
             paidAmount: seedOrder.payment.paidAmount,

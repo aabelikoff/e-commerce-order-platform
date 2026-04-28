@@ -28,6 +28,7 @@ Baseline resource snapshot:
 - `orders_failed_total`: `0 -> 0`
 - `process_cpu_seconds_total`: `87.340034 -> 88.053713`
 - CPU delta: about `+0.714 s`
+- CPU per request: about `35.7 ms/request`
 - `process_resident_memory_bytes`: `193159168 -> 196915200`
 - memory delta: about `+3.58 MB`
 - `nodejs_eventloop_lag_seconds`: `0.011052959 -> 0.001584242`
@@ -61,8 +62,20 @@ The real bottleneck was the synchronous external dependency in the request path:
 - Baseline had a visible tail: `p95` and `p99` were much worse than `p50`
 - A first optimization that removed local DB round-trips did not produce a meaningful e2e improvement
 - After moving payment authorization out of the synchronous request path, the same scenario improved measurably
+- Direct timing logs were added around `payments.authorize()` so the external dependency can now be observed explicitly through `durationMs` and timeout outcomes in runtime logs
 
 This sequence is important because the bottleneck conclusion was based on measurement, not intuition.
+
+### Direct runtime evidence
+
+A saved runtime log now shows the external dependency cost directly:
+
+- `POST /api/v1/orders` completed in `44 ms`
+- the async worker then logged `payment_authorize result=timeout ... durationMs=2520 timeoutMs=2500`
+- the same message was retried
+- the next authorization attempt succeeded with `durationMs=16`
+
+This is stronger evidence than before/after metrics alone, because it shows that the payment authorization call itself can take multiple seconds and therefore was a realistic tail-latency bottleneck when it used to run inside the synchronous HTTP request path.
 
 ## 4. Implemented Changes
 
@@ -107,6 +120,7 @@ The final comparison below uses:
 | Throughput | `26.8 req/s` | `27.34 req/s` | moderate improvement |
 | Error rate | `0%` | `0%` | no regression |
 | CPU delta | `+0.714 s` | `+0.586 s` | lower CPU time during test run |
+| CPU per request | `35.7 ms/request` | `29.3 ms/request` | lower runtime cost per successful request |
 | Memory delta | `+3.58 MB` | `+13.10 MB` | increased memory during optimized run |
 | Event loop lag snapshot | `11.05 ms -> 1.58 ms` | `0 ms -> 4.48 ms` | snapshot metric, useful but less stable than latency |
 | Created orders | `+20` | `+20` | same business throughput |
@@ -126,8 +140,14 @@ Load test flow used for both baseline and final measurement:
 4. Send 20 sequential `POST /api/v1/orders` requests
 5. Capture `p50`, `p95`, `p99`, throughput, error rate, CPU, memory, and event loop lag from `/metrics`
 
+Clean setup note:
+
+- the payment seed now writes `idempotencyKey`, so the seed is compatible with the `payments.idempotency_key NOT NULL` migration
+- timing logs around `payments.authorize()` can be used as direct runtime evidence for the external dependency cost
+
 Saved evidence:
 
 - [grafana-after-optimization.png](./performance-homework/grafana-after-optimization.png)
 - [baseline-capture-before-optimization.txt](./performance-homework/baseline-capture-before-optimization.txt)
 - [after-capture-optimized.txt](./performance-homework/after-capture-optimized.txt)
+- [payment-timing-evidence.log](./performance-homework/payment-timing-evidence.log)
