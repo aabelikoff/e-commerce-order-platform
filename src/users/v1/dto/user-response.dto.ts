@@ -6,37 +6,37 @@ export class UserResponseDto {
     example: '1',
     description: 'The unique identifier of the user',
   })
-  id: string;
+  id!: string;
 
   @ApiProperty({ example: 'John', description: 'The first name of the user' })
-  firstName: string;
+  firstName!: string;
 
   @ApiProperty({ example: 'Doe', description: 'The last name of the user' })
-  lastName: string;
+  lastName!: string;
 
   @ApiProperty({
     example: 'john.doe@example.com',
     description: 'The email address of the user',
   })
-  email: string;
+  email!: string;
 
   @ApiProperty({
     example: '2023-01-01T00:00:00.000Z',
     description: 'The date and time when the user was created',
   })
-  createdAt: Date;
+  createdAt!: Date;
 
   @ApiProperty({
     example: '2023-01-02T00:00:00.000Z',
     description: 'The date and time when the user was last updated',
   })
-  updatedAt: Date;
+  updatedAt!: Date;
 }
 
 export class UsersListResponseDto {
   @ApiProperty({ description: 'List of users', type: [UserResponseDto] })
-  items: UserResponseDto[];
+  items!: UserResponseDto[];
 
   @ApiProperty({ description: 'Pagination', type: PaginationCursorMetaDto })
-  pagination: PaginationCursorMetaDto;
+  pagination!: PaginationCursorMetaDto;
 }

@@ -8,5 +8,5 @@ export class CompleteUploadDto {
     example: '4444444-4444-5555-66545646',
   })
   @IsUUID()
-  fileId: string;
+  fileId!: string;
 }

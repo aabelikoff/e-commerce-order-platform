@@ -28,15 +28,45 @@ import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
 import { CursorPaginationQueryDto } from '../../common/dto/cursor-pagination-query.dto';
 import { AdminWritesThrottle } from '../../common/decorators';
 import { buildAuditRequestContext } from '../../common/audit';
+import {
+  ApiBearerAuth,
+  ApiForbiddenResponse,
+  ApiHeader,
+  ApiNoContentResponse,
+  ApiNotFoundResponse,
+  ApiOperation,
+  ApiParam,
+  ApiTags,
+  ApiUnauthorizedResponse,
+} from '@nestjs/swagger';
+import {
+  OrdersListResponseDto,
+  OrderResponseDto,
+} from './dto/order-response.dto';
+import {
+  ApiCreatedWrappedResponse,
+  ApiOkWrappedResponse,
+} from '../../common/decorators';
 
 @UseGuards(JwtAuthGuard, AccessGuard)
 @Controller('orders')
+@ApiTags('orders')
+@ApiBearerAuth()
 export class OrdersV1Controller {
   constructor(private orderService: OrdersService) {}
 
   @Scopes(EOrderScopes.ORDER_WRITE)
   @Post()
   @UseInterceptors(OrderResponseInterceptor)
+  @ApiOperation({ summary: 'Create a new order' })
+  @ApiHeader({
+    name: 'Idempotency-Key',
+    required: true,
+    description: 'Unique key to safely retry order creation',
+  })
+  @ApiCreatedWrappedResponse(OrderResponseDto)
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid bearer token' })
+  @ApiForbiddenResponse({ description: 'Insufficient scope or role' })
   async create(
     @Body() dto: CreateOrderDto,
     @IdempotencyKey() idempotencyKey: string,
@@ -47,6 +77,10 @@ export class OrdersV1Controller {
   @Scopes(EOrderScopes.ORDER_READ)
   @Get()
   @UseInterceptors(OrderResponseInterceptor)
+  @ApiOperation({ summary: 'List orders available to the current user' })
+  @ApiOkWrappedResponse(OrdersListResponseDto)
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid bearer token' })
+  @ApiForbiddenResponse({ description: 'Insufficient scope or role' })
   async getAll(
     @Req() req: Request & { user: AuthUser },
     @Query() query: CursorPaginationQueryDto,
@@ -58,6 +92,12 @@ export class OrdersV1Controller {
   @Scopes(EOrderScopes.ORDER_READ)
   @Get(':id')
   @UseInterceptors(OrderResponseInterceptor)
+  @ApiOperation({ summary: 'Get order by id' })
+  @ApiParam({ name: 'id', description: 'Order id (UUID)' })
+  @ApiOkWrappedResponse(OrderResponseDto)
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid bearer token' })
+  @ApiForbiddenResponse({ description: 'Insufficient scope or role' })
+  @ApiNotFoundResponse({ description: 'Order not found' })
   async getOne(
     @Req() req: Request & { user: AuthUser },
     @Param('id') id: string,
@@ -69,6 +109,12 @@ export class OrdersV1Controller {
   @Roles(ERoles.ADMIN)
   @Patch(':id/status')
   @AdminWritesThrottle()
+  @ApiOperation({ summary: 'Update order status (admin only)' })
+  @ApiParam({ name: 'id', description: 'Order id (UUID)' })
+  @ApiOkWrappedResponse(OrderResponseDto)
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid bearer token' })
+  @ApiForbiddenResponse({ description: 'Admin role required' })
+  @ApiNotFoundResponse({ description: 'Order not found' })
   async updateStatus(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateOrderStatusDto,
@@ -85,6 +131,12 @@ export class OrdersV1Controller {
   @Roles(ERoles.ADMIN)
   @HttpCode(204)
   @Delete(':id')
+  @ApiOperation({ summary: 'Delete order by id (admin only)' })
+  @ApiParam({ name: 'id', description: 'Order id (UUID)' })
+  @ApiNoContentResponse({ description: 'Order deleted' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid bearer token' })
+  @ApiForbiddenResponse({ description: 'Admin role required' })
+  @ApiNotFoundResponse({ description: 'Order not found' })
   async delete(@Param('id') id: string) {
     return await this.orderService.delete(id);
   }
