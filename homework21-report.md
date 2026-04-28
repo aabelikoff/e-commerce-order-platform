@@ -66,6 +66,17 @@ The real bottleneck was the synchronous external dependency in the request path:
 
 This sequence is important because the bottleneck conclusion was based on measurement, not intuition.
 
+### Direct runtime evidence
+
+A saved runtime log now shows the external dependency cost directly:
+
+- `POST /api/v1/orders` completed in `44 ms`
+- the async worker then logged `payment_authorize result=timeout ... durationMs=2520 timeoutMs=2500`
+- the same message was retried
+- the next authorization attempt succeeded with `durationMs=16`
+
+This is stronger evidence than before/after metrics alone, because it shows that the payment authorization call itself can take multiple seconds and therefore was a realistic tail-latency bottleneck when it used to run inside the synchronous HTTP request path.
+
 ## 4. Implemented Changes
 
 ### Change 1: performance optimization
@@ -139,3 +150,4 @@ Saved evidence:
 - [grafana-after-optimization.png](./performance-homework/grafana-after-optimization.png)
 - [baseline-capture-before-optimization.txt](./performance-homework/baseline-capture-before-optimization.txt)
 - [after-capture-optimized.txt](./performance-homework/after-capture-optimized.txt)
+- [payment-timing-evidence.log](./performance-homework/payment-timing-evidence.log)
