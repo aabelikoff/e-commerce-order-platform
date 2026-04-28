@@ -15,7 +15,10 @@ export class CreateOrderDto {
   @IsUUID()
   userId: string;
 
-  @ApiProperty({ description: '' })
+  @ApiProperty({
+    description: 'Order items',
+    type: [OrderItemDto],
+  })
   @IsArray()
   @ArrayMinSize(1)
   @ValidateNested({ each: true })

@@ -7,23 +7,23 @@ export class CreateUserDto {
   @IsString()
   @IsNotEmpty()
   @MinLength(2)
-  firstName: string;
+  firstName!: string;
 
   @ApiProperty({ description: 'Last name' })
   @IsString()
   @IsNotEmpty()
   @MinLength(2)
-  lastName: string;
+  lastName!: string;
 
   @ApiProperty({ description: 'Email' })
   @IsEmail()
   @Transform(({ value }) => value.toLowerCase().trim())
-  email: string;
+  email!: string;
 
   @ApiProperty({ description: 'Password' })
   @IsString()
   @IsNotEmpty()
   @MinLength(6)
   @Transform(({ value }) => value.trim())
-  password: string;
+  password!: string;
 }

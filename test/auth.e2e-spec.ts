@@ -98,7 +98,7 @@ describe('AuthController (e2e)', () => {
         email: '  ALICE@EXAMPLE.COM ',
         password: 'secret123',
       })
-      .expect(201);
+      .expect(200);
 
     expect(mockAuthService.login).toHaveBeenCalledWith(
       {

@@ -20,17 +20,27 @@ import { ERoles } from 'src/auth/access/roles';
 import { Roles } from 'src/auth/decorators';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { AccessGuard } from 'src/auth/guards/access.guard';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiParam,
+  ApiTags,
+} from '@nestjs/swagger';
 
 @Controller({ path: 'users', version: '1' })
+@ApiTags('users')
 export class UsersV1Controller {
   constructor(private usersService: UsersService) {}
 
   @Post()
+  @ApiOperation({ summary: 'Create user' })
   async create(@Body() dto: CreateUserDto): Promise<UserResponseDto> {
     return this.usersService.create(dto);
   }
 
   @Get(':id')
+  @ApiOperation({ summary: 'Get user by id' })
+  @ApiParam({ name: 'id', description: 'User id (UUID)' })
   @ApiOkWrappedResponse(UserResponseDto)
   async getOne(
     @Param('id', ParseUUIDPipe) id: string,
@@ -42,6 +52,8 @@ export class UsersV1Controller {
   @Roles(ERoles.ADMIN, ERoles.SUPPORT)
   // @Scopes(UserScopes.USER_READ)
   @Get()
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'List users (admin/support)' })
   @ApiOkWrappedResponse(UsersListResponseDto)
   async getAll(
     @Query() query: CursorPaginationQueryDto,
@@ -50,6 +62,8 @@ export class UsersV1Controller {
   }
 
   @Patch(':id')
+  @ApiOperation({ summary: 'Update user by id' })
+  @ApiParam({ name: 'id', description: 'User id (UUID)' })
   async update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateUserDto,

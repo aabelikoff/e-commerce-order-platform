@@ -22,10 +22,26 @@ import { AccessGuard } from 'src/auth/guards/access.guard';
 import { PresignFileDto } from './dto/presign-file.dto';
 import { FilesService } from './files.service';
 import { CompleteUploadDto } from './dto/complete-upload.dto';
+import {
+  ApiBearerAuth,
+  ApiForbiddenResponse,
+  ApiNotFoundResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiParam,
+  ApiTags,
+  ApiUnauthorizedResponse,
+} from '@nestjs/swagger';
+import {
+  FileResponseDto,
+  PresignedUploadResponseDto,
+} from './dto/file-response.dto';
 
 @UseGuards(JwtAuthGuard, AccessGuard)
 @Controller('files')
 @Roles(ERoles.ADMIN, ERoles.SUPPORT, ERoles.USER)
+@ApiTags('files')
+@ApiBearerAuth()
 @Scopes(
   EUserScopes.USER_WRITE,
   EProductScopes.PRODUCT_WRITE,
@@ -35,6 +51,10 @@ import { CompleteUploadDto } from './dto/complete-upload.dto';
 export class FilesController {
   constructor(private readonly filesService: FilesService) {}
   @Post('presign')
+  @ApiOperation({ summary: 'Create a presigned upload URL for a file' })
+  @ApiOkResponse({ type: PresignedUploadResponseDto })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid bearer token' })
+  @ApiForbiddenResponse({ description: 'Insufficient scope or role' })
   async presign(
     @Req() req: Request & { user: AuthUser },
     @Body() dto: PresignFileDto,
@@ -43,6 +63,11 @@ export class FilesController {
   }
 
   @Post('complete')
+  @ApiOperation({ summary: 'Complete a previously presigned upload' })
+  @ApiOkResponse({ type: FileResponseDto })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid bearer token' })
+  @ApiForbiddenResponse({ description: 'Insufficient scope or role' })
+  @ApiNotFoundResponse({ description: 'File not found' })
   async complete(
     @Req() req: Request & { user: AuthUser },
     @Body() dto: CompleteUploadDto,
@@ -57,6 +82,12 @@ export class FilesController {
     EPaymentScopes.PAYMENT_READ,
   )
   @Get(':id')
+  @ApiOperation({ summary: 'Get file metadata and public view by id' })
+  @ApiParam({ name: 'id', description: 'File id (UUID)' })
+  @ApiOkResponse({ type: FileResponseDto })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid bearer token' })
+  @ApiForbiddenResponse({ description: 'Insufficient scope or role' })
+  @ApiNotFoundResponse({ description: 'File not found' })
   async getById(
     @Req() req: Request & { user: AuthUser },
     @Param('id') id: string,

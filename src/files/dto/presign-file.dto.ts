@@ -17,21 +17,21 @@ import {
 export class PresignFileDto {
   @ApiProperty({ enum: EFileOwnerType, example: EFileOwnerType.USER })
   @IsEnum(EFileOwnerType)
-  ownerType: EFileOwnerType;
+  ownerType!: EFileOwnerType;
 
   @ApiProperty({ description: 'UUID of owner entity' })
   @IsUUID()
-  ownerId: string;
+  ownerId!: string;
 
   @ApiProperty({ example: 'image/jpeg' })
   @IsMimeType()
-  contentType: string;
+  contentType!: string;
 
   @ApiProperty({ example: 245678, description: 'File size in bytes' })
   @IsInt()
   @Min(1)
   @Max(20 * 1024 * 1024)
-  sizeBytes: number;
+  sizeBytes!: number;
 
   @ApiProperty({ example: 'avatar.jpg', required: false })
   @IsOptional()
