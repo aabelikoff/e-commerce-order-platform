@@ -63,21 +63,25 @@ This design allows each domain to evolve independently while maintaining clear b
 ```text
 src/
  |- auth/
- |- users/
- |- orders/
- |- payments/
- |- payment-service/
- |- products/
+ |- common/
+ |- config/
+ |- database/
  |- files/
- |- realtime/
- |- rabbitmq/
- |- outbox/
- |- kafka/
+ |- generated/
+ |- graphql/
  |- health/
+ |- kafka/
  |- metrics/
  |- notifications/
+ |- orders/
+ |- outbox/
+ |- payment-service/
+ |- payments/
+ |- products/
+ |- rabbitmq/
+ |- realtime/
  |- reportings/
- |- config/
+ |- users/
  |- app.module.ts
  `- main.ts
 
@@ -85,7 +89,10 @@ proto/
  `- payments/v1/payments.proto
 
 test/
- `- app.e2e-spec.ts
+ |- app.e2e-spec.ts
+ |- auth.e2e-spec.ts
+ |- orders.e2e-spec.ts
+ `- realtime-orders.gateway.e2e-spec.ts
 ```
 
 ### Structure explanation
@@ -104,6 +111,12 @@ Platform/support modules: `auth`, `files`, `realtime`, `rabbitmq`, `outbox`, `ka
 Dedicated gRPC microservice module: `payment-service` (separate entrypoint for Payments gRPC server)
 
 Configuration layer: the `config` directory contains centralized and strongly typed application configuration.
+
+Persistence layer: `database` contains TypeORM entities, migrations, seeders, and data-source configuration.
+
+GraphQL layer: `graphql` contains resolvers, models, loaders, and GraphQL-specific services.
+
+Shared layer: `common` contains reusable filters, guards, interceptors, decorators, DTOs, pagination helpers, audit helpers, and problem-detail types.
 
 ---
 
@@ -153,13 +166,15 @@ Observability:
 
 ## Requirements
 
-- Node.js v22.14.0
+- Node.js v24.13.0 for local development and CI, matching `.nvmrc`
 - npm
 - optional: use project Node version via `.nvmrc`
 
 ```bash
 nvm use
 ```
+
+Docker images currently use Node 20 based runtime images (`node:20-slim` and `gcr.io/distroless/nodejs20-debian12`) through the multi-stage `Dockerfile`.
 
 ## Project Setup
 
@@ -187,6 +202,7 @@ PORT=3001
 
 SEED_ENABLED=false
 NODE_ENV=development
+# allowed values: development | stage | production
 
 # Database Configuration
 DB_HOST=localhost
@@ -220,6 +236,37 @@ AWS_S3_ENDPOINT=http://localhost:9000
 AWS_S3_FORCE_PATH_STYLE=true
 AWS_CLOUDFRONT_URL=
 FILES_PRESIGN_EXPIRES_IN_SEC=900
+
+# RabbitMQ & Outbox Configuration
+RABBITMQ_URL=amqp://guest:guest@localhost:5673
+RABBITMQ_PREFETCH=1
+RABBITMQ_MAX_ATTEMPTS=3
+RABBITMQ_RETRY_DELAY_MS=5000
+OUTBOX_RELAY_INTERVAL_MS=1000
+OUTBOX_RELAY_BATCH_SIZE=50
+
+# Kafka Configuration
+KAFKA_ENABLED=true
+KAFKA_BROKERS=localhost:9094
+KAFKA_CLIENT_ID=ecommerce-order-api
+KAFKA_TOPIC_PARTITIONS=3
+KAFKA_TOPIC_ORDERS_EVENTS=orders.events
+KAFKA_ORDERS_ANALYTICS_GROUP_ID=orders-analytics
+KAFKA_ORDERS_CRM_GROUP_ID=orders-crm
+KAFKA_TOPIC_PAYMENTS_EVENTS=payments.events
+KAFKA_PAYMENTS_ANALYTICS_GROUP_ID=payments-analytics
+KAFKA_PAYMENTS_AUDIT_GROUP_ID=payments-audit
+
+# Payments gRPC Configuration
+PAYMENTS_GRPC_URL=localhost:5021
+PAYMENTS_GRPC_BIND_URL=0.0.0.0:5021
+PAYMENTS_RPC_TIMEOUT_MS=2500
+
+# Tracing Configuration
+OTEL_ENABLED=false
+OTEL_DIAGNOSTICS_ENABLED=false
+OTEL_SERVICE_NAME=ecommerce-service
+OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://localhost:4318/v1/traces
 ```
 
 ## Local Docker Quick Start
@@ -262,10 +309,12 @@ npm run docker:dev:logs
 Recommended local demo flow:
 
 1. `POST /api/v1/auth/login`
-2. `POST /api/v1/orders`
-3. `GET /api/v1/orders`
-4. `POST /api/v1/orders/:orderId/pay`
-5. `GET /api/v1/orders/:id`
+2. `GET /api/v1/auth/me`
+3. `PATCH /api/v1/auth/me`
+4. `POST /api/v1/orders` with `Authorization: Bearer <token>` and `Idempotency-Key: <unique-key>`
+5. `GET /api/v1/orders`
+6. `POST /api/v1/orders/:orderId/pay`
+7. `GET /api/v1/orders/:id`
 
 ## Compile and Run the Project
 
@@ -395,7 +444,7 @@ Service endpoints:
 Notes:
 
 - `/health` returns a simple liveness response
-- `/ready` returns a simple readiness response
+- `/ready` verifies database access and TCP connectivity to the payments gRPC service
 - `/metrics` returns Prometheus text format with HTTP and business metrics
 
 ## Monitoring
@@ -643,14 +692,18 @@ Services:
 - `api` (NestJS backend, `prod-distroless`)
 - `payments-service` (NestJS gRPC server, `prod-distroless`)
 - `postgres` (official `postgres:16`)
+- `rabbitmq` (official `rabbitmq:3-management`)
 - `migrate` (one-off migrations job)
 - `seed` (one-off seed job)
 - `kafka` + `kafka-init` (topic bootstrap for `orders.events`, `payments.events`)
 
 Notes:
 
-- `postgres` is only on private `internal` network and is not exposed
+- `postgres` is attached to the `internal` and `public` compose networks and is published locally as `5445 -> 5432`
 - `api` is published as `127.0.0.1:8080 -> 3001`
+- `payments-service` is published as `127.0.0.1:5021 -> 5021`
+- `rabbitmq` is published as `5673 -> 5672` and `15673 -> 15672`
+- `kafka` is published as `9094 -> 9094`
 
 Run step-by-step:
 
@@ -762,7 +815,7 @@ docker build --target prod-distroless -t ecommerse-api:distroless .
 ### Compose Notes
 
 - Use `--env-file .env.production` / `--env-file .env.development` in compose commands so `${...}` values are substituted correctly.
-- `postgres` is intentionally not published to host (`no ports:` in `compose.yml`).
+- The prod-like local compose file publishes Postgres on `5445`, RabbitMQ on `5673` / `15673`, Kafka on `9094`, API on `8080`, and the payments gRPC service on `5021`.
 - For local verification, prefer the `compose.dev.yml` flow described in `Local Docker Quick Start`.
 
 ## RabbitMQ + Outbox
@@ -798,9 +851,10 @@ Implemented in this area:
 
 - dedicated `payments-service` with separate NestJS entrypoint (`src/payment-service/main.ts`)
 - `.proto` contract at `proto/payments/v1/payments.proto`
-- `orders-service` gRPC client call to `Payments.Authorize`
-- timeout on Orders -> Payments call from env/config (`PAYMENTS_RPC_TIMEOUT_MS`)
-- happy path response includes payment authorization result (`paymentId`, `status`)
+- async orders worker gRPC call to `Payments.Authorize`
+- `payments` module gRPC call to `Payments.Capture` for explicit pay requests
+- timeout on Orders / Payments -> Payments gRPC calls from env/config (`PAYMENTS_RPC_TIMEOUT_MS`)
+- order creation stores the order and enqueues payment authorization through the outbox/worker flow instead of waiting for the remote payments dependency in the HTTP request path
 
 ### gRPC Quick Check
 
@@ -824,7 +878,7 @@ Postman collection for E2E check:
 What this collection verifies:
 
 - login + auth context (`/api/v1/auth/login`, `/api/v1/auth/me`)
-- order creation (`POST /api/v1/orders`) with gRPC `Payments.Authorize`
+- order creation (`POST /api/v1/orders`) with `Idempotency-Key` and async payment authorization queued through outbox/worker processing
 - order payment (`POST /api/v1/orders/:orderId/pay`) with gRPC `Payments.Capture`
 - repeat payment call idempotency (same paid payment is returned)
 - `paidAt` is set after capture
@@ -844,8 +898,8 @@ Timeout check:
 
 1. Set `PAYMENTS_RPC_TIMEOUT_MS=1` in `.env.development`.
 2. Recreate `api` container.
-3. Call `POST /api/v1/orders`.
-4. Expected HTTP result: `504` (`Payments service timeout`).
+3. Call `POST /api/v1/orders` with a valid `Idempotency-Key`.
+4. Expected result: order creation still returns from the API path, while the async worker logs the payment authorization timeout and applies the existing retry / DLQ behavior.
 
 ## Kafka Event Streams
 
@@ -867,7 +921,7 @@ Current domain streams:
 Runtime behavior:
 
 - Kafka settings (topics, brokers, group IDs) are configured through typed `kafka` config and environment variables.
-- `orders` flow publishes `order.placed` through Outbox Relay.
+- `orders` flow publishes `order.process_requested` through Outbox Relay for worker processing and order lifecycle events for stream consumers.
 - `payments` flow publishes payment lifecycle events from the payments service.
 - Consumer implementations are lightweight and currently focused on stream validation/processing logs.
 
@@ -879,4 +933,4 @@ This setup keeps operational processing in RabbitMQ and uses Kafka for domain ev
 
 ## License
 
-MIT licensed.
+This repository is currently private and marked as `UNLICENSED` in `package.json`.
