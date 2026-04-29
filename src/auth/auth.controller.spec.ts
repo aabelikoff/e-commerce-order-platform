@@ -4,6 +4,7 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { AuthUser } from './types';
 import { LoginDto } from './dto/login.dto';
+import { UsersService } from '../users/users.service';
 
 describe('AuthController', () => {
   let controller: AuthController;
@@ -20,6 +21,10 @@ describe('AuthController', () => {
     login: jest.fn(),
   };
 
+  const mockUsersService = {
+    update: jest.fn(),
+  };
+
   beforeEach(async () => {
     jest.clearAllMocks();
 
@@ -29,6 +34,10 @@ describe('AuthController', () => {
         {
           provide: AuthService,
           useValue: mockAuthService,
+        },
+        {
+          provide: UsersService,
+          useValue: mockUsersService,
         },
       ],
     }).compile();
@@ -81,5 +90,32 @@ describe('AuthController', () => {
     const result = controller.me(req);
 
     expect(result).toBe(user);
+  });
+
+  it('updates current user profile using req.user.sub', async () => {
+    const user: AuthUser = {
+      sub: 'user-1',
+      email: 'alice@example.com',
+      roles: [],
+      scopes: [],
+    };
+    const dto = {
+      firstName: 'Alice',
+      lastName: 'Updated',
+    };
+    const updatedUser = {
+      id: 'user-1',
+      email: 'alice@example.com',
+      firstName: 'Alice',
+      lastName: 'Updated',
+    };
+
+    mockUsersService.update.mockResolvedValue(updatedUser);
+
+    const req: AuthenticatedRequest = { user } as AuthenticatedRequest;
+    const result = await controller.updateMe(req, dto);
+
+    expect(mockUsersService.update).toHaveBeenCalledWith('user-1', dto);
+    expect(result).toEqual(updatedUser);
   });
 });

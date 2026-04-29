@@ -10,6 +10,7 @@ import request from 'supertest';
 import { VersioningType } from '@nestjs/common';
 import { AuthController } from '../src/auth/auth.controller';
 import { AuthService } from '../src/auth/auth.service';
+import { UsersService } from '../src/users/users.service';
 import { JwtAuthGuard } from '../src/auth/guards/jwt-auth.guard';
 import { ERoles } from '../src/auth/access/roles';
 import { EOrderScopes } from '../src/auth/access/scopes';
@@ -43,6 +44,10 @@ describe('AuthController (e2e)', () => {
     login: jest.fn(),
   };
 
+  const mockUsersService = {
+    update: jest.fn(),
+  };
+
   const getHttpServer = (): Parameters<typeof request>[0] =>
     app.getHttpServer() as Parameters<typeof request>[0];
 
@@ -53,6 +58,10 @@ describe('AuthController (e2e)', () => {
         {
           provide: AuthService,
           useValue: mockAuthService,
+        },
+        {
+          provide: UsersService,
+          useValue: mockUsersService,
         },
       ],
     })
@@ -84,10 +93,16 @@ describe('AuthController (e2e)', () => {
     mockAuthService.login.mockResolvedValue({
       accessToken: 'jwt-token',
     });
+    mockUsersService.update.mockResolvedValue({
+      id: 'user-1',
+      firstName: 'Alice',
+      lastName: 'Updated',
+      email: 'alice@example.com',
+    });
   });
 
   afterAll(async () => {
-    await app.close();
+    await app?.close();
   });
 
   it('logs in and returns wrapped access token', async () => {
@@ -169,6 +184,28 @@ describe('AuthController (e2e)', () => {
       email: 'alice@example.com',
       roles: [ERoles.USER],
       scopes: [EOrderScopes.ORDER_READ, EOrderScopes.ORDER_WRITE],
+    });
+  });
+
+  it('updates authenticated user profile for /auth/me', async () => {
+    const response = await request(getHttpServer())
+      .patch('/api/v1/auth/me')
+      .set('Authorization', 'Bearer user-token')
+      .send({
+        firstName: 'Alice',
+        lastName: 'Updated',
+      })
+      .expect(200);
+
+    expect(mockUsersService.update).toHaveBeenCalledWith('user-1', {
+      firstName: 'Alice',
+      lastName: 'Updated',
+    });
+    expect(response.body.data).toEqual({
+      id: 'user-1',
+      firstName: 'Alice',
+      lastName: 'Updated',
+      email: 'alice@example.com',
     });
   });
 });
