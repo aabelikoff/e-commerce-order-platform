@@ -17,14 +17,17 @@ import { CursorPaginationQueryDto } from 'src/common/dto/cursor-pagination-query
 import { UsersListResponseDto } from './dto/user-response.dto';
 import { User } from 'src/database/entities';
 import { ERoles } from 'src/auth/access/roles';
-import { Roles } from 'src/auth/decorators';
+import { EUserScopes } from 'src/auth/access/scopes';
+import { Roles, Scopes } from 'src/auth/decorators';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { AccessGuard } from 'src/auth/guards/access.guard';
 import {
   ApiBearerAuth,
+  ApiForbiddenResponse,
   ApiOperation,
   ApiParam,
   ApiTags,
+  ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 
 @Controller({ path: 'users', version: '1' })
@@ -50,20 +53,28 @@ export class UsersV1Controller {
 
   @UseGuards(JwtAuthGuard, AccessGuard)
   @Roles(ERoles.ADMIN, ERoles.SUPPORT)
-  // @Scopes(UserScopes.USER_READ)
+  @Scopes(EUserScopes.USER_READ)
   @Get()
   @ApiBearerAuth()
   @ApiOperation({ summary: 'List users (admin/support)' })
   @ApiOkWrappedResponse(UsersListResponseDto)
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid bearer token' })
+  @ApiForbiddenResponse({ description: 'Insufficient scope or role' })
   async getAll(
     @Query() query: CursorPaginationQueryDto,
   ): Promise<ResponseListDto<User>> {
     return this.usersService.findAll(query);
   }
 
+  @UseGuards(JwtAuthGuard, AccessGuard)
+  @Roles(ERoles.ADMIN, ERoles.SUPPORT)
+  @Scopes(EUserScopes.USER_WRITE)
   @Patch(':id')
-  @ApiOperation({ summary: 'Update user by id' })
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update user by id (admin/support)' })
   @ApiParam({ name: 'id', description: 'User id (UUID)' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid bearer token' })
+  @ApiForbiddenResponse({ description: 'Insufficient scope or role' })
   async update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateUserDto,

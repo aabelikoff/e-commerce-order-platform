@@ -8,10 +8,12 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from 'src/database/entities';
 import { JwtStrategy } from './jwt.strategy';
 import { type StringValue } from 'ms';
+import { UsersModule } from 'src/users/users.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([User]),
+    UsersModule,
     PassportModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
